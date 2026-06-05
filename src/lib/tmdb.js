@@ -17,6 +17,7 @@ export const tmdb = {
   search: (query, type = 'multi') => get(`/search/${type}?query=${encodeURIComponent(query)}`),
   movieDetails: (id) => get(`/movie/${id}`),
   tvDetails: (id) => get(`/tv/${id}`),
+  seasonDetails: (showId, season) => get(`/tv/${showId}/season/${season}`),
   providers: (type, id) => get(`/${type}/${id}/watch/providers`),
   recommendations: (type, id) => get(`/${type}/${id}/recommendations`),
 }
