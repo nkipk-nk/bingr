@@ -9,7 +9,10 @@ import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
 import Rankings from './pages/Rankings'
+import ListsPage from './pages/ListsPage'
+import ExportPanel from './components/ExportPanel'
 import SupportButton from './components/SupportButton'
+import { useLists } from './hooks/useLists'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import DeleteAccount from './pages/DeleteAccount'
@@ -17,6 +20,7 @@ import DeleteAccount from './pages/DeleteAccount'
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
   { id: 'rankings', label: '🏆 Rankings' },
+  { id: 'lists', label: '📋 Lists' },
   { id: 'watchlist', label: '🔖 Watchlist' },
   { id: 'watching', label: '▶ Watching' },
   { id: 'watched', label: '✅ Watched' },
@@ -28,6 +32,7 @@ export default function App() {
   const { session, loading: authLoading, signUp, signIn, signOut, deleteAccount } = useAuth()
   const { library, syncing, error: libError, setStatus, setRating, remove, counts } = useLibrary(session)
   const episodeHook = useEpisodes(session)
+  const listsHook = useLists(session)
 
   const [tab, setTab] = useState('discover')
   const [page, setPage] = useState('app') // app | privacy | terms | delete-account
@@ -280,6 +285,8 @@ export default function App() {
             onSetStatus={handleSetStatus}
             onSetRating={handleSetRating}
             episodeProps={episodeProps}
+            lists={listsHook.lists}
+            onAddToList={listsHook.addToList}
           />
         ) : tab === 'discover' ? (
           searchLoading ? (
@@ -309,8 +316,13 @@ export default function App() {
           )
         ) : tab === 'rankings' ? (
           <Rankings library={library} onOpen={openDetail} />
+        ) : tab === 'lists' ? (
+          <ListsPage listsHook={listsHook} onOpenItem={openDetail} />
         ) : (
-          <LibraryTab status={tab} library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
+          <>
+            <ExportPanel library={library} />
+            <LibraryTab status={tab} library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
+          </>
         )}
       </main>
 

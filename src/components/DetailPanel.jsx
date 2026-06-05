@@ -6,11 +6,13 @@ import EpisodeTracker from './EpisodeTracker'
 const STATUS_COLORS = { watched: '#1d9e75', watching: '#ba7517', watchlist: '#378add' }
 const STATUS_LABELS = { watched: 'Watched ✓', watching: 'Watching', watchlist: 'Watchlist' }
 
-export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps }) {
+export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList }) {
   const [details, setDetails] = useState(null)
   const [providers, setProviders] = useState({})
   const [recs, setRecs] = useState([])
   const [epTab, setEpTab] = useState(false)
+  const [showListPicker, setShowListPicker] = useState(false)
+  const [addedToList, setAddedToList] = useState(null)
   const type = item.media_type || 'movie'
   const isTV = type === 'tv'
 
@@ -111,6 +113,32 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
                 }}>{STATUS_LABELS[s]}</button>
               ))}
             </div>
+
+            {/* Add to list */}
+            {lists.length > 0 && (
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 12 }}>
+                <button onClick={() => setShowListPicker(v => !v)} style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  📋 Add to list
+                </button>
+                {showListPicker && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '6px', minWidth: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100 }}>
+                    {lists.map(list => (
+                      <button key={list.id} onClick={async () => {
+                        const ok = await onAddToList(list.id, item)
+                        if (ok) { setAddedToList(list.name); setTimeout(() => setAddedToList(null), 2000) }
+                        setShowListPicker(false)
+                      }} style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderRadius: 8, textAlign: 'left', fontSize: 13, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-input)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                      >
+                        {list.is_public ? '🌐' : '🔒'} {list.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {addedToList && <span style={{ marginLeft: 10, fontSize: 12, color: '#1d9e75' }}>✓ Added to {addedToList}</span>}
+              </div>
+            )}
 
             <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, margin: 0 }}>
               {details?.overview || item.overview || ''}
