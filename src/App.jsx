@@ -2,20 +2,26 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useLibrary } from './hooks/useLibrary'
 import { useEpisodes } from './hooks/useEpisodes'
+import { useLists } from './hooks/useLists'
+import { useProfile } from './hooks/useProfile'
 import { tmdb } from './lib/tmdb'
 import { logger } from './lib/logger'
+import { supabase } from './lib/supabase'
+import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import ProfilePage from './pages/ProfilePage'
 import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
 import Rankings from './pages/Rankings'
 import ListsPage from './pages/ListsPage'
 import ExportPanel from './components/ExportPanel'
-import SupportButton from './components/SupportButton'
-import { useLists } from './hooks/useLists'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import DeleteAccount from './pages/DeleteAccount'
+import SupportButton from './components/SupportButton'
 
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
@@ -33,9 +39,12 @@ export default function App() {
   const { library, syncing, error: libError, setStatus, setRating, remove, counts } = useLibrary(session)
   const episodeHook = useEpisodes(session)
   const listsHook = useLists(session)
+  const { profile, updateProfile, checkUsername } = useProfile(session)
 
   const [tab, setTab] = useState('discover')
-  const [page, setPage] = useState('app') // app | privacy | terms | delete-account
+  // page: landing | auth | forgot | reset | app | privacy | terms | delete-account | profile
+  const [page, setPage] = useState('loading')
+  const [authMode, setAuthMode] = useState('login')
   const [trending, setTrending] = useState({ movies: [], tv: [] })
   const [trendingError, setTrendingError] = useState(false)
   const [searchResults, setSearchResults] = useState(null)
@@ -47,32 +56,58 @@ export default function App() {
   const [toastTimer, setToastTimer] = useState(null)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
+  // Detect page from URL (handle reset-password redirect from email)
   useEffect(() => {
-    Promise.all([tmdb.trendingMovies(), tmdb.trendingTV()])
-      .then(([m, tv]) => {
-        setTrending({
-          movies: (m.results || []).slice(0, 12).map(x => ({ ...x, media_type: 'movie' })),
-          tv: (tv.results || []).slice(0, 12).map(x => ({ ...x, media_type: 'tv' })),
-        })
-      })
-      .catch(err => {
-        logger.error('Failed to load trending', err)
-        setTrendingError(true)
-      })
+    const hash = window.location.hash
+    const path = window.location.pathname
+    if (hash.includes('type=recovery') || path.includes('reset-password')) {
+      setPage('reset')
+      return
+    }
   }, [])
 
-  // Pre-fetch seasons for library TV shows (for progress bars)
+  // Auth state → page routing
+  useEffect(() => {
+    if (authLoading) return
+    if (page === 'reset') return
+    if (session) {
+      if (page === 'loading' || page === 'landing' || page === 'auth' || page === 'forgot') {
+        setPage('app')
+      }
+    } else {
+      if (page === 'loading' || page === 'app') {
+        setPage('landing')
+      }
+    }
+  }, [session, authLoading])
+
+  // Supabase auth event — handle PASSWORD_RECOVERY
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setPage('reset')
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    tmdb.trendingMovies()
+      .then(d => setTrending(prev => ({ ...prev, movies: (d.results || []).slice(0, 12).map(x => ({ ...x, media_type: 'movie' })) })))
+      .catch(err => { logger.error('Failed to load trending movies', err); setTrendingError(true) })
+    tmdb.trendingTV()
+      .then(d => setTrending(prev => ({ ...prev, tv: (d.results || []).slice(0, 12).map(x => ({ ...x, media_type: 'tv' })) })))
+      .catch(err => { logger.error('Failed to load trending TV', err); setTrendingError(true) })
+  }, [])
+
   useEffect(() => {
     Object.values(library)
       .filter(x => x.media_type === 'tv' && !seasonsCache[x.tmdb_id])
       .forEach(show => {
         tmdb.tvDetails(show.tmdb_id)
           .then(d => { if (d?.seasons) seasonsCache[show.tmdb_id] = d.seasons })
-          .catch(err => logger.warn('Failed to prefetch seasons', { showId: show.tmdb_id, err: err.message }))
+          .catch(() => {})
       })
   }, [library])
 
-  // Close user menu on outside click
   useEffect(() => {
     if (!showUserMenu) return
     const close = () => setShowUserMenu(false)
@@ -91,18 +126,14 @@ export default function App() {
 
   const handleSearch = async () => {
     if (!query.trim()) return
-    setSearchResults(null)
-    setDetailItem(null)
-    setSearchLoading(true)
+    setSearchResults(null); setDetailItem(null); setSearchLoading(true)
     try {
       const data = await tmdb.search(query.trim(), searchType)
       setSearchResults((data.results || []).filter(x => x.media_type !== 'person'))
     } catch (err) {
-      logger.error('Search failed', err, { query: query.trim() })
+      logger.error('Search failed', err)
       showToast('Search failed. Please try again.')
-    } finally {
-      setSearchLoading(false)
-    }
+    } finally { setSearchLoading(false) }
   }
 
   const handleSetStatus = async (item, status) => {
@@ -125,9 +156,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  const goHome = () => {
-    setDetailItem(null); setSearchResults(null); setTab('discover'); setPage('app')
-  }
+  const goHome = () => { setDetailItem(null); setSearchResults(null); setTab('discover'); setPage('app') }
 
   const episodeProps = {
     episodes: episodeHook.episodes,
@@ -137,43 +166,59 @@ export default function App() {
     getNextEpisode: episodeHook.getNextEpisode,
     getShowProgress: episodeHook.getShowProgress,
     getSeasonProgress: episodeHook.getSeasonProgress,
-    getNextEpisodeById: (tmdbId) => {
-      const seasons = seasonsCache[tmdbId]
-      return seasons ? episodeHook.getNextEpisode(tmdbId, seasons) : null
-    },
-    getShowProgressById: (tmdbId) => {
-      const seasons = seasonsCache[tmdbId]
-      return seasons ? episodeHook.getShowProgress(tmdbId, seasons) : null
-    },
+    getNextEpisodeById: (tmdbId) => { const s = seasonsCache[tmdbId]; return s ? episodeHook.getNextEpisode(tmdbId, s) : null },
+    getShowProgressById: (tmdbId) => { const s = seasonsCache[tmdbId]; return s ? episodeHook.getShowProgress(tmdbId, s) : null },
   }
 
-  if (authLoading) return (
+  // ── Loading splash ──
+  if (page === 'loading' || authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-page)' }}>
-      <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading...</div>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', marginBottom: 12 }}>🎬 bingr</div>
+        <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading…</div>
+      </div>
     </div>
   )
 
-  // Legal pages — accessible without login
-  if (page === 'privacy') return <PrivacyPolicy onBack={() => setPage('app')} />
-  if (page === 'terms') return <TermsOfService onBack={() => setPage('app')} />
+  // ── Legal pages (no auth needed) ──
+  if (page === 'privacy') return <PrivacyPolicy onBack={() => setPage(session ? 'app' : 'landing')} />
+  if (page === 'terms') return <TermsOfService onBack={() => setPage(session ? 'app' : 'landing')} />
 
-  if (!session) return (
-    <AuthPage
-      onAuth={handleAuth}
-      onShowPrivacy={() => setPage('privacy')}
-      onShowTerms={() => setPage('terms')}
-    />
-  )
+  // ── Password reset (from email link) ──
+  if (page === 'reset') return <ResetPassword onDone={() => { setPage('auth'); setAuthMode('login') }} />
 
-  if (page === 'delete-account') return (
-    <DeleteAccount
-      userEmail={session.user.email}
-      onBack={() => setPage('app')}
-      onDelete={deleteAccount}
-    />
-  )
+  // ── Forgot password ──
+  if (page === 'forgot') return <ForgotPassword onBack={() => setPage('auth')} />
 
-  const userInitials = session.user.email.slice(0, 2).toUpperCase()
+  // ── Not logged in ──
+  if (!session) {
+    if (page === 'auth') return (
+      <AuthPage
+        onAuth={handleAuth}
+        onShowPrivacy={() => setPage('privacy')}
+        onShowTerms={() => setPage('terms')}
+        onForgotPassword={() => setPage('forgot')}
+        initialMode={authMode}
+      />
+    )
+    return (
+      <LandingPage
+        onSignUp={() => { setAuthMode('signup'); setPage('auth') }}
+        onSignIn={() => { setAuthMode('login'); setPage('auth') }}
+        onShowPrivacy={() => setPage('privacy')}
+        onShowTerms={() => setPage('terms')}
+      />
+    )
+  }
+
+  // ── Logged-in-only pages ──
+  if (page === 'delete-account') return <DeleteAccount userEmail={session.user.email} onBack={() => setPage('app')} onDelete={deleteAccount} />
+  if (page === 'profile') return <ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onBack={() => setPage('app')} />
+
+  // ── Main app ──
+  const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
+  const userInitials = userDisplay.slice(0, 2).toUpperCase()
+
   const tabLabel = (t) => {
     if (t.id === 'watchlist') return `🔖 Watchlist${counts.watchlist ? ` (${counts.watchlist})` : ''}`
     if (t.id === 'watching') return `▶ Watching${counts.watching ? ` (${counts.watching})` : ''}`
@@ -199,7 +244,7 @@ export default function App() {
 
           <div style={{ flex: 1, display: 'flex', gap: 6, minWidth: 200 }}>
             <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="Search movies & TV shows..."
+              placeholder="Search movies & TV shows…"
               style={{ flex: 1, padding: '7px 12px', fontSize: 14, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} />
             <select value={searchType} onChange={e => setSearchType(e.target.value)}
               style={{ padding: '7px 8px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -207,49 +252,40 @@ export default function App() {
               <option value="movie">Movies</option>
               <option value="tv">TV Shows</option>
             </select>
-            <button onClick={handleSearch}
-              style={{ padding: '7px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, flexShrink: 0 }}>
-              Search
-            </button>
+            <button onClick={handleSearch} style={{ padding: '7px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, flexShrink: 0 }}>Search</button>
           </div>
 
-          {/* User menu */}
+          {/* User avatar + menu */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {syncing && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Syncing...</span>}
-              <div
-                onClick={(e) => { e.stopPropagation(); setShowUserMenu(v => !v) }}
-                title={session.user.email}
-                style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, cursor: 'pointer', userSelect: 'none' }}
-              >{userInitials}</div>
+              {syncing && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Syncing…</span>}
+              <div onClick={e => { e.stopPropagation(); setShowUserMenu(v => !v) }}
+                style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, cursor: 'pointer', userSelect: 'none', border: '2px solid transparent' }}
+                title={session.user.email}>
+                {userInitials}
+              </div>
             </div>
 
             {showUserMenu && (
-              <div onClick={e => e.stopPropagation()} style={{
-                position: 'absolute', top: '100%', right: 0, marginTop: 8,
-                background: 'var(--bg-card)', border: '1px solid var(--border)',
-                borderRadius: 12, padding: '8px', minWidth: 200,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 200,
-              }}>
+              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '8px', minWidth: 220, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 200 }}>
                 <div style={{ padding: '8px 12px 12px', borderBottom: '1px solid var(--border)', marginBottom: 6 }}>
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 2 }}>Signed in as</div>
-                  <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500, wordBreak: 'break-all' }}>{session.user.email}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{userDisplay}</div>
+                  {profile?.username && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>@{profile.username}</div>}
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{session.user.email}</div>
                 </div>
                 {[
+                  { label: '👤 Edit profile', action: () => { setPage('profile'); setShowUserMenu(false) } },
                   { label: '🔒 Privacy Policy', action: () => { setPage('privacy'); setShowUserMenu(false) } },
                   { label: '📄 Terms of Service', action: () => { setPage('terms'); setShowUserMenu(false) } },
                   { label: '🚪 Sign out', action: () => { signOut(); setShowUserMenu(false) } },
                   { label: '⚠️ Delete account', action: () => { setPage('delete-account'); setShowUserMenu(false) }, danger: true },
                 ].map(item => (
-                  <button key={item.label} onClick={item.action} style={{
-                    display: 'block', width: '100%', padding: '9px 12px', background: 'none',
-                    border: 'none', borderRadius: 8, textAlign: 'left', fontSize: 13,
-                    color: item.danger ? '#e24b4a' : 'var(--text)', cursor: 'pointer',
-                    fontFamily: 'inherit',
-                  }}
+                  <button key={item.label} onClick={item.action}
+                    style={{ display: 'block', width: '100%', padding: '9px 12px', background: 'none', border: 'none', borderRadius: 8, textAlign: 'left', fontSize: 13, color: item.danger ? '#e24b4a' : 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-input)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                  >{item.label}</button>
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+                    {item.label}
+                  </button>
                 ))}
               </div>
             )}
@@ -267,7 +303,7 @@ export default function App() {
         </div>
       </header>
 
-      {/* ── Library sync error banner ── */}
+      {/* Error banner */}
       {libError && (
         <div style={{ background: 'rgba(226,75,74,0.1)', borderBottom: '1px solid rgba(226,75,74,0.2)', padding: '10px 1.5rem', fontSize: 13, color: '#e24b4a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {libError}
@@ -275,7 +311,7 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Main content ── */}
+      {/* Main content */}
       <main style={{ padding: '1.5rem' }}>
         {detailItem ? (
           <DetailPanel
@@ -290,7 +326,7 @@ export default function App() {
           />
         ) : tab === 'discover' ? (
           searchLoading ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: 14 }}>Searching...</div>
+            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: 14 }}>Searching…</div>
           ) : searchResults ? (
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 14 }}>
@@ -326,30 +362,20 @@ export default function App() {
         )}
       </main>
 
-      {/* ── Footer ── */}
-      <footer style={{ borderTop: '1px solid var(--border)', padding: '1.5rem', display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap' }}>
-        {[
-          { label: 'Privacy Policy', page: 'privacy' },
-          { label: 'Terms of Service', page: 'terms' },
-          { label: 'Delete Account', page: 'delete-account' },
-        ].map(item => (
-          <span key={item.page} onClick={() => setPage(item.page)}
-            style={{ fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}
+      {/* Footer */}
+      <footer style={{ borderTop: '1px solid var(--border)', padding: '1.5rem', display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
+        {[{ label: 'Privacy Policy', p: 'privacy' }, { label: 'Terms of Service', p: 'terms' }, { label: 'Delete Account', p: 'delete-account' }].map(item => (
+          <span key={item.p} onClick={() => setPage(item.p)} style={{ fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}
             onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-          >{item.label}</span>
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>{item.label}</span>
         ))}
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>© {new Date().getFullYear()} bingr</span>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>© {new Date().getFullYear()} bingr · Made in Nairobi 🇰🇪</span>
       </footer>
 
-      {/* Floating support button */}
       <SupportButton session={session} />
 
-      {/* Toast */}
       {toast && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 9999, whiteSpace: 'nowrap' }}>
-          {toast}
-        </div>
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 9999, whiteSpace: 'nowrap' }}>{toast}</div>
       )}
     </div>
   )
