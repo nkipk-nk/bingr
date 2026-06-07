@@ -12,8 +12,8 @@ const GOOGLE_ICON = (
   </svg>
 )
 
-export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotPassword }) {
-  const [mode, setMode] = useState('login')
+export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotPassword, initialMode = 'login' }) {
+  const [mode, setMode] = useState(initialMode)
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
   const [usernameState, setUsernameState] = useState('idle') // idle|checking|available|taken|invalid
@@ -108,7 +108,7 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
       <div style={Card}>
         <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 6 }}>
-            <img src="/android-chrome-192x192.png" alt="bingr" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'contain' }} />
+            <img src="/logo.png" alt="bingr" style={{ width: 38, height: 38, borderRadius: 8, objectFit: 'contain' }} />
             <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)', letterSpacing: -1 }}>bingr</span>
           </div>
           <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>{mode === 'login' ? 'Welcome back.' : 'Create your free account.'}</div>

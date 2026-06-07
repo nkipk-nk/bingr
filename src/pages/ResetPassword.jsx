@@ -28,6 +28,8 @@ export default function ResetPassword({ onDone }) {
       if (error) throw error
       setDone(true)
       logger.info('Password reset successful')
+      // Sign out so user lands on login page cleanly instead of being auto-logged in
+      await supabase.auth.signOut()
     } catch (err) {
       setError(friendlyAuthError(err.message))
     } finally {

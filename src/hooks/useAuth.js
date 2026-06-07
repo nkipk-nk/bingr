@@ -41,14 +41,14 @@ export function useAuth() {
   const signUp = async (email, password, username) => {
     try {
       checkRateLimit()
-      // Check username availability first
+      // Check username availability before creating account
       if (username) {
         const { data: existing } = await supabase
           .from('profiles')
           .select('id')
           .eq('username', username.toLowerCase())
           .single()
-        if (existing) return { data: null, error: { message: 'That username is already taken. Please choose another.' } }
+        if (existing) return { data: null, error: { message: 'That username is already taken.' } }
       }
 
       const { data, error } = await supabase.auth.signUp({
@@ -58,15 +58,15 @@ export function useAuth() {
       })
       if (error) return { data: null, error: { message: friendlyAuthError(error.message) } }
 
-      // If confirmed immediately (email confirm off), set username now
-      if (data.session && username) {
+      // Save username immediately if we have user.id
+      // Works whether email confirm is on or off
+      if (data.user?.id && username) {
         await supabase.from('profiles')
-          .upsert({ id: data.user.id, username: username.toLowerCase(), username_set: true }, { onConflict: 'id' })
-      } else if (data.user && username) {
-        // Store username in metadata for trigger to pick up — or update after confirmation
-        await supabase.from('profiles')
-          .upsert({ id: data.user.id, username: username.toLowerCase(), username_set: true }, { onConflict: 'id' })
-          .select()
+          .upsert({
+            id: data.user.id,
+            username: username.toLowerCase(),
+            username_set: true,
+          }, { onConflict: 'id' })
       }
 
       logger.info('User signed up')

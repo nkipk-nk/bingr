@@ -1,21 +1,29 @@
 /**
- * Lightweight IP geolocation
- * Uses ipapi.co free tier — no API key needed, 1000 req/day
- * Returns country code e.g. 'KE', 'US', 'GB'
+ * IP geolocation — called once on first login, stored in profile.country_code
+ * Multiple fallbacks in case one provider is blocked or slow.
  */
 
-let cachedCountry = null
-
-export async function getCountryCode() {
-  if (cachedCountry) return cachedCountry
+async function tryFetch(url, parser, timeoutMs = 3000) {
   try {
-    const res = await fetch('https://ipapi.co/json/', { signal: AbortSignal.timeout(4000) })
+    const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) })
     const data = await res.json()
-    cachedCountry = data.country_code || null
-    return cachedCountry
+    return parser(data)
   } catch {
     return null
   }
+}
+
+export async function detectCountryCode() {
+  const providers = [
+    () => tryFetch('https://ipapi.co/json/', d => d?.country_code),
+    () => tryFetch('https://ipwho.is/', d => d?.country_code),
+    () => tryFetch('https://ip-api.com/json/?fields=countryCode', d => d?.countryCode),
+  ]
+  for (const provider of providers) {
+    const code = await provider()
+    if (code && code.length === 2) return code
+  }
+  return null
 }
 
 export function isKenya(code) {

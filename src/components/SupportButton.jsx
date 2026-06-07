@@ -1,30 +1,22 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { getCountryCode, isKenya } from '../lib/geo'
+import { isKenya } from '../lib/geo'
 
 const AMOUNTS = [50, 150, 300]
-const getNumber = () => ['01', '40', '109', '229'].join('') // ← replace with your real number split across segments
+const getNumber = () => ['07', '00', '000', '000'].join('') // ← replace with your real number
 
-export default function SupportButton({ session }) {
+export default function SupportButton({ session, profile, onShowSupporters }) {
   const [open, setOpen] = useState(false)
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [countryCode, setCountryCode] = useState(null)
-  const [countryLoading, setCountryLoading] = useState(false)
   const [supporters, setSupporters] = useState([])
 
-  // Detect country when modal opens
-  useEffect(() => {
-    if (!open || countryCode !== null) return
-    setCountryLoading(true)
-    getCountryCode().then(code => {
-      setCountryCode(code || 'unknown')
-      setCountryLoading(false)
-    })
-  }, [open])
+  // Country comes from profile — detected once on first login, stored permanently
+  const countryCode = profile?.country_code || null
+  const kenyan = isKenya(countryCode)
 
-  // Load supporter wall
+  // Load supporter wall when modal opens
   useEffect(() => {
     if (!open) return
     supabase
@@ -33,22 +25,29 @@ export default function SupportButton({ session }) {
       .eq('confirmed', true)
       .eq('show_on_wall', true)
       .order('donated_at', { ascending: false })
-      .limit(10)
+      .limit(3)
       .then(({ data }) => setSupporters(data || []))
   }, [open])
 
   const handleCopy = async () => {
     const num = getNumber()
     try { await navigator.clipboard.writeText(num) }
-    catch { const el = document.createElement('textarea'); el.value = num; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el) }
+    catch {
+      const el = document.createElement('textarea')
+      el.value = num; document.body.appendChild(el); el.select()
+      document.execCommand('copy'); document.body.removeChild(el)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
     logger.info('M-Pesa number copied')
   }
 
-  const close = () => { setOpen(false); setTimeout(() => { setRevealed(false); setCopied(false) }, 300) }
+  const close = () => {
+    setOpen(false)
+    setTimeout(() => { setRevealed(false); setCopied(false) }, 300)
+  }
+
   const number = getNumber()
-  const kenyan = isKenya(countryCode)
 
   return (
     <>
@@ -70,11 +69,12 @@ export default function SupportButton({ session }) {
               <div style={{ fontSize: 40, marginBottom: 10 }}>☕</div>
               <h2 style={{ fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Support bingr</h2>
               <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                bingr is free, ad-free. If it saves you time or brings joy, a small support means a lot 🙏
+                bingr is free, ad-free, and built by one developer in Nairobi.
+                If it saves you time or brings you joy, a small support means a lot 🙏
               </p>
             </div>
 
-            {/* Suggested amounts */}
+            {/* Suggested amounts — visual context only */}
             <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
               {AMOUNTS.map(a => (
                 <div key={a} style={{ padding: '6px 14px', borderRadius: 20, background: 'var(--bg-input)', border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)' }}>KES {a}</div>
@@ -86,13 +86,11 @@ export default function SupportButton({ session }) {
               <div style={{ padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 16 }}>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>🔒 Sign in to reveal the M-Pesa number</div>
               </div>
-            ) : countryLoading ? (
-              <div style={{ textAlign: 'center', padding: '1rem', color: 'var(--text-muted)', fontSize: 13 }}>Detecting your location…</div>
             ) : kenyan ? (
               /* Kenya — show M-Pesa number */
               !revealed ? (
                 <button onClick={() => setRevealed(true)}
-                  style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
                   📱 Show M-Pesa number
                 </button>
               ) : (
@@ -111,24 +109,34 @@ export default function SupportButton({ session }) {
                   </div>
                 </div>
               )
-            ) : (
-              /* Outside Kenya */
+            ) : countryCode !== null ? (
+              /* Outside Kenya — friendly message */
               <div style={{ padding: '1.25rem', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 8 }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>International support coming soon</div>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-                  We're working on international payment options so supporters worldwide can contribute. In the meantime, sharing bingr with friends is equally valuable — thank you for being here 💚
+                  We're working on international payment options. In the meantime, sharing bingr with friends is equally valuable — thank you for being here 💚
                 </div>
+              </div>
+            ) : (
+              /* Country not yet detected — show neutral message */
+              <div style={{ padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Payment options loading…</div>
               </div>
             )}
 
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', margin: '12px 0' }}>No pressure at all — bingr is free forever 💚</p>
+            <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', margin: '10px 0' }}>
+              No pressure at all — bingr is free forever 💚
+            </p>
 
-            {/* Supporter wall */}
+            {/* Recent supporters — compact, links to full page */}
             {supporters.length > 0 && (
-              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 10 }}>🌟 Recent supporters</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>🌟 Recent supporters</div>
+                  <button onClick={() => { close(); onShowSupporters() }} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>View all →</button>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                   {supporters.map((s, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 10px', background: 'var(--bg-input)', borderRadius: 8 }}>
                       <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{s.username}</div>

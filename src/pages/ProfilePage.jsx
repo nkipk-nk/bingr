@@ -20,6 +20,7 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
     setUsername(clean)
     setSaved(false)
     if (!clean || clean === profile?.username) { setUsernameState('idle'); return }
+    if (clean.length < 3) { setUsernameState('invalid'); return }
     if (!USERNAME_RE.test(clean)) { setUsernameState('invalid'); return }
     setUsernameState('checking')
     clearTimeout(window._unameTimer)
