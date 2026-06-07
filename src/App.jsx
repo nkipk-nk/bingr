@@ -18,6 +18,9 @@ import LibraryTab from './pages/LibraryTab'
 import Rankings from './pages/Rankings'
 import ListsPage from './pages/ListsPage'
 import ExportPanel from './components/ExportPanel'
+import AdminPanel from './pages/AdminPanel'
+import FeedbackModal from './components/FeedbackModal'
+import { useAdmin } from './hooks/useAdmin'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import DeleteAccount from './pages/DeleteAccount'
@@ -40,6 +43,8 @@ export default function App() {
   const episodeHook = useEpisodes(session)
   const listsHook = useLists(session)
   const { profile, updateProfile, checkUsername } = useProfile(session)
+  const adminHook = useAdmin(profile)
+  const [showFeedback, setShowFeedback] = useState(false)
 
   const [tab, setTab] = useState('discover')
   // page: landing | auth | forgot | reset | app | privacy | terms | delete-account | profile
@@ -121,8 +126,8 @@ export default function App() {
     setToastTimer(setTimeout(() => setToast(''), 2400))
   }, [toastTimer])
 
-  const handleAuth = async (mode, email, password) =>
-    mode === 'signup' ? signUp(email, password) : signIn(email, password)
+  const handleAuth = async (mode, email, password, username) =>
+    mode === 'signup' ? signUp(email, password, username) : signIn(email, password)
 
   const handleSearch = async () => {
     if (!query.trim()) return
@@ -174,7 +179,10 @@ export default function App() {
   if (page === 'loading' || authLoading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-page)' }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 36, fontWeight: 700, color: 'var(--accent)', marginBottom: 12 }}>🎬 bingr</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
+          <img src="/android-chrome-192x192.png" alt="bingr" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'contain' }} />
+          <span style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)' }}>Bingr</span>
+        </div>
         <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading…</div>
       </div>
     </div>
@@ -214,6 +222,7 @@ export default function App() {
   // ── Logged-in-only pages ──
   if (page === 'delete-account') return <DeleteAccount userEmail={session.user.email} onBack={() => setPage('app')} onDelete={deleteAccount} />
   if (page === 'profile') return <ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onBack={() => setPage('app')} />
+  if (page === 'admin') return adminHook.isAdmin ? <AdminPanel adminHook={adminHook} onBack={() => setPage('app')} /> : <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Access denied.</div>
 
   // ── Main app ──
   const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
@@ -240,8 +249,10 @@ export default function App() {
       {/* ── Header ── */}
       <header style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div onClick={goHome} style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', cursor: 'pointer', letterSpacing: -0.5, flexShrink: 0 }}>🎬 bingr</div>
-
+          <div onClick={goHome} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <img src="/android-chrome-192x192.png" alt="bingr" style={{ width: 28, height: 28, borderRadius: 6 }} />
+            <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)', letterSpacing: -0.5 }}>bingr</span>
+          </div>
           <div style={{ flex: 1, display: 'flex', gap: 6, minWidth: 200 }}>
             <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()}
               placeholder="Search movies & TV shows…"
@@ -275,6 +286,8 @@ export default function App() {
                 </div>
                 {[
                   { label: '👤 Edit profile', action: () => { setPage('profile'); setShowUserMenu(false) } },
+                  ...(adminHook.isAdmin ? [{ label: '⚙️ Admin panel', action: () => { setPage('admin'); setShowUserMenu(false) } }] : []),
+                  { label: '💬 Send feedback', action: () => { setShowFeedback(true); setShowUserMenu(false) } },
                   { label: '🔒 Privacy Policy', action: () => { setPage('privacy'); setShowUserMenu(false) } },
                   { label: '📄 Terms of Service', action: () => { setPage('terms'); setShowUserMenu(false) } },
                   { label: '🚪 Sign out', action: () => { signOut(); setShowUserMenu(false) } },
@@ -373,6 +386,8 @@ export default function App() {
       </footer>
 
       <SupportButton session={session} />
+
+      {showFeedback && <FeedbackModal session={session} profile={profile} onClose={() => setShowFeedback(false)} />}
 
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 9999, whiteSpace: 'nowrap' }}>{toast}</div>

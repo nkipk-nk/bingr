@@ -19,7 +19,10 @@ export default function LandingPage({ onSignUp, onSignIn }) {
 
       {/* Nav */}
       <nav style={{ padding: '1rem 2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--accent)', letterSpacing: -0.5 }}>🎬 bingr</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src="/android-chrome-192x192.png" alt="bingr" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'contain' }} />
+          <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)', letterSpacing: -0.5 }}>Bingr</span>
+        </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button onClick={onSignIn} style={{ padding: '8px 18px', border: '1px solid var(--border)', borderRadius: 8, background: 'none', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>Sign in</button>
           <button onClick={onSignUp} style={{ padding: '8px 18px', border: 'none', borderRadius: 8, background: 'var(--accent)', color: '#fff', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 600 }}>Sign up free</button>
@@ -107,7 +110,10 @@ export default function LandingPage({ onSignUp, onSignIn }) {
 
       {/* Footer */}
       <footer style={{ borderTop: '1px solid var(--border)', padding: '1.5rem 2rem', display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>🎬 bingr</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <img src="/android-chrome-192x192.png" alt="" style={{ width: 20, height: 20, borderRadius: 4, objectFit: 'contain' }} />
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>Bingr</span>
+        </span>
         {['Privacy Policy', 'Terms of Service'].map(label => (
           <span key={label} style={{ fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>{label}</span>
         ))}

@@ -44,7 +44,7 @@ export default class ErrorBoundary extends Component {
           background: 'var(--bg-card)', border: '1px solid var(--border)',
           borderRadius: 16, padding: '2.5rem 2rem',
         }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎬</div>
+          <img src="/android-chrome-192x192.png" alt="bingr" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'contain', marginBottom: 16 }} />
           <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
             Something went wrong
           </h2>

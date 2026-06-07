@@ -12,6 +12,3 @@ dist/
 # Editor
 .DS_Store
 .vscode/
-
-#supabase
-supabase/
