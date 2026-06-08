@@ -86,6 +86,11 @@ export default function SupportButton({ session, profile, onShowSupporters }) {
               <div style={{ padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 16 }}>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>🔒 Sign in to reveal the M-Pesa number</div>
               </div>
+            ) : !profile ? (
+              /* Profile still loading */
+              <div style={{ padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Loading…</div>
+              </div>
             ) : kenyan ? (
               /* Kenya — show M-Pesa number */
               !revealed ? (
@@ -109,8 +114,8 @@ export default function SupportButton({ session, profile, onShowSupporters }) {
                   </div>
                 </div>
               )
-            ) : countryCode !== null ? (
-              /* Outside Kenya — friendly message */
+            ) : countryCode && !kenyan ? (
+              /* Outside Kenya */
               <div style={{ padding: '1.25rem', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 8 }}>
                 <div style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>International support coming soon</div>
@@ -119,9 +124,13 @@ export default function SupportButton({ session, profile, onShowSupporters }) {
                 </div>
               </div>
             ) : (
-              /* Country not yet detected — show neutral message */
-              <div style={{ padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 8 }}>
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Payment options loading…</div>
+              /* Country not detected — show international message as safe default */
+              <div style={{ padding: '1.25rem', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>International support coming soon</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>
+                  We're working on international payment options. Sharing bingr with friends is equally valuable — thank you for being here 💚
+                </div>
               </div>
             )}
 

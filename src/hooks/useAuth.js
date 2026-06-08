@@ -58,14 +58,18 @@ export function useAuth() {
       })
       if (error) return { data: null, error: { message: friendlyAuthError(error.message) } }
 
-      // Save username immediately if we have user.id
-      // Works whether email confirm is on or off
+      // Save username — do this regardless of email confirmation status
+      // We have the user.id from the response even before confirmation
       if (data.user?.id && username) {
-        await supabase.from('profiles')
+        // Small delay to let the trigger create the profile row first
+        await new Promise(r => setTimeout(r, 800))
+        await supabase
+          .from('profiles')
           .upsert({
             id: data.user.id,
-            username: username.toLowerCase(),
+            username: username.toLowerCase().trim(),
             username_set: true,
+            updated_at: new Date().toISOString(),
           }, { onConflict: 'id' })
       }
 
