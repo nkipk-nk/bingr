@@ -38,7 +38,7 @@ export function useAuth() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  const signUp = async (email, password, username) => {
+  const signUp = async (email, password, username, country) => {
     try {
       checkRateLimit()
       // Check username availability before creating account
@@ -58,19 +58,24 @@ export function useAuth() {
       })
       if (error) return { data: null, error: { message: friendlyAuthError(error.message) } }
 
-      // Save username — do this regardless of email confirmation status
-      // We have the user.id from the response even before confirmation
+      // Save username by updating the profile row the trigger just created
+      // We retry a few times since the trigger may take a moment
       if (data.user?.id && username) {
-        // Small delay to let the trigger create the profile row first
-        await new Promise(r => setTimeout(r, 800))
-        await supabase
-          .from('profiles')
-          .upsert({
-            id: data.user.id,
-            username: username.toLowerCase().trim(),
-            username_set: true,
-            updated_at: new Date().toISOString(),
-          }, { onConflict: 'id' })
+        const cleanUsername = username.toLowerCase().trim()
+        let saved = false
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          await new Promise(r => setTimeout(r, attempt * 400))
+          const { error: updateErr } = await supabase
+            .from('profiles')
+            .update({
+              username: cleanUsername,
+              username_set: true,
+              ...(country ? { country_code: country } : {}),
+            })
+            .eq('id', data.user.id)
+          if (!updateErr) { saved = true; break }
+        }
+        if (!saved) logger.warn('Username save failed after retries', { userId: data.user.id })
       }
 
       logger.info('User signed up')

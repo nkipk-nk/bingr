@@ -27,6 +27,7 @@ import TermsOfService from './pages/TermsOfService'
 import DeleteAccount from './pages/DeleteAccount'
 import SupportButton from './components/SupportButton'
 import FeedbackModal from './components/FeedbackModal'
+import OnboardingModal from './components/OnboardingModal'
 
 
 const TABS = [
@@ -164,8 +165,8 @@ export default function App() {
     setToastTimer(setTimeout(() => setToast(''), 2400))
   }, [toastTimer])
 
-  const handleAuth = async (mode, email, password, username) =>
-    mode === 'signup' ? signUp(email, password, username) : signIn(email, password)
+  const handleAuth = async (mode, email, password, username, country) =>
+    mode === 'signup' ? signUp(email, password, username, country) : signIn(email, password)
 
   const handleSearch = async () => {
     if (!query.trim()) return
@@ -292,6 +293,14 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-page)', fontFamily: 'var(--font)' }}>
+
+      {/* Onboarding for Google OAuth users — shown until profile is complete */}
+      {profile && !profile.username_set && (
+        <OnboardingModal
+          session={session}
+          onComplete={() => { window.location.reload() }}
+        />
+      )}
 
       {/* Header */}
       <header style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>

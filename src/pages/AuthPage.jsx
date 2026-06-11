@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { friendlyAuthError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
+import { COUNTRIES } from '../lib/countries'
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
 const GOOGLE_ICON = (
@@ -16,6 +17,7 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
   const [mode, setMode] = useState(initialMode)
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
+  const [country, setCountry] = useState('')
   const [usernameState, setUsernameState] = useState('idle') // idle|checking|available|taken|invalid
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -58,12 +60,13 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
       if (!username) { setError('Please choose a username.'); return }
       if (!USERNAME_RE.test(username)) { setError('Username: 3–20 characters, letters, numbers, underscores only.'); return }
       if (usernameState === 'taken') { setError('That username is taken. Please choose another.'); return }
+      if (!country) { setError('Please select your country.'); return }
       if (password !== confirm) { setError('Passwords do not match.'); return }
       if (password.length < 6) { setError('Password must be at least 6 characters.'); return }
       if (!agreed) { setError('Please accept the Terms of Service and Privacy Policy.'); return }
     }
     setLoading(true)
-    const { error: err, data } = await onAuth(mode, email, password, username)
+    const { error: err, data } = await onAuth(mode, email, password, username, country)
     setLoading(false)
     if (err) {
       if (err.message?.toLowerCase().includes('email not confirmed')) { setAwaitingConfirmation(true); return }
@@ -85,7 +88,7 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
     setResendMsg(error ? friendlyAuthError(error.message) : 'Confirmation email resent! Check your inbox and spam folder.')
   }
 
-  const switchMode = (m) => { setMode(m); setError(''); setPassword(''); setConfirm(''); setUsername(''); setUsernameState('idle'); setAgreed(false); setShowPw(false); setShowCPw(false); setAwaitingConfirmation(false); setResendMsg('') }
+  const switchMode = (m) => { setMode(m); setError(''); setPassword(''); setConfirm(''); setUsername(''); setCountry(''); setUsernameState('idle'); setAgreed(false); setShowPw(false); setShowCPw(false); setAwaitingConfirmation(false); setResendMsg('') }
   const hint = usernameHint()
 
   if (awaitingConfirmation) return (
@@ -126,6 +129,7 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
 
         {/* Username (signup only) */}
         {mode === 'signup' && (
+          <>
           <div style={{ marginBottom: 14 }}>
             <label style={L}>Username *</label>
             <div style={{ position: 'relative' }}>
@@ -136,6 +140,20 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
             {hint && <div style={{ fontSize: 12, color: hint.color, marginTop: 4 }}>{hint.msg}</div>}
             {!hint && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>This is how others will see you. You can change it later.</div>}
           </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={L}>Country *</label>
+            <select value={country} onChange={e => setCountry(e.target.value)}
+              style={{ ...I, cursor: 'pointer' }}>
+              <option value="">Select your country...</option>
+              {COUNTRIES.map((c, i) =>
+                c.disabled
+                  ? <option key={i} disabled value="">──────────────</option>
+                  : <option key={c.code} value={c.code}>{c.name}</option>
+              )}
+            </select>
+          </div>
+          </>
         )}
 
         <div style={{ marginBottom: 14 }}>
