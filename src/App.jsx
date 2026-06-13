@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth'
 import { useLibrary } from './hooks/useLibrary'
 import { useEpisodes } from './hooks/useEpisodes'
 import { useLists } from './hooks/useLists'
+import { useDiary } from './hooks/useDiary'
 import { useProfile } from './hooks/useProfile'
 import { useAdmin } from './hooks/useAdmin'
 import { tmdb } from './lib/tmdb'
@@ -14,6 +15,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import ProfilePage from './pages/ProfilePage'
 import PublicListPage from './pages/PublicListPage'
+import UserProfilePage from './pages/UserProfilePage'
 import SupportersPage from './pages/SupportersPage'
 import AdminPanel from './pages/AdminPanel'
 import MovieCard from './components/MovieCard'
@@ -21,6 +23,7 @@ import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
 import Rankings from './pages/Rankings'
 import ListsPage from './pages/ListsPage'
+import DiaryPage from './pages/DiaryPage'
 import ExportPanel from './components/ExportPanel'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
@@ -33,6 +36,7 @@ import OnboardingModal from './components/OnboardingModal'
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
   { id: 'rankings', label: '🏆 Rankings' },
+  { id: 'diary', label: '📔 Diary' },
   { id: 'lists', label: '📋 Lists' },
   { id: 'watchlist', label: '🔖 Watchlist' },
   { id: 'watching', label: '▶ Watching' },
@@ -48,6 +52,8 @@ function getPageFromURL() {
   if (hash.includes('type=recovery') || path.includes('reset-password')) return { page: 'reset', param: null }
   const listMatch = path.match(/^\/list\/([a-f0-9-]+)$/)
   if (listMatch) return { page: 'public-list', param: listMatch[1] }
+  const userMatch = path.match(/^\/@([a-z0-9_]+)$/)
+  if (userMatch) return { page: 'user-profile', param: userMatch[1] }
   if (path === '/supporters') return { page: 'supporters', param: null }
   return { page: null, param: null }
 }
@@ -57,6 +63,7 @@ export default function App() {
   const { library, syncing, error: libError, setStatus, setRating, remove, counts } = useLibrary(session)
   const episodeHook = useEpisodes(session)
   const listsHook = useLists(session)
+  const diaryHook = useDiary(session)
   const { profile, updateProfile, checkUsername } = useProfile(session)
   const adminHook = useAdmin(profile)
 
@@ -85,7 +92,7 @@ export default function App() {
   // Auth → page routing
   useEffect(() => {
     if (authLoading) return
-    if (page === 'reset' || page === 'public-list' || page === 'supporters') return
+    if (page === 'reset' || page === 'public-list' || page === 'supporters' || page === 'user-profile') return
     if (session) {
       if (page === 'loading' || page === 'landing' || page === 'auth' || page === 'forgot') setPage('app')
     } else {
@@ -238,6 +245,14 @@ export default function App() {
 
   // ── Public pages (no auth needed) ──
   if (page === 'public-list') return <PublicListPage listId={pageParam} onSignUp={() => { setAuthMode('signup'); navigate('auth') }} />
+  if (page === 'user-profile') return (
+    <UserProfilePage
+      username={pageParam}
+      currentUserId={session?.user?.id || null}
+      onOpenItem={(item) => { navigate('app'); setTab('discover'); openDetail(item) }}
+      onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
+    />
+  )
   if (page === 'supporters') return <SupportersPage onBack={() => navigate('app')} />
   if (page === 'privacy') return <PrivacyPolicy onBack={() => navigate(session ? 'app' : 'landing')} />
   if (page === 'terms') return <TermsOfService onBack={() => navigate(session ? 'app' : 'landing')} />
@@ -337,6 +352,7 @@ export default function App() {
                 </div>
                 {[
                   { label: '👤 Edit profile', action: () => { navigate('profile'); setShowUserMenu(false) } },
+                  { label: '🪪 View public profile', action: () => { window.location.href = `/@${profile?.username}`; setShowUserMenu(false) } },
                   ...(adminHook.isAdmin ? [{ label: '⚙️ Admin panel', action: () => { navigate('admin'); setShowUserMenu(false) } }] : []),
                   ...(!adminHook.isAdmin ? [{ label: '💬 Send feedback', action: () => { setShowFeedback(true); setShowUserMenu(false) } }] : []),
                   { label: '🌟 Supporters', action: () => { navigate('supporters'); setShowUserMenu(false) } },
@@ -385,6 +401,8 @@ export default function App() {
             episodeProps={episodeProps}
             lists={listsHook.lists}
             onAddToList={listsHook.addToList}
+            onLogDiary={diaryHook.logEntry}
+            diaryEntries={detailItem ? diaryHook.getEntriesForItem(detailItem.id) : []}
           />
         ) : tab === 'discover' ? (
           searchLoading ? (
@@ -413,6 +431,8 @@ export default function App() {
           )
         ) : tab === 'rankings' ? (
           <Rankings library={library} onOpen={openDetail} />
+        ) : tab === 'diary' ? (
+          <DiaryPage diaryHook={diaryHook} onOpen={openDetail} />
         ) : tab === 'lists' ? (
           <ListsPage listsHook={listsHook} onOpenItem={openDetail} />
         ) : (

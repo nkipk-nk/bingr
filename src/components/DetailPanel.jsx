@@ -2,17 +2,20 @@ import { useEffect, useState } from 'react'
 import { tmdb, IMG } from '../lib/tmdb'
 import StarRating from './StarRating'
 import EpisodeTracker from './EpisodeTracker'
+import LogEntryModal from './LogEntryModal'
 
 const STATUS_COLORS = { watched: '#1d9e75', watching: '#ba7517', watchlist: '#378add' }
 const STATUS_LABELS = { watched: 'Watched ✓', watching: 'Watching', watchlist: 'Watchlist' }
 
-export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList }) {
+export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [] }) {
   const [details, setDetails] = useState(null)
   const [providers, setProviders] = useState({})
   const [recs, setRecs] = useState([])
   const [epTab, setEpTab] = useState(false)
   const [showListPicker, setShowListPicker] = useState(false)
   const [addedToList, setAddedToList] = useState(null)
+  const [showLogModal, setShowLogModal] = useState(false)
+  const [isRewatchLog, setIsRewatchLog] = useState(false)
   const type = item.media_type || 'movie'
   const isTV = type === 'tv'
 
@@ -113,6 +116,16 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
                 }}>{STATUS_LABELS[s]}</button>
               ))}
             </div>
+
+            {/* Diary logging */}
+            {onLogDiary && (
+              <div style={{ display: 'inline-flex', gap: 8, marginBottom: 12, marginRight: 8 }}>
+                <button onClick={() => { setIsRewatchLog(diaryEntries.length > 0); setShowLogModal(true) }}
+                  style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  {diaryEntries.length > 0 ? `🔁 Log rewatch (${diaryEntries.length})` : '📔 Log to diary'}
+                </button>
+              </div>
+            )}
 
             {/* Add to list */}
             {lists.length > 0 && (
@@ -218,6 +231,20 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
             ))}
           </div>
         </div>
+      )}
+
+      {showLogModal && (
+        <LogEntryModal
+          item={item}
+          currentRating={entry.rating}
+          isRewatch={isRewatchLog}
+          onSave={async (opts) => {
+            await onLogDiary(item, opts)
+            // If a rating was given and it's a first watch, also set the overall rating
+            if (opts.rating && !isRewatchLog) onSetRating(item, opts.rating)
+          }}
+          onClose={() => setShowLogModal(false)}
+        />
       )}
     </div>
   )
