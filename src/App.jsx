@@ -22,6 +22,7 @@ import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
 import Rankings from './pages/Rankings'
+import StatsPage from './pages/StatsPage'
 import ListsPage from './pages/ListsPage'
 import DiaryPage from './pages/DiaryPage'
 import ExportPanel from './components/ExportPanel'
@@ -35,6 +36,7 @@ import OnboardingModal from './components/OnboardingModal'
 
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
+  { id: 'stats', label: '📊 Stats' },
   { id: 'rankings', label: '🏆 Rankings' },
   { id: 'diary', label: '📔 Diary' },
   { id: 'lists', label: '📋 Lists' },
@@ -429,6 +431,8 @@ export default function App() {
               <CardGrid items={trending.tv} />
             </div>
           )
+        ) : tab === 'stats' ? (
+          <StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} />
         ) : tab === 'rankings' ? (
           <Rankings library={library} onOpen={openDetail} />
         ) : tab === 'diary' ? (

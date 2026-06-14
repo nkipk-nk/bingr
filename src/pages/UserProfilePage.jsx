@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { IMG } from '../lib/tmdb'
+import { computeStats, formatHours } from '../lib/stats'
 
 const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
 
 export default function UserProfilePage({ username, onOpenItem, onSignUp, currentUserId }) {
   const [profile, setProfile] = useState(null)
   const [library, setLibrary] = useState([])
+  const [libraryMap, setLibraryMap] = useState({})
+  const stats = useMemo(() => computeStats(diary, libraryMap, {}), [diary, libraryMap])
   const [diary, setDiary] = useState([])
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(true)
@@ -23,11 +26,16 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
         setProfile(profileData)
 
         const [libRes, diaryRes, listsRes] = await Promise.all([
-          supabase.from('bingr_library').select('*').eq('user_id', profileData.id).gt('rating', 0).order('rating', { ascending: false }),
+          supabase.from('bingr_library').select('*').eq('user_id', profileData.id).order('rating', { ascending: false }),
           supabase.from('bingr_diary').select('*').eq('user_id', profileData.id).order('watched_date', { ascending: false }).limit(20),
           supabase.from('bingr_lists').select('*, bingr_list_items(count)').eq('user_id', profileData.id).eq('is_public', true).order('updated_at', { ascending: false }),
         ])
-        setLibrary(libRes.data || [])
+        const libData = libRes.data || []
+        setLibrary(libData.filter(x => x.rating > 0).sort((a,b) => b.rating - a.rating))
+        // Build map for stats computation
+        const map = {}
+        libData.forEach(row => { map[row.tmdb_id] = row })
+        setLibraryMap(map)
         setDiary(diaryRes.data || [])
         setLists(listsRes.data || [])
         setLoading(false)
@@ -57,6 +65,7 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
 
   const TABS = [
     { id: 'rankings', label: `🏆 Top Rated (${library.length})` },
+    { id: 'stats', label: '📊 Stats' },
     { id: 'diary', label: `📔 Recent Activity (${diary.length})` },
     { id: 'lists', label: `📋 Lists (${lists.length})` },
   ]
@@ -142,6 +151,49 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
         )}
 
         {/* Diary tab */}
+        {tab === 'stats' && (
+          <div>
+            {/* Compact stats for public profile */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10, marginBottom: 20 }}>
+              {[
+                { icon: '🎬', value: stats.totalMovies, label: 'Movies watched' },
+                { icon: '📺', value: stats.totalShows, label: 'TV shows tracked' },
+                { icon: '▶️', value: stats.totalEpisodes, label: 'Episodes watched' },
+                { icon: '⏱️', value: formatHours(stats.totalHours), label: 'Watch time est.' },
+                { icon: '⭐', value: stats.avgRating > 0 ? `${stats.avgRating}/10` : '—', label: 'Avg rating' },
+                { icon: '📔', value: stats.diaryTotal, label: 'Diary entries' },
+              ].map(s => (
+                <div key={s.label} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '1rem' }}>
+                  <div style={{ fontSize: 22, marginBottom: 6 }}>{s.icon}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{s.value}</div>
+                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+            {/* Activity chart */}
+            {stats.monthlyActivity.some(m => m.count > 0) && (() => {
+              const maxM = Math.max(...stats.monthlyActivity.map(m => m.count), 1)
+              return (
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '1.25rem' }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 16 }}>📅 Activity — last 12 months</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 70 }}>
+                    {stats.monthlyActivity.map(m => {
+                      const h = Math.max((m.count / maxM) * 50, m.count > 0 ? 5 : 2)
+                      return (
+                        <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                          {m.count > 0 && <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>{m.count}</div>}
+                          <div style={{ width: '100%', borderRadius: 2, background: m.count > 0 ? 'var(--accent)' : 'var(--border)', height: `${h}px`, opacity: m.count > 0 ? 1 : 0.4 }} />
+                          <div style={{ fontSize: 8, color: 'var(--text-muted)', textAlign: 'center' }}>{m.label}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        )}
+
         {tab === 'diary' && (
           diary.length === 0 ? <Empty icon="📔" text="No activity yet" /> : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
