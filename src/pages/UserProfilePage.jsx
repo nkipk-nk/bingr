@@ -5,7 +5,9 @@ import { computeStats, formatHours } from '../lib/stats'
 
 const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
 
-export default function UserProfilePage({ username, onOpenItem, onSignUp, currentUserId }) {
+export default function UserProfilePage({ username, onOpenItem, onSignUp, currentUserId, followsHook }) {
+  const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
+  const [followLoading, setFollowLoading] = useState(false)
   const [profile, setProfile] = useState(null)
   const [library, setLibrary] = useState([])
   const [libraryMap, setLibraryMap] = useState({})
@@ -38,6 +40,10 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
         setLibraryMap(map)
         setDiary(diaryRes.data || [])
         setLists(listsRes.data || [])
+        // Load follow counts
+        if (followsHook && profileData) {
+          followsHook.getCounts(profileData.id).then(setFollowCounts)
+        }
         setLoading(false)
       })
   }, [username])
@@ -62,6 +68,19 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
   const movieCount = library.filter(x => x.media_type === 'movie' && x.status === 'watched').length
   const tvCount = library.filter(x => x.media_type === 'tv' && x.status === 'watched').length
   const isOwnProfile = currentUserId === profile.id
+  const amFollowing = followsHook ? followsHook.isFollowing(profile.id) : false
+
+  const handleFollow = async () => {
+    if (!followsHook || followLoading) return
+    setFollowLoading(true)
+    await followsHook.toggleFollow(profile.id)
+    // Update local count
+    setFollowCounts(prev => ({
+      ...prev,
+      followers: amFollowing ? prev.followers - 1 : prev.followers + 1
+    }))
+    setFollowLoading(false)
+  }
 
   const TABS = [
     { id: 'rankings', label: `🏆 Top Rated (${library.length})` },
@@ -94,8 +113,24 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)' }}>{profile.display_name || profile.username}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>@{profile.username}{isOwnProfile && ' (you)'}</div>
-            {profile.bio && <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 8, lineHeight: 1.6 }}>{profile.bio}</p>}
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 6 }}>@{profile.username}{isOwnProfile && ' (you)'}</div>
+            {/* Follower counts */}
+            <div style={{ display: 'flex', gap: 16, fontSize: 13, marginBottom: 8 }}>
+              <span style={{ color: 'var(--text-muted)' }}>
+                <strong style={{ color: 'var(--text)' }}>{followCounts.followers}</strong> follower{followCounts.followers !== 1 ? 's' : ''}
+              </span>
+              <span style={{ color: 'var(--text-muted)' }}>
+                <strong style={{ color: 'var(--text)' }}>{followCounts.following}</strong> following
+              </span>
+            </div>
+            {profile.bio && <p style={{ fontSize: 14, color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.6 }}>{profile.bio}</p>}
+            {/* Follow button */}
+            {!isOwnProfile && currentUserId && followsHook && (
+              <button onClick={handleFollow} disabled={followLoading}
+                style={{ marginTop: 8, padding: '7px 18px', borderRadius: 20, border: 'none', cursor: followLoading ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, background: amFollowing ? 'var(--bg-input)' : 'var(--accent)', color: amFollowing ? 'var(--text)' : '#fff', border: amFollowing ? '1px solid var(--border)' : 'none', transition: 'all 0.15s' }}>
+                {followLoading ? '…' : amFollowing ? 'Following ✓' : 'Follow'}
+              </button>
+            )}
           </div>
           <div style={{ display: 'flex', gap: 24, flexShrink: 0 }}>
             <div style={{ textAlign: 'center' }}>

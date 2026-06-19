@@ -4,6 +4,8 @@ import { useLibrary } from './hooks/useLibrary'
 import { useEpisodes } from './hooks/useEpisodes'
 import { useLists } from './hooks/useLists'
 import { useDiary } from './hooks/useDiary'
+import { useFollows } from './hooks/useFollows'
+import { useFeed } from './hooks/useFeed'
 import { useProfile } from './hooks/useProfile'
 import { useAdmin } from './hooks/useAdmin'
 import { tmdb } from './lib/tmdb'
@@ -18,13 +20,14 @@ import PublicListPage from './pages/PublicListPage'
 import UserProfilePage from './pages/UserProfilePage'
 import SupportersPage from './pages/SupportersPage'
 import AdminPanel from './pages/AdminPanel'
+import ActivityFeed from './pages/ActivityFeed'
 import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
 import Rankings from './pages/Rankings'
 import StatsPage from './pages/StatsPage'
-import ListsPage from './pages/ListsPage'
 import DiaryPage from './pages/DiaryPage'
+import ListsPage from './pages/ListsPage'
 import ExportPanel from './components/ExportPanel'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
@@ -33,9 +36,9 @@ import SupportButton from './components/SupportButton'
 import FeedbackModal from './components/FeedbackModal'
 import OnboardingModal from './components/OnboardingModal'
 
-
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
+  { id: 'feed', label: '🌐 Feed' },
   { id: 'stats', label: '📊 Stats' },
   { id: 'rankings', label: '🏆 Rankings' },
   { id: 'diary', label: '📔 Diary' },
@@ -66,6 +69,8 @@ export default function App() {
   const episodeHook = useEpisodes(session)
   const listsHook = useLists(session)
   const diaryHook = useDiary(session)
+  const followsHook = useFollows(session)
+  const feedHook = useFeed(session, followsHook.following)
   const { profile, updateProfile, checkUsername } = useProfile(session)
   const adminHook = useAdmin(profile)
 
@@ -251,6 +256,7 @@ export default function App() {
     <UserProfilePage
       username={pageParam}
       currentUserId={session?.user?.id || null}
+      followsHook={session ? followsHook : null}
       onOpenItem={(item) => { navigate('app'); setTab('discover'); openDetail(item) }}
       onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
     />
@@ -294,6 +300,7 @@ export default function App() {
   const userInitials = userDisplay.slice(0, 2).toUpperCase()
 
   const tabLabel = (t) => {
+    if (t.id === 'feed') return `🌐 Feed${feedHook.feed.length ? ` (${feedHook.feed.length})` : ''}`
     if (t.id === 'watchlist') return `🔖 Watchlist${counts.watchlist ? ` (${counts.watchlist})` : ''}`
     if (t.id === 'watching') return `▶ Watching${counts.watching ? ` (${counts.watching})` : ''}`
     if (t.id === 'watched') return `✅ Watched${counts.watched ? ` (${counts.watched})` : ''}`
@@ -431,6 +438,14 @@ export default function App() {
               <CardGrid items={trending.tv} />
             </div>
           )
+        ) : tab === 'feed' ? (
+          <ActivityFeed
+            feedHook={feedHook}
+            following={followsHook.following}
+            onOpenItem={openDetail}
+            onOpenProfile={(username) => { window.location.href = `/@${username}` }}
+            onDiscover={() => setTab('discover')}
+          />
         ) : tab === 'stats' ? (
           <StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} />
         ) : tab === 'rankings' ? (
