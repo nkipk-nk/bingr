@@ -69,7 +69,8 @@ export function useFollows(session) {
         supabase.from('bingr_follows').select('id', { count: 'exact', head: true }).eq('following_id', userId),
       ])
       return { following: fwing.count || 0, followers: fwers.count || 0 }
-    } catch {
+    } catch (err) {
+      logger.warn('getCounts failed — bingr_follows table may not exist yet', { message: err.message })
       return { following: 0, followers: 0 }
     }
   }, [])

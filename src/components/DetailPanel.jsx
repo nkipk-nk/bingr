@@ -3,11 +3,13 @@ import { tmdb, IMG } from '../lib/tmdb'
 import StarRating from './StarRating'
 import EpisodeTracker from './EpisodeTracker'
 import LogEntryModal from './LogEntryModal'
+import CommentsSection from './CommentsSection'
+import { useComments } from '../hooks/useComments'
 
 const STATUS_COLORS = { watched: '#1d9e75', watching: '#ba7517', watchlist: '#378add' }
 const STATUS_LABELS = { watched: 'Watched ✓', watching: 'Watching', watchlist: 'Watchlist' }
 
-export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [] }) {
+export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [], session, profile, onOpenProfile, onShowAuth }) {
   const [details, setDetails] = useState(null)
   const [providers, setProviders] = useState({})
   const [recs, setRecs] = useState([])
@@ -17,6 +19,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
   const [showLogModal, setShowLogModal] = useState(false)
   const [isRewatchLog, setIsRewatchLog] = useState(false)
   const type = item.media_type || 'movie'
+  const commentsHook = useComments(item.id, type, session, profile)
   const isTV = type === 'tv'
 
   useEffect(() => {
@@ -231,6 +234,17 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
             ))}
           </div>
         </div>
+      )}
+
+      {/* Comments — always visible regardless of episode tab */}
+      {!epTab && (
+        <CommentsSection
+          commentsHook={commentsHook}
+          session={session}
+          profile={profile}
+          onOpenProfile={(username) => { window.location.href = `/@${username}` }}
+          onShowAuth={onShowAuth}
+        />
       )}
 
       {showLogModal && (

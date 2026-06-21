@@ -8,6 +8,7 @@ export function useAdmin(profile) {
   const [users, setUsers] = useState([])
   const [feedback, setFeedback] = useState([])
   const [donations, setDonations] = useState([])
+  const [comments, setComments] = useState([])
   const [loading, setLoading] = useState(false)
 
   const loadUsers = useCallback(async () => {
@@ -40,12 +41,23 @@ export function useAdmin(profile) {
     setDonations(data || [])
   }, [isAdmin])
 
+  const loadComments = useCallback(async () => {
+    if (!isAdmin) return
+    const { data, error } = await supabase
+      .from('bingr_comments')
+      .select('*, bingr_comment_flags(count)')
+      .order('created_at', { ascending: false })
+      .limit(200)
+    if (error) { logger.error('loadComments failed', error); return }
+    setComments(data || [])
+  }, [isAdmin])
+
   const loadAll = useCallback(async () => {
     if (!isAdmin) return
     setLoading(true)
-    await Promise.all([loadUsers(), loadFeedback(), loadDonations()])
+    await Promise.all([loadUsers(), loadFeedback(), loadDonations(), loadComments()])
     setLoading(false)
-  }, [isAdmin, loadUsers, loadFeedback, loadDonations])
+  }, [isAdmin, loadUsers, loadFeedback, loadDonations, loadComments])
 
   const markFeedback = useCallback(async (id, status) => {
     const { error } = await supabase.from('bingr_feedback').update({ status }).eq('id', id)
@@ -82,10 +94,28 @@ export function useAdmin(profile) {
     return { error }
   }, [])
 
+  const hideComment = useCallback(async (commentId) => {
+    const { error } = await supabase.from('bingr_comments').update({ status: 'hidden' }).eq('id', commentId)
+    if (!error) setComments(prev => prev.map(c => c.id === commentId ? { ...c, status: 'hidden' } : c))
+    return { error }
+  }, [])
+
+  const restoreComment = useCallback(async (commentId) => {
+    const { error } = await supabase.from('bingr_comments').update({ status: 'visible' }).eq('id', commentId)
+    if (!error) setComments(prev => prev.map(c => c.id === commentId ? { ...c, status: 'visible' } : c))
+    return { error }
+  }, [])
+
+  const deleteCommentAdmin = useCallback(async (commentId) => {
+    const { error } = await supabase.from('bingr_comments').delete().eq('id', commentId)
+    if (!error) setComments(prev => prev.filter(c => c.id !== commentId))
+    return { error }
+  }, [])
+
   return {
-    isAdmin, loading, users, feedback, donations,
-    loadAll, loadUsers, loadFeedback, loadDonations,
+    isAdmin, loading, users, feedback, donations, comments,
+    loadAll, loadUsers, loadFeedback, loadDonations, loadComments,
     markFeedback, addDonation, updateDonation, deleteDonation,
-    promoteUser, deleteUser,
+    promoteUser, deleteUser, hideComment, restoreComment, deleteCommentAdmin,
   }
 }

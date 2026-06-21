@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 
-const TABS = ['Users', 'Feedback', 'Donations']
+const TABS = ['Users', 'Feedback', 'Donations', 'Comments']
 const STATUS_COLORS = { unread: '#e24b4a', read: '#ba7517', resolved: '#1d9e75' }
 const CATEGORY_ICONS = { bug: '🐛', feature: '💡', content: '🎬', general: '💬', other: '🔧' }
 
 export default function AdminPanel({ adminHook, onBack }) {
-  const { loading, users, feedback, donations, loadAll, markFeedback, addDonation, updateDonation, deleteDonation, promoteUser } = adminHook
+  const { loading, users, feedback, donations, comments, loadAll, markFeedback, addDonation, updateDonation, deleteDonation, promoteUser, hideComment, restoreComment, deleteCommentAdmin } = adminHook
   const [tab, setTab] = useState('Users')
   const [showAddDonation, setShowAddDonation] = useState(false)
   const [donationForm, setDonationForm] = useState({ username: '', amount_kes: '', note: '', show_on_wall: false, confirmed: true })
@@ -239,6 +239,58 @@ export default function AdminPanel({ adminHook, onBack }) {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── COMMENTS ── */}
+        {tab === 'Comments' && (
+          <div>
+            {loading ? <div style={Loading}>Loading…</div> : !comments.length ? (
+              <div style={Empty}>No comments yet</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {comments.map(c => {
+                  const flagCount = c.bingr_comment_flags?.[0]?.count ?? 0
+                  return (
+                    <div key={c.id} style={{ background: 'var(--bg-card)', border: `1px solid ${c.status === 'hidden' ? 'rgba(226,75,74,0.3)' : flagCount > 0 ? 'rgba(186,117,23,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '1rem 1.25rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>@{c.username}</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>on title #{c.tmdb_id} ({c.media_type})</span>
+                          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: c.status === 'hidden' ? 'rgba(226,75,74,0.1)' : 'rgba(29,158,117,0.1)', color: c.status === 'hidden' ? '#e24b4a' : '#1d9e75', fontWeight: 600 }}>
+                            {c.status === 'hidden' ? 'Hidden' : 'Visible'}
+                          </span>
+                          {flagCount > 0 && (
+                            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 20, background: 'rgba(186,117,23,0.1)', color: '#ba7517', fontWeight: 600 }}>
+                              🚩 {flagCount} report{flagCount !== 1 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(c.created_at).toLocaleDateString('en-KE')}</span>
+                          {c.status === 'visible' ? (
+                            <button onClick={() => hideComment(c.id)}
+                              style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                              Hide
+                            </button>
+                          ) : (
+                            <button onClick={() => restoreComment(c.id)}
+                              style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
+                              Restore
+                            </button>
+                          )}
+                          <button onClick={() => { if (window.confirm('Permanently delete this comment?')) deleteCommentAdmin(c.id) }}
+                            style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: '1px solid rgba(226,75,74,0.3)', background: 'none', color: '#e24b4a', cursor: 'pointer', fontFamily: 'inherit' }}>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                      <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, margin: 0 }}>{c.comment}</p>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

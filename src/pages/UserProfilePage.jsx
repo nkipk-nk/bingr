@@ -21,31 +21,55 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
   useEffect(() => {
     if (!username) { setNotFound(true); setLoading(false); return }
 
-    supabase.from('profiles').select('*').eq('username', username).single()
-      .then(async ({ data: profileData, error }) => {
+    let cancelled = false
+
+    async function loadProfile() {
+      try {
+        const { data: profileData, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('username', username)
+          .single()
+
+        if (cancelled) return
         if (error || !profileData) { setNotFound(true); setLoading(false); return }
         if (profileData.profile_public === false) { setNotFound(true); setLoading(false); return }
         setProfile(profileData)
 
-        const [libRes, diaryRes, listsRes] = await Promise.all([
+        // Each query independently fault-tolerant — one failing shouldn't crash the page
+        const [libRes, diaryRes, listsRes] = await Promise.allSettled([
           supabase.from('bingr_library').select('*').eq('user_id', profileData.id).order('rating', { ascending: false }),
           supabase.from('bingr_diary').select('*').eq('user_id', profileData.id).order('watched_date', { ascending: false }).limit(20),
           supabase.from('bingr_lists').select('*, bingr_list_items(count)').eq('user_id', profileData.id).eq('is_public', true).order('updated_at', { ascending: false }),
         ])
-        const libData = libRes.data || []
-        setLibrary(libData.filter(x => x.rating > 0).sort((a,b) => b.rating - a.rating))
-        // Build map for stats computation
+
+        if (cancelled) return
+
+        const libData = (libRes.status === 'fulfilled' ? libRes.value.data : null) || []
+        setLibrary(libData.filter(x => x.rating > 0).sort((a, b) => b.rating - a.rating))
         const map = {}
         libData.forEach(row => { map[row.tmdb_id] = row })
         setLibraryMap(map)
-        setDiary(diaryRes.data || [])
-        setLists(listsRes.data || [])
-        // Load follow counts
-        if (followsHook && profileData) {
-          followsHook.getCounts(profileData.id).then(setFollowCounts)
+
+        setDiary((diaryRes.status === 'fulfilled' ? diaryRes.value.data : null) || [])
+        setLists((listsRes.status === 'fulfilled' ? listsRes.value.data : null) || [])
+
+        // Follow counts — independently safe, never throws
+        if (followsHook) {
+          followsHook.getCounts(profileData.id).then(counts => { if (!cancelled) setFollowCounts(counts) })
         }
+
         setLoading(false)
-      })
+      } catch (err) {
+        if (!cancelled) {
+          setNotFound(true)
+          setLoading(false)
+        }
+      }
+    }
+
+    loadProfile()
+    return () => { cancelled = true }
   }, [username])
 
   if (loading) return (
@@ -127,7 +151,14 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
             {/* Follow button */}
             {!isOwnProfile && currentUserId && followsHook && (
               <button onClick={handleFollow} disabled={followLoading}
-                style={{ marginTop: 8, padding: '7px 18px', borderRadius: 20, border: 'none', cursor: followLoading ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, background: amFollowing ? 'var(--bg-input)' : 'var(--accent)', color: amFollowing ? 'var(--text)' : '#fff', border: amFollowing ? '1px solid var(--border)' : 'none', transition: 'all 0.15s' }}>
+                style={{
+                  marginTop: 8, padding: '7px 18px', borderRadius: 20,
+                  cursor: followLoading ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+                  background: amFollowing ? 'var(--bg-input)' : 'var(--accent)',
+                  color: amFollowing ? 'var(--text)' : '#fff',
+                  border: amFollowing ? '1px solid var(--border)' : '1px solid transparent',
+                  transition: 'all 0.15s',
+                }}>
                 {followLoading ? '…' : amFollowing ? 'Following ✓' : 'Follow'}
               </button>
             )}

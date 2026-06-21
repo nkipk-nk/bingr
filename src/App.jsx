@@ -21,6 +21,7 @@ import UserProfilePage from './pages/UserProfilePage'
 import SupportersPage from './pages/SupportersPage'
 import AdminPanel from './pages/AdminPanel'
 import ActivityFeed from './pages/ActivityFeed'
+import FindPeople from './components/FindPeople'
 import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
@@ -412,6 +413,9 @@ export default function App() {
             onAddToList={listsHook.addToList}
             onLogDiary={diaryHook.logEntry}
             diaryEntries={detailItem ? diaryHook.getEntriesForItem(detailItem.id) : []}
+            session={session}
+            profile={profile}
+            onShowAuth={() => { setAuthMode('login'); navigate('auth') }}
           />
         ) : tab === 'discover' ? (
           searchLoading ? (
@@ -439,13 +443,20 @@ export default function App() {
             </div>
           )
         ) : tab === 'feed' ? (
-          <ActivityFeed
-            feedHook={feedHook}
-            following={followsHook.following}
-            onOpenItem={openDetail}
-            onOpenProfile={(username) => { window.location.href = `/@${username}` }}
-            onDiscover={() => setTab('discover')}
-          />
+          <div>
+            <ActivityFeed
+              feedHook={feedHook}
+              following={followsHook.following}
+              onOpenItem={openDetail}
+              onOpenProfile={(username) => { window.location.href = `/@${username}` }}
+              onDiscover={() => {}}
+            />
+            <div style={{ marginTop: 32 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>👥 Find people to follow</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Search by username or browse recently active users</div>
+              <FindPeople session={session} followsHook={followsHook} onOpenProfile={(username) => { window.location.href = `/@${username}` }} />
+            </div>
+          </div>
         ) : tab === 'stats' ? (
           <StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} />
         ) : tab === 'rankings' ? (
