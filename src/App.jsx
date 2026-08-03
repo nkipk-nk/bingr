@@ -280,6 +280,7 @@ export default function App() {
         onSignIn={() => { setAuthMode('login'); navigate('auth') }}
         onShowPrivacy={() => navigate('privacy')}
         onShowTerms={() => navigate('terms')}
+        trending={trending}
       />
     )
   }
