@@ -933,6 +933,65 @@ Note this trap is **systemic**, not local to comments — the same `{ error }`-o
 
 ---
 
+#### C9 — Admin "Make admin" has never worked, and the UI shows it succeeding
+
+**Files:** `profiles` RLS (no admin UPDATE policy), [useAdmin.js:83-87](src/hooks/useAdmin.js#L83-L87),
+[AdminPanel.jsx:115-119](src/pages/AdminPanel.jsx#L115-L119)
+
+*Discovered while regression-testing the C2 fix — I checked that legitimate admin promotion still
+worked after adding the role trigger, and found it had never worked in the first place.*
+
+The only UPDATE policy on `profiles` is self-update (`auth.uid() = id`). An admin writing to another
+user's row therefore matches **zero rows**, and PostgREST returns success.
+
+**[VERIFIED LIVE]** as `claudeadmin@test.com` (role `admin`):
+
+```
+PATCH /profiles?id=eq.<other-user>  {"role":"admin"}   → HTTP 204, role unchanged
+PATCH /profiles?id=eq.<other-user>  {"bio":"probe"}    → HTTP 200, []      ← zero rows, no error
+PATCH /profiles?id=eq.<own-row>     {"bio":"probe"}    → HTTP 200, [row]   ← self-update works
+```
+
+`useAdmin.promoteUser` then does:
+
+```js
+const { error } = await supabase.from('profiles').update({ role }).eq('id', userId)
+if (!error) setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+```
+
+`error` is null, so the local state updates and **the admin sees the role badge flip to "admin"**. It
+silently reverts on the next load. `AdminPanel` discards the returned `{ error }` entirely, so there
+was no signal at any layer.
+
+**Impact.** Admin user management is entirely non-functional, and fails in the most misleading way
+available — it looks like it worked. This is the third confirmed instance of **M21** (after C4 and
+C8), which is why M21 is called out as the systemic root cause rather than an incidental detail.
+
+**Note this was masked by C2:** the only way anyone became an admin was self-promotion, which *did*
+work because it's a self-update. Fixing C2 without also fixing C9 would have left no working path to
+create an admin at all.
+
+**Fix.** Add an admin UPDATE policy — safe alongside the C2 trigger, which independently gates the
+`role` column on the caller genuinely being an admin:
+
+```sql
+create or replace function public.is_admin() returns boolean
+language sql security definer stable set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+$$;
+
+create policy "Admins can update any profile"
+  on public.profiles for update to authenticated
+  using ((select public.is_admin())) with check ((select public.is_admin()));
+```
+
+Shipped as [supabase/migrations/20260803_p0b_admin_write.sql](supabase/migrations/20260803_p0b_admin_write.sql),
+with `promoteUser` hardened via `assertAffected` and `AdminPanel` now surfacing success/failure.
+
+**Effort:** 🟢 30 minutes.
+
+---
+
 ### 🟠 MODERATE
 
 | ID | Finding | File | Impact |
@@ -1451,28 +1510,33 @@ escalated and reverted (Rev 1); its username was set to `claude` by the maintain
 Update the **Status** column as fixes land, so nothing is dropped. Suggested values:
 `open` · `in progress` · `fixed` · `verified` · `won't fix`.
 
+**Fix round 1 — commit `23af63a`, deployed as `assets/index-DNh75_sl.js`, migration
+`20260803_p0_security.sql` applied.** Every ✅ below was re-tested against production *after* the fix,
+not just reasoned about.
+
 | ID | Severity | Finding | Owner | Status |
 |---|---|---|---|---|
-| C1 | 🔴 Critical | Public profile TDZ crash | | open |
-| C2 | 🔴 Critical | Privilege escalation to admin | | open |
-| C3 | 🔴 Critical | Activity feed 400s silently | | open |
+| C1 | 🔴 Critical | Public profile TDZ crash | Claude | ✅ **verified** — declaration now precedes use in the live bundle |
+| C2 | 🔴 Critical | Privilege escalation to admin | Claude | ✅ **verified** — `PATCH {"role":"admin"}` → `403 role may only be changed by an administrator` |
+| C3 | 🔴 Critical | Activity feed 400s silently | Claude | ✅ **verified** — feed query returns joined rows, HTTP 200 |
 | C4 | ~~🔴 Critical~~ | ~~Signup discards username/country~~ — resolved by disabling email confirmation; code defect tracked as **M21** | maintainer | ✅ verified |
-| C5 | 🔴 Critical | Diary world-readable | | open |
-| C6 | 🔴 Critical | Comment authorship spoofable | | open |
-| C7 | 🔴 Critical | Moderation client-side only | | open |
-| C8 | 🔴 Critical | Authors can't see/delete own hidden comments; delete reports false success | | open |
-| M1 | 🟠 Moderate | `delete-account` ignores `target_user_id` | | open |
-| M2 | 🟠 Moderate | Incomplete account deletion (KDPA) | | open |
+| C5 | 🔴 Critical | Diary world-readable | Claude | ✅ **verified** — private profile's diary returns `[]` to anon, owner still sees it, public profiles unaffected |
+| C6 | 🔴 Critical | Comment authorship spoofable | Claude | ✅ **verified** — posting as `nkipk` → `403`; posting as own handle → `201` |
+| C7 | 🔴 Critical | Moderation client-side only | Claude | ✅ **verified** — 3,000 chars → `400` check constraint; 6 rapid inserts → `201×4` then `400` |
+| C8 | 🔴 Critical | Authors can't see/delete own hidden comments; delete reports false success | Claude | ✅ **verified** — owner sees and deletes own hidden comment; anon still cannot see it |
+| C9 | 🔴 Critical | Admin "Make admin" never worked; UI showed false success | Claude | ⏳ **code fixed, awaiting migration** — run [`20260803_p0b_admin_write.sql`](supabase/migrations/20260803_p0b_admin_write.sql) |
+| M1 | 🟠 Moderate | `delete-account` ignores `target_user_id` | Claude | ✅ fixed — needs Edge Function redeploy |
+| M2 | 🟠 Moderate | Incomplete account deletion (KDPA) | Claude | ✅ fixed — needs Edge Function redeploy |
 | M3 | 🟠 Moderate | `last_seen_at` never written | | open |
-| M4 | 🟠 Moderate | Landing legal links dead | | open |
-| M5 | 🟠 Moderate | Feed CTA dead click | | open |
-| M6 | 🟠 Moderate | Feed never auto-refreshes | | open |
+| M4 | 🟠 Moderate | Landing legal links dead | Claude | ✅ **verified live** |
+| M5 | 🟠 Moderate | Feed CTA dead click | Claude | ✅ fixed |
+| M6 | 🟠 Moderate | Feed never auto-refreshes | Claude | ✅ fixed |
 | M7 | 🟠 Moderate | No `.catch()` on TMDB chains | | open |
 | M8 | 🟠 Moderate | TMDB N+1 fan-out | | open |
-| M9 | 🟠 Moderate | Anon feedback spam vector | | open |
-| M10 | 🟠 Moderate | No DB length constraints | | open |
-| M11 | 🟠 Moderate | CSP blocks Google avatars | | open |
-| M12 | 🟠 Moderate | Schema not in version control | | open |
+| M9 | 🟠 Moderate | Anon feedback spam vector | Claude | ✅ **verified** — anon insert → `401` |
+| M10 | 🟠 Moderate | No DB length constraints | Claude | ✅ fixed for comments / diary notes / bio / feedback |
+| M11 | 🟠 Moderate | CSP blocks Google avatars | Claude | ✅ **verified live** in response headers |
+| M12 | 🟠 Moderate | Schema not in version control | Claude | ✅ fixed — `supabase/` tracked, migrations added |
 | M13 | 🟠 Moderate | 1.08 MB single bundle | | open |
 | M14 | 🟠 Moderate | Queries rely solely on RLS | | open |
 | M15 | 🟠 Moderate | Privacy Policy inaccurate | | open |
@@ -1481,5 +1545,11 @@ Update the **Status** column as fixes land, so nothing is dropped. Suggested val
 | M18 | 🟠 Moderate | Edge Function CORS `*` | | open |
 | M19 | 🟠 Moderate | `useLibrary.upsert` dep churn | | open |
 | M20 | 🟠 Moderate | In-memory auth rate limit | | open |
-| M21 | 🟠 Moderate | Zero-row writes treated as success (root cause of C4 + C8) | | open |
-| m1–m17 | 🟡 Minor | See §5 Minor table | | open |
+| M21 | 🟠 Moderate | Zero-row writes treated as success (root cause of C4, C8, C9) | Claude | 🔶 **partial** — `assertAffected()` added and applied to `signUp`, `deleteComment`, `promoteUser`; the remaining ~8 call sites in `useDiary`, `useLists`, `useLibrary`, `useFollows`, `useAdmin` still check only `error` |
+| m1–m17 | 🟡 Minor | See §5 Minor table | | open (m2 dupe-key fixed) |
+
+### Outstanding actions for the maintainer
+
+1. **Run [`supabase/migrations/20260803_p0b_admin_write.sql`](supabase/migrations/20260803_p0b_admin_write.sql)** — closes C9. Until then, no one can be promoted to admin through the UI, and with C2 now fixed there is no other path either. The two existing admins (`nkipk`, `claudeadmin`) are unaffected.
+2. **Redeploy the `delete-account` Edge Function** (`supabase functions deploy delete-account`) — the M1/M2 fixes are committed but Edge Functions do not deploy via Vercel.
+3. **Replace the placeholder M-Pesa number** in [SupportButton.jsx:6](src/components/SupportButton.jsx#L6) — still returns `0700 000 000` to Kenyan users on the live site.
