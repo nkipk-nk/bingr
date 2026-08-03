@@ -39,6 +39,10 @@ const MIGRATED_FILES = [
   'src/components/FollowerListSheet.jsx',
   'src/components/nav/Header.jsx',
   'src/pages/ProfilePage.jsx',
+  'src/components/StarRating.jsx',
+  'src/components/CommentsSection.jsx',
+  'src/components/LogEntryModal.jsx',
+  'src/components/EpisodeTracker.jsx',
 ]
 
 export default defineConfig([

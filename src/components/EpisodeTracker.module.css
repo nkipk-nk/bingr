@@ -1,0 +1,38 @@
+.seasonTabs { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.seasonChip {
+  padding: var(--space-2) var(--space-4); border-radius: var(--radius-pill);
+  border: var(--border-width-hairline) solid var(--border-subtle); background: var(--bg-input);
+  color: var(--text-secondary); font-family: var(--font-body); font-size: var(--text-body-sm-size);
+  cursor: pointer; position: relative; display: inline-flex; align-items: center; gap: 4px;
+}
+.seasonChipActive { background: var(--magenta-deep); border-color: var(--magenta-deep); color: var(--text-primary); font-weight: 600; }
+.seasonChipPct { font-size: var(--text-body-xs-size); opacity: 0.85; }
+
+.seasonHeader { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.seasonTitle { font-family: var(--font-body); font-size: var(--text-body-md-size); font-weight: 600; color: var(--text-primary); }
+.seasonProgressText { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); margin-left: var(--space-2); }
+
+.progressBar { margin-bottom: var(--space-4); }
+
+.errorBox { display: flex; align-items: center; gap: var(--space-3); font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--danger); padding: var(--space-4) 0; }
+.loadingText { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); padding: var(--space-4) 0; }
+
+.epList { display: flex; flex-direction: column; gap: var(--space-1); }
+.epRow {
+  display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm); background: var(--bg-input);
+  border: var(--border-width-hairline) solid var(--border-subtle); cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+}
+.epRowWatched { background: color-mix(in srgb, var(--status-watched) 10%, transparent); border-color: color-mix(in srgb, var(--status-watched) 30%, transparent); }
+.epRowUnaired { cursor: default; opacity: 0.5; }
+
+.epCheck { flex-shrink: 0; display: flex; color: var(--text-tertiary); }
+.epCheckWatched { color: var(--status-watched); }
+
+.epCode { font-family: var(--font-mono); font-size: var(--text-mono-sm-size); color: var(--text-tertiary); flex-shrink: 0; min-width: 48px; }
+.epBody { flex: 1; min-width: 0; }
+.epTitle { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.epTitleWatched { color: var(--status-watched); font-weight: 500; }
+.epMeta { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); }
+.epUpcoming { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); flex-shrink: 0; }

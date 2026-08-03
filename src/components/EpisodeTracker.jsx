@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react'
+import { CheckCircle2, Circle } from 'lucide-react'
 import { tmdb } from '../lib/tmdb'
 import { logger } from '../lib/logger'
+import Button from './ui/Button'
+import ProgressBar from './ui/ProgressBar'
+import styles from './EpisodeTracker.module.css'
 
 export default function EpisodeTracker({ show, isWatched, toggleEpisode, markSeasonWatched, getSeasonProgress }) {
   const [activeSeason, setActiveSeason] = useState(null)
@@ -41,8 +45,7 @@ export default function EpisodeTracker({ show, isWatched, toggleEpisode, markSea
 
   return (
     <div>
-      {/* Season tabs */}
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+      <div className={styles.seasonTabs}>
         {seasons.map(s => {
           const sp = getSeasonProgress(show.id, s.season_number, s.episode_count)
           const pct = s.episode_count > 0 ? Math.round((sp.watched / s.episode_count) * 100) : 0
@@ -51,64 +54,39 @@ export default function EpisodeTracker({ show, isWatched, toggleEpisode, markSea
             <button
               key={s.season_number}
               onClick={() => setActiveSeason(s.season_number)}
-              style={{
-                padding: '6px 12px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
-                border: `1px solid ${isActive ? 'var(--accent)' : 'var(--border)'}`,
-                background: isActive ? 'var(--accent)' : 'var(--bg-input)',
-                color: isActive ? '#fff' : 'var(--text-muted)',
-                fontFamily: 'inherit', fontWeight: isActive ? 600 : 400,
-                position: 'relative',
-              }}
+              className={[styles.seasonChip, isActive ? styles.seasonChipActive : ''].filter(Boolean).join(' ')}
             >
               S{s.season_number}
-              {pct > 0 && pct < 100 && (
-                <span style={{ marginLeft: 5, fontSize: 10, opacity: 0.85 }}>{pct}%</span>
-              )}
-              {pct === 100 && <span style={{ marginLeft: 4 }}>✓</span>}
+              {pct > 0 && pct < 100 && <span className={styles.seasonChipPct}>{pct}%</span>}
+              {pct === 100 && <CheckCircle2 size={12} />}
             </button>
           )
         })}
       </div>
 
-      {/* Season header */}
       {activeSeason && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div className={styles.seasonHeader}>
           <div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>Season {activeSeason}</span>
-            <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 8 }}>
-              {prog.watched}/{prog.total} episodes watched
-            </span>
+            <span className={styles.seasonTitle}>Season {activeSeason}</span>
+            <span className={styles.seasonProgressText}>{prog.watched}/{prog.total} episodes watched</span>
           </div>
-          <button
-            onClick={() => markSeasonWatched(show.id, activeSeason, currentSeasonEps)}
-            disabled={loading}
-            style={{
-              padding: '5px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer',
-              border: '1px solid var(--border)', fontFamily: 'inherit',
-              background: allWatched ? '#1d9e75' : 'var(--bg-input)',
-              color: allWatched ? '#fff' : 'var(--text-muted)',
-            }}
-          >{allWatched ? 'Unmark all' : 'Mark all watched'}</button>
+          <Button variant={allWatched ? 'primary' : 'secondary'} size="sm" disabled={loading} onClick={() => markSeasonWatched(show.id, activeSeason, currentSeasonEps)}>
+            {allWatched ? 'Unmark all' : 'Mark all watched'}
+          </Button>
         </div>
       )}
 
-      {/* Progress bar */}
-      {prog.total > 0 && (
-        <div style={{ height: 4, background: 'var(--border)', borderRadius: 4, marginBottom: 12, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${(prog.watched / prog.total) * 100}%`, background: '#1d9e75', borderRadius: 4, transition: 'width 0.3s' }} />
-        </div>
-      )}
+      {prog.total > 0 && <div className={styles.progressBar}><ProgressBar value={prog.watched} max={prog.total} /></div>}
 
-      {/* Episode list */}
       {loading ? (
-        <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '1rem 0' }}>Loading episodes...</div>
+        <div className={styles.loadingText}>Loading episodes...</div>
       ) : loadError ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#e24b4a', padding: '1rem 0' }}>
+        <div className={styles.errorBox}>
           <span>Couldn't load episodes for this season.</span>
-          <button onClick={() => setRetryTick(t => t + 1)} style={{ background: 'none', border: 'none', color: '#e24b4a', textDecoration: 'underline', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0 }}>Retry</button>
+          <Button variant="ghost" size="sm" onClick={() => setRetryTick(t => t + 1)}>Retry</Button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <div className={styles.epList}>
           {currentSeasonEps.map(ep => {
             const watched = isWatched(show.id, activeSeason, ep.episode_number)
             const airDate = ep.air_date ? new Date(ep.air_date) : null
@@ -117,44 +95,25 @@ export default function EpisodeTracker({ show, isWatched, toggleEpisode, markSea
               <div
                 key={ep.episode_number}
                 onClick={() => !isUnaired && toggleEpisode(show.id, activeSeason, ep.episode_number)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '8px 12px', borderRadius: 8,
-                  background: watched ? 'rgba(29,158,117,0.08)' : 'var(--bg-input)',
-                  border: `1px solid ${watched ? 'rgba(29,158,117,0.25)' : 'var(--border)'}`,
-                  cursor: isUnaired ? 'default' : 'pointer',
-                  opacity: isUnaired ? 0.5 : 1,
-                  transition: 'all 0.15s',
-                }}
+                className={[styles.epRow, watched ? styles.epRowWatched : '', isUnaired ? styles.epRowUnaired : ''].filter(Boolean).join(' ')}
               >
-                {/* Checkbox */}
-                <div style={{
-                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
-                  border: `2px solid ${watched ? '#1d9e75' : 'var(--border-strong)'}`,
-                  background: watched ? '#1d9e75' : 'transparent',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 11, color: '#fff',
-                }}>{watched ? '✓' : ''}</div>
-
-                {/* Episode label */}
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', flexShrink: 0, minWidth: 48 }}>
-                  S{String(activeSeason).padStart(2,'0')}E{String(ep.episode_number).padStart(2,'0')}
+                <div className={[styles.epCheck, watched ? styles.epCheckWatched : ''].filter(Boolean).join(' ')}>
+                  {watched ? <CheckCircle2 size={20} /> : <Circle size={20} />}
                 </div>
 
-                {/* Title */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, color: watched ? '#1d9e75' : 'var(--text)', fontWeight: watched ? 500 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {ep.name}
-                  </div>
+                <div className={styles.epCode}>S{String(activeSeason).padStart(2, '0')}E{String(ep.episode_number).padStart(2, '0')}</div>
+
+                <div className={styles.epBody}>
+                  <div className={[styles.epTitle, watched ? styles.epTitleWatched : ''].filter(Boolean).join(' ')}>{ep.name}</div>
                   {ep.air_date && (
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                    <div className={styles.epMeta}>
                       {isUnaired ? `Airs ${ep.air_date}` : ep.air_date}
                       {ep.runtime ? ` · ${ep.runtime}m` : ''}
                     </div>
                   )}
                 </div>
 
-                {isUnaired && <span style={{ fontSize: 10, color: 'var(--text-muted)', flexShrink: 0 }}>Upcoming</span>}
+                {isUnaired && <span className={styles.epUpcoming}>Upcoming</span>}
               </div>
             )
           })}

@@ -1,0 +1,19 @@
+.subtitle { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); margin-top: -12px; margin-bottom: var(--space-4); }
+.titleIcon { vertical-align: -3px; margin-right: var(--space-2); }
+.field { margin-bottom: var(--space-4); }
+.label { display: block; font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-secondary); margin-bottom: var(--space-1); }
+.dateInput {
+  width: 100%; padding: var(--space-3); font-size: var(--text-body-md-size); font-family: var(--font-body);
+  border: var(--border-width-hairline) solid var(--border-subtle); border-radius: var(--radius-sm);
+  background: var(--bg-input); color: var(--text-primary); outline: none; box-sizing: border-box;
+}
+.textarea {
+  width: 100%; padding: var(--space-3); font-size: var(--text-body-md-size); font-family: var(--font-body);
+  border: var(--border-width-hairline) solid var(--border-subtle); border-radius: var(--radius-sm);
+  background: var(--bg-input); color: var(--text-primary); outline: none; resize: vertical; box-sizing: border-box;
+}
+.ratingRow { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.ratingLabel { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); }
+.actions { display: flex; gap: var(--space-2); }
+.cancelBtn { flex: 1; }
+.saveBtn { flex: 2; }

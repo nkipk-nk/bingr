@@ -1,32 +1,35 @@
 import { useState } from 'react'
+import { Star } from 'lucide-react'
 import { RATING_LABELS as LABELS } from '../lib/constants'
+import styles from './StarRating.module.css'
 
 export default function StarRating({ value = 0, onChange, size = 22 }) {
   const [hovered, setHovered] = useState(0)
+  const [justRated, setJustRated] = useState(false)
   const display = hovered || value
 
+  const handleClick = (n) => {
+    onChange(n)
+    setJustRated(true)
+  }
+
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-      <div style={{ display: 'flex', gap: 2 }}>
+    <div className={styles.wrap}>
+      <div className={styles.stars}>
         {Array.from({ length: 10 }, (_, i) => i + 1).map(n => (
           <button
             key={n}
-            onClick={() => onChange(n)}
+            onClick={() => handleClick(n)}
             onMouseEnter={() => setHovered(n)}
             onMouseLeave={() => setHovered(0)}
-            style={{
-              fontSize: size, background: 'none', border: 'none', cursor: 'pointer',
-              color: display >= n ? '#ef9f27' : 'var(--border-strong)',
-              padding: '0 1px', lineHeight: 1,
-              transition: 'color 0.1s, transform 0.1s',
-              transform: hovered === n ? 'scale(1.2)' : 'scale(1)',
-            }}
-          >★</button>
+            onAnimationEnd={() => setJustRated(false)}
+            className={[styles.star, display >= n ? styles.starFilled : '', justRated && n === value ? styles.starPop : ''].filter(Boolean).join(' ')}
+          >
+            <Star size={size} fill={display >= n ? 'currentColor' : 'none'} strokeWidth={display >= n ? 0 : 1.5} />
+          </button>
         ))}
       </div>
-      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-        {display ? `${display}/10 — ${LABELS[display]}` : 'Tap to rate'}
-      </span>
+      <span className={styles.label}>{display ? `${display}/10 — ${LABELS[display]}` : 'Tap to rate'}</span>
     </div>
   )
 }
