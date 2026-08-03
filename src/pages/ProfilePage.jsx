@@ -1,5 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
+import { ArrowLeft, Globe, Lock, Package } from 'lucide-react'
 import { downloadFullExport } from '../lib/export'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Avatar from '../components/ui/Avatar'
+import styles from './ProfilePage.module.css'
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
 
@@ -78,119 +83,95 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
   }
 
   const usernameHint = () => {
-    if (usernameState === 'checking') return { color: 'var(--text-muted)', msg: 'Checking…' }
-    if (usernameState === 'available') return { color: '#1d9e75', msg: '✓ Available' }
-    if (usernameState === 'taken') return { color: '#e24b4a', msg: '✗ Already taken' }
-    if (usernameState === 'invalid') return { color: '#e24b4a', msg: 'Usernames: 3–20 chars, letters, numbers, underscores only' }
+    if (usernameState === 'checking') return { cls: '', msg: 'Checking…' }
+    if (usernameState === 'available') return { cls: styles.hintOk, msg: '✓ Available' }
+    if (usernameState === 'taken') return { cls: styles.hintBad, msg: '✗ Already taken' }
+    if (usernameState === 'invalid') return { cls: styles.hintBad, msg: 'Usernames: 3–20 chars, letters, numbers, underscores only' }
     return null
   }
 
   const hint = usernameHint()
-  const initials = (profile?.display_name || profile?.username || session?.user?.email || '?').slice(0, 2).toUpperCase()
+  const displayLabel = profile?.display_name || profile?.username || session?.user?.email
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto', padding: '2rem 1.5rem' }}>
-      <button onClick={onBack} style={BackBtn}>← Back</button>
+    <div className={styles.wrap}>
+      <Button variant="ghost" size="sm" className={styles.backBtn} onClick={onBack}><ArrowLeft size={16} /> Back</Button>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden' }}>
-
-        {/* Avatar area */}
-        <div style={{ background: 'linear-gradient(135deg, var(--accent), #b52c1f)', padding: '2rem', display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, flexShrink: 0 }}>
-            {initials}
-          </div>
+      <div className={styles.card}>
+        <div className={styles.avatarBanner}>
+          <Avatar size="lg" name={displayLabel} />
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>{profile?.display_name || profile?.username}</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 2 }}>@{profile?.username}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>{session?.user?.email}</div>
+            <div className={styles.bannerName}>{profile?.display_name || profile?.username}</div>
+            <div className={styles.bannerHandle}>@{profile?.username}</div>
+            <div className={styles.bannerEmail}>{session?.user?.email}</div>
           </div>
         </div>
 
-        {/* Edit form */}
-        <div style={{ padding: '1.5rem' }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 16 }}>Edit profile</div>
+        <div className={styles.form}>
+          <div className={styles.formTitle}>Edit profile</div>
 
-          <div style={{ marginBottom: 16 }}>
-            <label style={L}>Username</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--text-muted)' }}>@</span>
-              <input value={username} onChange={e => handleUsernameChange(e.target.value)}
-                style={{ ...I, paddingLeft: 28, borderColor: usernameState === 'taken' || usernameState === 'invalid' ? '#e24b4a' : usernameState === 'available' ? '#1d9e75' : 'var(--border)' }}
-                maxLength={20} placeholder="your_username" />
+          <div className={styles.field}>
+            <label className={styles.label}>Username</label>
+            <div className={styles.usernameWrap}>
+              <span className={styles.usernameAt}>@</span>
+              <Input
+                className={styles.usernameInput}
+                value={username} onChange={e => handleUsernameChange(e.target.value)}
+                invalid={usernameState === 'taken' || usernameState === 'invalid'}
+                maxLength={20} placeholder="your_username"
+              />
             </div>
-            {hint && <div style={{ fontSize: 12, color: hint.color, marginTop: 5 }}>{hint.msg}</div>}
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>Your unique identifier on bingr. Used in shared list URLs.</div>
+            {hint && <div className={`${styles.hint} ${hint.cls}`}>{hint.msg}</div>}
+            <div className={styles.helperText}>Your unique identifier on bingr. Used in shared list URLs.</div>
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={L}>Display name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-            <input value={displayName} onChange={e => setDisplayName(e.target.value)} style={I}
-              maxLength={50} placeholder="How you want to appear on bingr" />
+          <div className={styles.field}>
+            <label className={styles.label}>Display name <span className={styles.labelOptional}>(optional)</span></label>
+            <Input value={displayName} onChange={e => setDisplayName(e.target.value)} maxLength={50} placeholder="How you want to appear on bingr" />
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label style={L}>Profile visibility</label>
-            <div
-              onClick={togglePrivacy}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '12px',
-                background: 'var(--bg-input)', borderRadius: 10,
-                border: `1px solid ${isPublic ? 'var(--border)' : 'var(--accent)'}`,
-                cursor: privacySaving ? 'wait' : 'pointer', opacity: privacySaving ? 0.7 : 1,
-              }}>
-              <div style={{ width: 36, height: 20, borderRadius: 10, background: isPublic ? 'var(--accent)' : 'var(--border)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
-                <div style={{ position: 'absolute', top: 2, left: isPublic ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+          <div className={styles.field}>
+            <label className={styles.label}>Profile visibility</label>
+            <div className={`${styles.visToggle} ${!isPublic ? styles.visToggleActive : ''} ${privacySaving ? styles.visToggleSaving : ''}`} onClick={togglePrivacy}>
+              <div className={[styles.visSwitch, isPublic ? styles.visSwitchOn : styles.visSwitchOff].join(' ')}>
+                <div className={[styles.visKnob, isPublic ? styles.visKnobOn : styles.visKnobOff].join(' ')} />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{isPublic ? '🌐 Public profile' : '🔒 Private profile'}</div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                <div className={styles.visLabel}>{isPublic ? <><Globe size={14} /> Public profile</> : <><Lock size={14} /> Private profile</>}</div>
+                <div className={styles.visDesc}>
                   {isPublic
                     ? 'Your profile page, ratings, and diary are visible to anyone with your link.'
                     : 'Only you can see your ratings and diary. Your username stays findable in search.'}
                 </div>
               </div>
             </div>
-            {privacyError && <div style={{ fontSize: 12, color: '#e24b4a', marginTop: 6 }}>{privacyError}</div>}
+            {privacyError && <div className={`${styles.hint} ${styles.hintBad}`}>{privacyError}</div>}
           </div>
 
-          {error && <div style={{ fontSize: 13, color: '#e24b4a', padding: '8px 12px', background: 'rgba(226,75,74,0.08)', borderRadius: 8, marginBottom: 14 }}>{error}</div>}
-          {saved && <div style={{ fontSize: 13, color: '#1d9e75', padding: '8px 12px', background: 'rgba(29,158,117,0.08)', borderRadius: 8, marginBottom: 14 }}>✓ Profile saved</div>}
+          {error && <div className={styles.errorBox}>{error}</div>}
+          {saved && <div className={styles.successBox}>✓ Profile saved</div>}
 
-          <button onClick={save} disabled={!canSave || saving}
-            style={{ width: '100%', padding: '10px', background: canSave ? 'var(--accent)' : 'var(--border)', color: canSave ? '#fff' : 'var(--text-muted)', border: 'none', borderRadius: 8, fontSize: 14, cursor: canSave ? 'pointer' : 'not-allowed', fontFamily: 'inherit', fontWeight: 500 }}>
-            {saving ? 'Saving…' : 'Save changes'}
-          </button>
+          <Button variant="primary" className={styles.fullWidthBtn} onClick={save} disabled={!canSave} loading={saving}>Save changes</Button>
         </div>
 
-        {/* Read-only info */}
-        <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem' }}>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Email address</div>
-          <div style={{ fontSize: 14, color: 'var(--text)' }}>{session?.user?.email}</div>
-          <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>To change your email address, contact support@bingr.app</div>
+        <div className={styles.section}>
+          <div className={styles.sectionLabel}>Email address</div>
+          <div className={styles.sectionValue}>{session?.user?.email}</div>
+          <div className={styles.helperText}>To change your email address, contact support@bingr.app</div>
         </div>
 
-        {/* Data export */}
-        <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Your data</div>
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.6 }}>
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Your data</div>
+          <div className={styles.sectionDesc}>
             Download everything bingr has stored for your account — profile, watchlist, ratings, diary,
             episode progress, lists, comments, and follows — as a single JSON file.
           </div>
-          <button onClick={handleExport} disabled={exporting}
-            style={{ padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', cursor: exporting ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 500 }}>
-            {exporting ? 'Preparing export…' : '📦 Download all my data'}
-          </button>
+          <Button variant="secondary" size="sm" onClick={handleExport} loading={exporting}><Package size={14} /> Download all my data</Button>
           {exportNotice && (
-            <div style={{ fontSize: 12, marginTop: 8, color: exportNotice.kind === 'ok' ? '#1d9e75' : '#e24b4a' }}>
-              {exportNotice.msg}
-            </div>
+            <div className={`${styles.exportNotice} ${exportNotice.kind === 'ok' ? styles.exportNoticeOk : styles.exportNoticeErr}`}>{exportNotice.msg}</div>
           )}
         </div>
       </div>
     </div>
   )
 }
-
-const L = { display: 'block', fontSize: 12, color: 'var(--text-muted)', marginBottom: 5, fontWeight: 500 }
-const I = { width: '100%', padding: '9px 12px', fontSize: 14, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
-const BackBtn = { background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6, padding: 0, marginBottom: 16, fontFamily: 'inherit' }

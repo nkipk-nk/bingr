@@ -38,6 +38,7 @@ const MIGRATED_FILES = [
   'src/pages/PublicListPage.jsx',
   'src/components/FollowerListSheet.jsx',
   'src/components/nav/Header.jsx',
+  'src/pages/ProfilePage.jsx',
 ]
 
 export default defineConfig([
