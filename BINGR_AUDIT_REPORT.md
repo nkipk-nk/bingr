@@ -1570,7 +1570,7 @@ not just reasoned about.
 | C7 | 🔴 Critical | Moderation client-side only | Claude | ✅ **verified** — 3,000 chars → `400` check constraint; 6 rapid inserts → `201×4` then `400` |
 | C8 | 🔴 Critical | Authors can't see/delete own hidden comments; delete reports false success | Claude | ✅ **verified** — owner sees and deletes own hidden comment; anon still cannot see it |
 | C9 | 🔴 Critical | Admin "Make admin" never worked; UI showed false success | Claude | ✅ **verified** — migration `20260803_p0b_admin_write.sql` applied, promote/demote round-tripped live |
-| C10 | 🔴 Critical | `bingr_library` had no public-read policy — public rankings always empty | Claude | ⏳ **code fixed, awaiting migration** — run [`20260803_p1a_library_visibility.sql`](supabase/migrations/20260803_p1a_library_visibility.sql) |
+| C10 | 🔴 Critical | `bingr_library` had no public-read policy — public rankings always empty | Claude | ✅ **verified** — migration `20260803_p1a_library_visibility.sql` applied; public profile visible to anon + other users, private profile hides from anon while owner still sees it |
 | M1 | 🟠 Moderate | `delete-account` ignores `target_user_id` | Claude | ✅ fixed — needs Edge Function redeploy |
 | M2 | 🟠 Moderate | Incomplete account deletion (KDPA) | Claude | ✅ fixed — needs Edge Function redeploy |
 | M3 | 🟠 Moderate | `last_seen_at` never written | Claude | ✅ fixed — was fire-and-forget on a lazy thenable, never actually sent; now awaited via `.then()` with a warn on failure |
@@ -1586,7 +1586,7 @@ not just reasoned about.
 | M13 | 🟠 Moderate | 1.08 MB single bundle | | open |
 | M14 | 🟠 Moderate | Queries rely solely on RLS | | open |
 | M15 | 🟠 Moderate | Privacy Policy inaccurate | Claude | ✅ fixed — §1 data list corrected, §4 retention matches the M1/M2 fix, §6 RLS claim no longer overstated |
-| M16 | 🟠 Moderate | No full data export / privacy toggle | Claude | 🔶 **partial** — visibility toggle shipped (needs `p1a` migration to fully take effect); full-account JSON export still not built |
+| M16 | 🟠 Moderate | No full data export / privacy toggle | Claude | 🔶 **partial** — visibility toggle shipped and **verified live** (protects diary and, via C10, ratings/rankings); full-account JSON export still not built |
 | M17 | 🟠 Moderate | Comment reports do nothing | | open |
 | M18 | 🟠 Moderate | Edge Function CORS `*` | | open |
 | M19 | 🟠 Moderate | `useLibrary.upsert` dep churn | | open |
@@ -1599,4 +1599,6 @@ not just reasoned about.
 1. ~~Run `20260803_p0b_admin_write.sql`~~ — ✅ **done**, verified live (C9 closed).
 2. ~~Redeploy the `delete-account` Edge Function~~ — ✅ **done**, verified via CORS header on the live function.
 3. ~~Replace the placeholder M-Pesa number~~ — ✅ **done**, live.
-4. **Run [`supabase/migrations/20260803_p1a_library_visibility.sql`](supabase/migrations/20260803_p1a_library_visibility.sql)** — closes **C10**. Until then, the "🏆 Top Rated" tab and rating counts on every `/@username` page will keep showing empty for every visitor except the profile owner, regardless of the new privacy toggle.
+4. ~~Run `20260803_p1a_library_visibility.sql`~~ — ✅ **done**, verified live (C10 closed). Public "Top Rated" rankings now work, and the privacy toggle correctly hides them when a profile is set private.
+
+### All P0 and this round of P1 fixes are verified closed. No outstanding actions remain.
