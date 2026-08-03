@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
+import { ShieldCheck, CheckCircle2, AlertTriangle, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { friendlyAuthError } from '../lib/errors'
 import { logger } from '../lib/logger'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import styles from './AuthCardShell.module.css'
 
 export default function ResetPassword({ onDone }) {
   const [password, setPassword] = useState('')
@@ -41,87 +45,80 @@ export default function ResetPassword({ onDone }) {
   }
 
   if (checking) return (
-    <div style={Wrap}>
-      <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Verifying reset link…</div>
+    <div className={styles.wrap}>
+      <div className={styles.checkingText}>Verifying reset link…</div>
     </div>
   )
 
   if (done) return (
-    <div style={Wrap}>
-      <div style={Card}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>✅</div>
-        <h2 style={H2}>Password updated</h2>
-        <p style={P}>Your password has been changed. You can now sign in with your new password.</p>
-        <button onClick={onDone} style={BtnPrimary}>Go to sign in</button>
+    <div className={styles.wrap}>
+      <div className={styles.card}>
+        <CheckCircle2 size={48} className={styles.iconSuccess} />
+        <h2 className={styles.heading}>Password updated</h2>
+        <p className={styles.body}>Your password has been changed. You can now sign in with your new password.</p>
+        <Button variant="primary" onClick={onDone} className={styles.fullWidthBtn}>Go to sign in</Button>
       </div>
     </div>
   )
 
   if (!validSession) return (
-    <div style={Wrap}>
-      <div style={Card}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
-        <h2 style={H2}>Link expired or already used</h2>
-        <p style={P}>Please request a new password reset link.</p>
-        <button onClick={onDone} style={BtnPrimary}>Back to sign in</button>
+    <div className={styles.wrap}>
+      <div className={styles.card}>
+        <AlertTriangle size={48} className={styles.iconWarning} />
+        <h2 className={styles.heading}>Link expired or already used</h2>
+        <p className={styles.body}>Please request a new password reset link.</p>
+        <Button variant="primary" onClick={onDone} className={styles.fullWidthBtn}>Back to sign in</Button>
       </div>
     </div>
   )
 
   return (
-    <div style={Wrap}>
-      <div style={Card}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>🔐</div>
-        <h2 style={H2}>Set new password</h2>
-        <p style={P}>Choose a strong password — at least 6 characters.</p>
+    <div className={styles.wrap}>
+      <div className={styles.card}>
+        <ShieldCheck size={36} className={styles.icon} />
+        <h2 className={styles.heading}>Set new password</h2>
+        <p className={styles.body}>Choose a strong password — at least 6 characters.</p>
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={L}>New password</label>
-          <div style={{ position: 'relative' }}>
-            <input
+        <div className={styles.field}>
+          <label className={styles.label}>New password</label>
+          <div className={styles.passwordWrap}>
+            <Input
               type={showPw ? 'text' : 'password'}
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder="New password"
               autoFocus
-              style={{ ...I, paddingRight: 44 }}
+              className={styles.passwordInput}
             />
-            <button onClick={() => setShowPw(v => !v)} style={Eye} tabIndex={-1}>{showPw ? '🙈' : '👁️'}</button>
+            <button onClick={() => setShowPw(v => !v)} className={styles.eyeBtn} tabIndex={-1} type="button">
+              {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
         </div>
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={L}>Confirm new password</label>
-          <div style={{ position: 'relative' }}>
-            <input
+        <div className={styles.field}>
+          <label className={styles.label}>Confirm new password</label>
+          <div className={styles.passwordWrap}>
+            <Input
               type={showCPw ? 'text' : 'password'}
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && submit()}
               placeholder="Confirm password"
-              style={{ ...I, paddingRight: 44 }}
+              className={styles.passwordInput}
             />
-            <button onClick={() => setShowCPw(v => !v)} style={Eye} tabIndex={-1}>{showCPw ? '🙈' : '👁️'}</button>
+            <button onClick={() => setShowCPw(v => !v)} className={styles.eyeBtn} tabIndex={-1} type="button">
+              {showCPw ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
         </div>
 
-        {error && <div style={ErrBox}>{error}</div>}
+        {error && <div className={styles.errorBox}>{error}</div>}
 
-        <button onClick={submit} disabled={!password || !confirm || loading}
-          style={{ ...BtnPrimary, opacity: !password || !confirm || loading ? 0.7 : 1 }}>
-          {loading ? 'Updating…' : 'Update password'}
-        </button>
+        <Button variant="primary" onClick={submit} disabled={!password || !confirm} loading={loading} className={styles.fullWidthBtn}>
+          Update password
+        </Button>
       </div>
     </div>
   )
 }
-
-const Wrap = { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-page)', padding: '1rem' }
-const Card = { width: '100%', maxWidth: 400, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '2.5rem 2rem', textAlign: 'center' }
-const H2 = { fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }
-const P = { fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 20 }
-const L = { display: 'block', fontSize: 12, color: 'var(--text-muted)', marginBottom: 5, textAlign: 'left' }
-const I = { width: '100%', padding: '9px 12px', fontSize: 14, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
-const Eye = { position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 }
-const ErrBox = { fontSize: 13, color: '#e24b4a', padding: '8px 12px', background: 'rgba(226,75,74,0.08)', borderRadius: 8, marginBottom: 12, textAlign: 'left' }
-const BtnPrimary = { width: '100%', padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }

@@ -11,6 +11,11 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 const MIGRATED_FILES = [
   'src/pages/PrivacyPolicy.jsx',
   'src/pages/TermsOfService.jsx',
+  'src/pages/SupportersPage.jsx',
+  'src/pages/DeleteAccount.jsx',
+  'src/pages/ForgotPassword.jsx',
+  'src/pages/ResetPassword.jsx',
+  'src/pages/AdminPanel.jsx',
 ]
 
 export default defineConfig([
