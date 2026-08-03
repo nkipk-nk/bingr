@@ -1,0 +1,14 @@
+.bottomNav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 300;
+  background: var(--bg-surface);
+  border-top: var(--border-width-hairline) solid var(--border-subtle);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+@media (min-width: 1024px) {
+  .bottomNav { display: none; }
+}

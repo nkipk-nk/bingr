@@ -1,0 +1,26 @@
+/* Phase 2b — room for the fixed BottomNav (mobile) / SideRail (desktop)
+   layered on top of the still-unmigrated page content below. */
+
+.shell {
+  padding-bottom: 64px; /* clears BottomNav's height */
+}
+
+@media (min-width: 1024px) {
+  .shell {
+    padding-bottom: 0;
+    padding-left: 220px; /* clears SideRail's width */
+  }
+}
+
+/* §8 Toast spec: "fixed bottom-center on mobile (above any bottom nav)" */
+.toast {
+  position: fixed;
+  bottom: 88px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+}
+
+@media (min-width: 1024px) {
+  .toast { bottom: 24px; }
+}

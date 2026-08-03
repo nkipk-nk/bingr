@@ -1,0 +1,56 @@
+.rail {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .rail {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 220px;
+    background: var(--bg-surface);
+    border-right: var(--border-width-hairline) solid var(--border-subtle);
+    padding: var(--space-6) var(--space-3);
+    z-index: 300;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-8);
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+}
+.brandLogo { width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: contain; }
+.brandName {
+  font-family: var(--font-display);
+  font-size: var(--text-display-md-size);
+  font-weight: 700;
+  color: var(--magenta-bright);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  border: none;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-body-md-size);
+  cursor: pointer;
+  transition: color var(--duration-instant) var(--ease-standard), background-color var(--duration-instant) var(--ease-standard);
+}
+.item:hover { background: var(--bg-input); color: var(--text-primary); }
+.itemActive { color: var(--magenta-bright); border-left-color: var(--magenta-bright); background: var(--bg-input); }

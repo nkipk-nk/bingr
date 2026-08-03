@@ -74,7 +74,7 @@ function getPageFromURL() {
 
 export default function App() {
   const { session, loading: authLoading, signUp, signIn, signOut, deleteAccount } = useAuth()
-  const { library, syncing, error: libError, setStatus, setRating, remove, counts } = useLibrary(session)
+  const { library, syncing, error: libError, setStatus, setRating, remove } = useLibrary(session)
   const episodeHook = useEpisodes(session)
   const listsHook = useLists(session)
   const diaryHook = useDiary(session)
@@ -96,8 +96,8 @@ export default function App() {
   const [detailItem, setDetailItem] = useState(null)
   const [toast, setToast] = useState('')
   const [toastTimer, setToastTimer] = useState(null)
-  const [showUserMenu, setShowUserMenu] = useState(false)
   const [showFeedback, setShowFeedback] = useState(false)
+  const [youTab, setYouTab] = useState('stats')
 
   // URL routing on mount
   useEffect(() => {
@@ -181,13 +181,6 @@ export default function App() {
     )
   }, [library])
 
-  useEffect(() => {
-    if (!showUserMenu) return
-    const close = () => setShowUserMenu(false)
-    setTimeout(() => document.addEventListener('click', close), 0)
-    return () => document.removeEventListener('click', close)
-  }, [showUserMenu])
-
   const showToast = useCallback((msg) => {
     setToast(msg)
     if (toastTimer) clearTimeout(toastTimer)
@@ -262,7 +255,7 @@ export default function App() {
   // ── Public pages (no auth needed) ──
   if (page === 'public-list') return (
     <Suspense fallback={<PageFallback />}>
-      <PublicListPage listId={pageParam} onSignUp={() => { setAuthMode('signup'); navigate('auth') }} />
+      <PublicListPage listId={pageParam} onSignUp={() => { setAuthMode('signup'); navigate('auth') }} onGoHome={() => navigate('app')} />
     </Suspense>
   )
   if (page === 'user-profile') return (
@@ -273,6 +266,7 @@ export default function App() {
         followsHook={session ? followsHook : null}
         onOpenItem={(item) => { navigate('app'); setTab('discover'); openDetail(item) }}
         onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
+        onGoHome={() => navigate('app')}
       />
     </Suspense>
   )
@@ -322,12 +316,11 @@ export default function App() {
       )}
 
       <NavShell
-        session={session} profile={profile} isAdmin={adminHook.isAdmin} syncing={syncing}
+        session={session} profile={profile} syncing={syncing}
         query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={handleSearch}
-        showUserMenu={showUserMenu} setShowUserMenu={setShowUserMenu}
         tab={tab} onSelectTab={(id) => { setDetailItem(null); setSearchResults(null); setTab(id) }}
-        counts={counts} feedCount={feedHook.feed.length}
-        onGoHome={goHome} onNavigate={navigate} onSignOut={signOut}
+        onOpenAccount={() => { setDetailItem(null); setSearchResults(null); setTab('you'); setYouTab('account') }}
+        onGoHome={goHome} onNavigate={navigate}
         libError={libError}
         showFeedback={showFeedback} setShowFeedback={setShowFeedback}
         toast={toast}
@@ -357,7 +350,21 @@ export default function App() {
                 Search results ({searchResults.length})
                 <button onClick={() => setSearchResults(null)} style={{ marginLeft: 12, fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Clear ✕</button>
               </div>
-              {searchResults.length ? <CardGrid items={searchResults} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} /> : <div style={{ color: 'var(--text-muted)', fontSize: 14, padding: '2rem 0' }}>No results for "{query}".</div>}
+              {searchResults.length ? <CardGrid items={searchResults} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} /> : (
+                <div style={{ color: 'var(--text-muted)', fontSize: 14, padding: '2rem 0' }}>
+                  No results for "{query}".
+                  {/* RD8 (BINGR_UI_AUDIT.md) — this search covers titles only;
+                      point people-searchers at where that actually lives
+                      instead of leaving the scope silently ambiguous. */}
+                  <div style={{ marginTop: 6, fontSize: 13 }}>
+                    Looking for a person?{' '}
+                    <span onClick={() => { setSearchResults(null); setTab('feed'); setTimeout(() => document.getElementById('find-people')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
+                      style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}>
+                      Search people in Feed →
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           ) : trendingError ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -401,6 +408,9 @@ export default function App() {
               session={session} profile={profile} library={library}
               diaryHook={diaryHook} episodeHook={episodeHook} listsHook={listsHook}
               onOpenItem={openDetail} onShowSupporters={() => navigate('supporters')}
+              tab={youTab} onTabChange={setYouTab}
+              onNavigate={navigate} onSignOut={signOut} onShowFeedback={() => setShowFeedback(true)}
+              isAdmin={adminHook.isAdmin}
             />
           </Suspense>
         ) : null}

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { IMG } from '../lib/tmdb'
 
-export default function PublicListPage({ listId, onSignUp }) {
+export default function PublicListPage({ listId, onSignUp, onGoHome }) {
   const [list, setList] = useState(null)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -33,7 +33,7 @@ export default function PublicListPage({ listId, onSignUp }) {
         <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>List not found</h2>
         <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>This list is private or doesn't exist.</p>
-        <button onClick={() => window.location.href = '/'} style={{ padding: '9px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>Go to bingr</button>
+        <button onClick={onGoHome} style={{ padding: '9px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>Go to bingr</button>
       </div>
     </div>
   )
@@ -42,7 +42,7 @@ export default function PublicListPage({ listId, onSignUp }) {
     <div style={{ minHeight: '100vh', background: 'var(--bg-page)', fontFamily: 'var(--font)' }}>
       {/* Header */}
       <header style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div onClick={() => window.location.href = '/'} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+        <div onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
           <img src="/logo.png" alt="bingr" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'contain' }} />
           <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)', letterSpacing: -0.5 }}>bingr</span>
         </div>
