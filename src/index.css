@@ -2,7 +2,11 @@
 
 :root {
   --accent: #E8392A;
-  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Phase 0b of the design-system rollout (see BINGR_DESIGN_SYSTEM.md §2) —
+     General Sans is self-hosted via tokens.css's @font-face rules, loaded
+     ahead of index.css in main.jsx. System stack stays as the fallback
+     chain for the swap-in window before the font asset loads. */
+  --font: 'General Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Light mode */
   --bg-page: #f4f4f2;
