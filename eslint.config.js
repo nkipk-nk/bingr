@@ -19,6 +19,9 @@ const MIGRATED_FILES = [
   'src/components/DetailPanel.jsx',
   'src/components/MovieCard.jsx',
   'src/pages/DiscoverPage.jsx',
+  'src/pages/ActivityFeed.jsx',
+  'src/components/FindPeople.jsx',
+  'src/pages/FeedPage.jsx',
 ]
 
 export default defineConfig([

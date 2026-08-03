@@ -14,10 +14,9 @@ import { supabase } from './lib/supabase'
 import { RATING_LABELS } from './lib/constants'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
-import ActivityFeed from './pages/ActivityFeed'
-import FindPeople from './components/FindPeople'
 import DetailPanel from './components/DetailPanel'
 import DiscoverPage from './pages/DiscoverPage'
+import FeedPage from './pages/FeedPage'
 import LibraryTab from './pages/LibraryTab'
 import ExportPanel from './components/ExportPanel'
 import OnboardingModal from './components/OnboardingModal'
@@ -339,20 +338,12 @@ export default function App() {
             onFindPeople={() => { setSearchResults(null); setTab('feed'); setTimeout(() => document.getElementById('find-people')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
           />
         ) : tab === 'feed' ? (
-          <div>
-            <ActivityFeed
-              feedHook={feedHook}
-              following={followsHook.following}
-              onOpenItem={openDetail}
-              onOpenProfile={(username) => { window.location.href = `/@${username}` }}
-              onDiscover={() => document.getElementById('find-people')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            />
-            <div id="find-people" style={{ marginTop: 32, scrollMarginTop: 100 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>👥 Find people to follow</div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Search by username or browse recently active users</div>
-              <FindPeople session={session} followsHook={followsHook} onOpenProfile={(username) => { window.location.href = `/@${username}` }} />
-            </div>
-          </div>
+          <FeedPage
+            feedHook={feedHook} following={followsHook.following}
+            session={session} followsHook={followsHook}
+            onOpenItem={openDetail}
+            onOpenProfile={(username) => { window.location.href = `/@${username}` }}
+          />
         ) : tab === 'diary' ? (
           <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} /></Suspense>
         ) : tab === 'library' ? (

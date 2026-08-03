@@ -1,33 +1,29 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import Avatar from './ui/Avatar'
+import Input from './ui/Input'
+import FollowButton from './ui/FollowButton'
+import styles from './FindPeople.module.css'
 
-// Hoisted to module scope — was defined inside FindPeople on every render.
-// Takes what it needs as props instead of closing over followsHook/onOpenProfile.
-const UserRow = ({ user, isFollowing, onToggleFollow, onOpenProfile }) => {
-  const initials = (user.display_name || user.username).slice(0, 2).toUpperCase()
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
-      <div onClick={() => onOpenProfile(user.username)}
-        style={{ width: 38, height: 38, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, flexShrink: 0, cursor: 'pointer' }}>
-        {initials}
-      </div>
-      <div onClick={() => onOpenProfile(user.username)} style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{user.display_name || user.username}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>@{user.username}</div>
-      </div>
-      <button
-        onClick={onToggleFollow}
-        style={{
-          padding: '6px 16px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
-          background: isFollowing ? 'var(--bg-input)' : 'var(--accent)',
-          color: isFollowing ? 'var(--text)' : '#fff',
-          border: isFollowing ? '1px solid var(--border)' : '1px solid transparent',
-        }}>
-        {isFollowing ? 'Following' : 'Follow'}
-      </button>
+// Deliberate deviation from BINGR_DESIGN_SYSTEM.md's Feed redesign: the doc
+// calls for removing this search box entirely in favor of the unified
+// header search (RD8) surfacing People results. That combined typeahead is
+// still open (deferred as new-feature scope during the Phase 2b nav pass —
+// see BINGR_UI_AUDIT.md RD8's note), so removing this now would leave
+// username search unreachable anywhere in the app. Keeping it until the
+// replacement actually exists.
+const UserRow = ({ user, isFollowing, onToggleFollow, onOpenProfile }) => (
+  <div className={styles.row}>
+    <div className={styles.rowAvatar} onClick={() => onOpenProfile(user.username)}>
+      <Avatar size="md" name={user.display_name || user.username} />
     </div>
-  )
-}
+    <div className={styles.rowBody} onClick={() => onOpenProfile(user.username)}>
+      <div className={styles.rowName}>{user.display_name || user.username}</div>
+      <div className={styles.rowHandle}>@{user.username}</div>
+    </div>
+    <FollowButton following={isFollowing} onToggle={onToggleFollow} />
+  </div>
+)
 
 export default function FindPeople({ session, followsHook, onOpenProfile }) {
   const [query, setQuery] = useState('')
@@ -71,40 +67,29 @@ export default function FindPeople({ session, followsHook, onOpenProfile }) {
 
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
-        <input
-          value={query}
-          onChange={e => handleSearch(e.target.value)}
-          placeholder="Search by username..."
-          style={{ width: '100%', padding: '10px 14px', fontSize: 14, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg-input)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }}
-        />
+      <div className={styles.searchWrap}>
+        <Input value={query} onChange={e => handleSearch(e.target.value)} placeholder="Search by username..." />
       </div>
 
       {query.trim() ? (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10 }}>
-            {loading ? 'Searching…' : `${results.length} result${results.length !== 1 ? 's' : ''}`}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div className={styles.sectionLabel}>{loading ? 'Searching…' : `${results.length} result${results.length !== 1 ? 's' : ''}`}</div>
+          <div className={styles.list}>
             {results.map(u => <UserRow key={u.id} user={u} isFollowing={followsHook.isFollowing(u.id)} onToggleFollow={() => followsHook.toggleFollow(u.id)} onOpenProfile={onOpenProfile} />)}
           </div>
           {!loading && !results.length && (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: 14 }}>
-              No users found matching "{query}"
-            </div>
+            <div className={styles.centeredMsg}>No users found matching "{query}"</div>
           )}
         </div>
       ) : (
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10 }}>Recently active on bingr</div>
+          <div className={styles.sectionLabel}>Recently active on bingr</div>
           {suggested.length ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className={styles.list}>
               {suggested.map(u => <UserRow key={u.id} user={u} isFollowing={followsHook.isFollowing(u.id)} onToggleFollow={() => followsHook.toggleFollow(u.id)} onOpenProfile={onOpenProfile} />)}
             </div>
           ) : (
-            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: 14 }}>
-              No other users yet — invite your friends!
-            </div>
+            <div className={styles.centeredMsg}>No other users yet — invite your friends!</div>
           )}
         </div>
       )}
