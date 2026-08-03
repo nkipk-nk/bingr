@@ -20,6 +20,7 @@ import FeedPage from './pages/FeedPage'
 import LibraryPage from './pages/LibraryPage'
 import OnboardingModal from './components/OnboardingModal'
 import NavShell from './components/nav/NavShell'
+import styles from './App.module.css'
 
 // Code-split everything that isn't on the landing → auth → discover path.
 // Before this the whole app — admin panel, both legal pages, public profile
@@ -39,8 +40,8 @@ const TermsOfService = lazy(() => import('./pages/TermsOfService'))
 const DeleteAccount = lazy(() => import('./pages/DeleteAccount'))
 
 const PageFallback = () => (
-  <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-    <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading…</div>
+  <div className={styles.pageFallback}>
+    <div className={styles.centeredMsg}>Loading…</div>
   </div>
 )
 
@@ -228,13 +229,13 @@ export default function App() {
 
   // ── Loading ──
   if (page === 'loading' || authLoading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-page)' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 12 }}>
-          <img src="/logo.png" alt="bingr" style={{ width: 44, height: 44, borderRadius: 10, objectFit: 'contain' }} />
-          <span style={{ fontSize: 32, fontWeight: 700, color: 'var(--accent)' }}>bingr</span>
+    <div className={styles.loadingScreen}>
+      <div className={styles.loadingInner}>
+        <div className={styles.loadingBrand}>
+          <img src="/logo.png" alt="bingr" className={styles.loadingLogo} />
+          <span className={styles.loadingName}>bingr</span>
         </div>
-        <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading…</div>
+        <div className={styles.centeredMsg}>Loading…</div>
       </div>
     </div>
   )
@@ -291,7 +292,7 @@ export default function App() {
   if (page === 'profile') return <Suspense fallback={<PageFallback />}><ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onExportAllData={exportAllData} onBack={() => navigate('app')} /></Suspense>
   if (page === 'admin') return adminHook.isAdmin
     ? <Suspense fallback={<PageFallback />}><AdminPanel adminHook={adminHook} onBack={() => navigate('app')} /></Suspense>
-    : <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Access denied.</div>
+    : <div className={styles.denied}>Access denied.</div>
 
   // ── Main app ──
   return (

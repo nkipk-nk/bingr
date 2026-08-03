@@ -1,0 +1,10 @@
+.pageFallback { min-height: 40vh; display: flex; align-items: center; justify-content: center; }
+.centeredMsg { font-family: var(--font-body); font-size: var(--text-body-md-size); color: var(--text-secondary); }
+
+.loadingScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-canvas); }
+.loadingInner { text-align: center; }
+.loadingBrand { display: flex; align-items: center; justify-content: center; gap: var(--space-3); margin-bottom: var(--space-3); }
+.loadingLogo { width: 44px; height: 44px; border-radius: var(--radius-md); object-fit: contain; }
+.loadingName { font-family: var(--font-display); font-size: var(--text-display-lg-size); font-weight: 700; color: var(--magenta-bright); }
+
+.denied { padding: var(--space-8); text-align: center; color: var(--text-secondary); font-family: var(--font-body); font-size: var(--text-body-md-size); }

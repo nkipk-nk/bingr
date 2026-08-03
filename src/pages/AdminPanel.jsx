@@ -10,6 +10,7 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { PageTabBar } from '../components/ui/Tab'
+import { formatDate } from '../lib/dates'
 import styles from './AdminPanel.module.css'
 
 const TABS = ['Users', 'Feedback', 'Donations', 'Comments']
@@ -137,7 +138,7 @@ export default function AdminPanel({ adminHook, onBack }) {
                         <td>{u.display_name || '—'}</td>
                         <td>{u.role === 'admin' ? <span className={styles.pillBrand}>admin</span> : <Badge tone="neutral">user</Badge>}</td>
                         <td>{u.country_code || '—'}</td>
-                        <td className={styles.tableNowrap}>{u.created_at ? new Date(u.created_at).toLocaleDateString('en-KE') : '—'}</td>
+                        <td className={styles.tableNowrap}>{u.created_at ? formatDate(u.created_at) : '—'}</td>
                         <td>
                           <Button variant="secondary" size="sm" onClick={() => handlePromote(u)}>
                             {u.role === 'admin' ? 'Remove admin' : 'Make admin'}
@@ -172,7 +173,7 @@ export default function AdminPanel({ adminHook, onBack }) {
                           <Badge tone={FEEDBACK_TONE[f.status]}>{f.status}</Badge>
                         </div>
                         <div className={styles.itemActionsGroup}>
-                          <span className={styles.itemTimestamp}>{new Date(f.created_at).toLocaleDateString('en-KE')}</span>
+                          <span className={styles.itemTimestamp}>{formatDate(f.created_at)}</span>
                           {['unread', 'read', 'resolved'].map(s => s !== f.status && (
                             <Button key={s} variant="secondary" size="sm" onClick={() => markFeedback(f.id, s)}>Mark {s}</Button>
                           ))}
@@ -238,7 +239,7 @@ export default function AdminPanel({ adminHook, onBack }) {
                     <Coffee size={20} className={styles.donationIcon} />
                     <div className={styles.donationBody}>
                       <div className={styles.donationName}>{d.username || 'Anonymous'}</div>
-                      <div className={styles.donationMeta}>{new Date(d.donated_at).toLocaleDateString('en-KE')} {d.note ? `· ${d.note}` : ''}</div>
+                      <div className={styles.donationMeta}>{formatDate(d.donated_at)} {d.note ? `· ${d.note}` : ''}</div>
                     </div>
                     <div className={styles.donationAmount}>KES {d.amount_kes.toLocaleString()}</div>
                     <div className={styles.donationBadges}>
@@ -277,7 +278,7 @@ export default function AdminPanel({ adminHook, onBack }) {
                           )}
                         </div>
                         <div className={styles.itemActionsGroup}>
-                          <span className={styles.itemTimestamp}>{new Date(c.created_at).toLocaleDateString('en-KE')}</span>
+                          <span className={styles.itemTimestamp}>{formatDate(c.created_at)}</span>
                           {c.status === 'visible' ? (
                             <Button variant="secondary" size="sm" onClick={() => hideComment(c.id)}>Hide</Button>
                           ) : (

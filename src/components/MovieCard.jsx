@@ -1,9 +1,13 @@
 import { IMG } from '../lib/tmdb'
 import { STATUS_LABELS } from '../lib/constants'
+import PosterTile from './ui/PosterTile'
 import StatusPill from './ui/StatusPill'
 import RatingBadge from './ui/RatingBadge'
 import styles from './MovieCard.module.css'
 
+// CX1 (BINGR_UI_AUDIT.md) — poster now goes through the shared PosterTile
+// primitive (size="md" for grid contexts) instead of a hand-rolled
+// equivalent, closing the grid-tile side of the poster-size consolidation.
 export default function MovieCard({ item, entry = {}, onOpen, onSetStatus }) {
   const title = item.title || item.name || ''
   const year = (item.release_date || item.first_air_date || '').slice(0, 4)
@@ -13,12 +17,7 @@ export default function MovieCard({ item, entry = {}, onOpen, onSetStatus }) {
 
   return (
     <div className={styles.card} onClick={() => onOpen(item)}>
-      <div className={styles.posterWrap}>
-        {poster
-          ? <img src={poster} alt={title} loading="lazy" className={styles.posterImg} />
-          : <div className={styles.posterFallback}>🎬</div>
-        }
-
+      <PosterTile size="md" src={poster} alt={title}>
         <div className={styles.overlay}>
           {['watched', 'watching', 'watchlist'].map(s => (
             <button
@@ -28,7 +27,7 @@ export default function MovieCard({ item, entry = {}, onOpen, onSetStatus }) {
             >{STATUS_LABELS[s]}</button>
           ))}
         </div>
-      </div>
+      </PosterTile>
 
       {entry.status && <div className={styles.statusBadge}><StatusPill status={entry.status} /></div>}
       {entry.rating > 0 && <div className={styles.ratingBadge}><RatingBadge rating={entry.rating} /></div>}

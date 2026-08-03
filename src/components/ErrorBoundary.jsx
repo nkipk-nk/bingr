@@ -1,5 +1,7 @@
 import { Component } from 'react'
 import { logger } from '../lib/logger'
+import Button from './ui/Button'
+import styles from './ErrorBoundary.module.css'
 
 /**
  * React Error Boundary
@@ -35,36 +37,18 @@ export default class ErrorBoundary extends Component {
     if (!this.state.hasError) return this.props.children
 
     return (
-      <div style={{
-        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'var(--bg-page)', fontFamily: 'var(--font)', padding: '2rem',
-      }}>
-        <div style={{
-          maxWidth: 480, width: '100%', textAlign: 'center',
-          background: 'var(--bg-card)', border: '1px solid var(--border)',
-          borderRadius: 16, padding: '2.5rem 2rem',
-        }}>
-          <img src="/logo.png" alt="bingr" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'contain', marginBottom: 16 }} />
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-            Something went wrong
-          </h2>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 20 }}>
+      <div className={styles.wrap}>
+        <div className={styles.card}>
+          <img src="/logo.png" alt="bingr" className={styles.logo} />
+          <div className={styles.title}>Something went wrong</div>
+          <p className={styles.desc}>
             bingr hit an unexpected error. Your watchlist and data are safe —
             this is just a display issue. Try refreshing the page.
           </p>
           {this.state.errorId && (
-            <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 20, fontFamily: 'monospace' }}>
-              Error ID: {this.state.errorId}
-            </p>
+            <p className={styles.errorId}>Error ID: {this.state.errorId}</p>
           )}
-          <button
-            onClick={() => this.handleReset()}
-            style={{
-              padding: '10px 24px', background: 'var(--accent)', color: '#fff',
-              border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer',
-              fontFamily: 'inherit', fontWeight: 500,
-            }}
-          >Reload bingr</button>
+          <Button variant="primary" onClick={() => this.handleReset()}>Reload bingr</Button>
         </div>
       </div>
     )

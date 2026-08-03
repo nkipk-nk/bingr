@@ -45,6 +45,9 @@ const MIGRATED_FILES = [
   'src/components/EpisodeTracker.jsx',
   'src/components/OnboardingModal.jsx',
   'src/components/FeedbackModal.jsx',
+  'src/App.jsx',
+  'src/components/ErrorBoundary.jsx',
+  'src/components/nav/NavShell.jsx',
 ]
 
 export default defineConfig([

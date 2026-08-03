@@ -2,6 +2,7 @@ import { Rss, Satellite, Moon, RefreshCw } from 'lucide-react'
 import WatchLogCard from '../components/WatchLogCard'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/ui/EmptyState'
+import { formatDate } from '../lib/dates'
 import styles from './ActivityFeed.module.css'
 
 export default function ActivityFeed({ feedHook, following, onOpenItem, onOpenProfile, onDiscover }) {
@@ -40,7 +41,7 @@ export default function ActivityFeed({ feedHook, following, onOpenItem, onOpenPr
       <div className={styles.list}>
         {feed.map(item => {
           const displayName = item.display_name || item.username
-          const dateStr = item.date ? new Date(item.date).toLocaleDateString('en-KE', { day: 'numeric', month: 'short' }) : ''
+          const dateStr = item.date ? formatDate(item.date, 'short') : ''
           const action = item.type === 'diary' ? (item.rewatch ? 'rewatched' : 'watched') : 'rated'
           const openTitle = () => onOpenItem({ id: item.tmdb_id, media_type: item.media_type, title: item.title, poster_path: item.poster_path })
           return (

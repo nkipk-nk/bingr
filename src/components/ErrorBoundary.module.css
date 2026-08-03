@@ -1,0 +1,6 @@
+.wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-canvas); font-family: var(--font-body); padding: var(--space-6); }
+.card { max-width: 480px; width: 100%; text-align: center; background: var(--bg-surface); border: var(--border-width-hairline) solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-10) var(--space-8); }
+.logo { width: 56px; height: 56px; border-radius: var(--radius-md); object-fit: contain; margin-bottom: var(--space-4); }
+.title { font-family: var(--font-display); font-size: var(--text-display-md-size); font-weight: var(--text-display-md-weight); color: var(--text-primary); margin-bottom: var(--space-2); }
+.desc { font-family: var(--font-body); font-size: var(--text-body-md-size); color: var(--text-secondary); line-height: 1.7; margin-bottom: var(--space-5); }
+.errorId { font-family: var(--font-mono); font-size: var(--text-mono-sm-size); color: var(--text-tertiary); margin-bottom: var(--space-5); }

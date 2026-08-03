@@ -3,6 +3,7 @@ import { BookOpen } from 'lucide-react'
 import WatchLogCard from '../components/WatchLogCard'
 import EmptyState from '../components/ui/EmptyState'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import { formatDate } from '../lib/dates'
 import styles from './DiaryPage.module.css'
 
 export default function DiaryPage({ diaryHook, onOpen }) {
@@ -18,8 +19,7 @@ export default function DiaryPage({ diaryHook, onOpen }) {
   // Group entries by month
   const groups = {}
   entries.forEach(e => {
-    const d = new Date(e.watched_date)
-    const key = d.toLocaleDateString('en-KE', { year: 'numeric', month: 'long' })
+    const key = formatDate(e.watched_date, 'month')
     if (!groups[key]) groups[key] = []
     groups[key].push(e)
   })

@@ -3,6 +3,7 @@ import { MessageCircle, MoreHorizontal, Trash2, Flag } from 'lucide-react'
 import Avatar from './ui/Avatar'
 import Button from './ui/Button'
 import ConfirmDialog from './ui/ConfirmDialog'
+import { formatDate } from '../lib/dates'
 import styles from './CommentsSection.module.css'
 
 function timeAgo(dateStr) {
@@ -14,7 +15,7 @@ function timeAgo(dateStr) {
   if (hours < 24) return `${hours}h ago`
   const days = Math.floor(hours / 24)
   if (days < 30) return `${days}d ago`
-  return new Date(dateStr).toLocaleDateString('en-KE', { day: 'numeric', month: 'short', year: 'numeric' })
+  return formatDate(dateStr, 'full')
 }
 
 function CommentRow({ comment, session, onDelete, onFlag, onOpenProfile }) {

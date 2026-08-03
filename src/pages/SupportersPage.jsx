@@ -5,6 +5,7 @@ import { logger } from '../lib/logger'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Skeleton from '../components/ui/Skeleton'
+import { formatDate } from '../lib/dates'
 import styles from './SupportersPage.module.css'
 
 export default function SupportersPage({ onBack }) {
@@ -87,7 +88,7 @@ export default function SupportersPage({ onBack }) {
                 <div className={styles.rowName}>{s.username}</div>
                 {s.note && <div className={styles.rowNote}>"{s.note}"</div>}
                 <div className={styles.rowDate}>
-                  {new Date(s.donated_at).toLocaleDateString('en-KE', { year: 'numeric', month: 'long' })}
+                  {formatDate(s.donated_at, 'month')}
                 </div>
               </div>
               <div className={styles.rowAmount}>KES {s.amount_kes}</div>
