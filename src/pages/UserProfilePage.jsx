@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { IMG } from '../lib/tmdb'
 import { logger } from '../lib/logger'
 import { computeStats, formatHours } from '../lib/stats'
-import { RATING_LABELS } from '../lib/constants'
+import RankedList from '../components/RankedList'
 
 export default function UserProfilePage({ username, onOpenItem, onSignUp, currentUserId, followsHook }) {
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
@@ -194,32 +194,8 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
           ))}
         </div>
 
-        {/* Rankings tab */}
-        {tab === 'rankings' && (
-          library.length === 0 ? <Empty icon="🏆" text="No ratings yet" /> : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {library.map((item, i) => (
-                <div key={item.tmdb_id} onClick={() => onOpenItem({ ...item, id: item.tmdb_id })}
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px', cursor: 'pointer' }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: i < 3 ? 'var(--accent)' : 'var(--text-muted)', minWidth: 24, textAlign: 'center', flexShrink: 0 }}>{i + 1}</div>
-                  <div style={{ width: 36, height: 54, borderRadius: 5, overflow: 'hidden', flexShrink: 0, background: 'var(--bg-input)' }}>
-                    {item.poster_path
-                      ? <img src={IMG(item.poster_path)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🎬</div>}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{(item.release_date || '').slice(0, 4)} · {item.media_type === 'tv' ? 'TV' : 'Film'}</div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#ef9f27' }}>★ {item.rating}/10</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{RATING_LABELS[item.rating]}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        )}
+        {/* Rankings tab — shared RankedList component (RD1) */}
+        {tab === 'rankings' && <RankedList items={library} onOpen={onOpenItem} />}
 
         {/* Diary tab */}
         {tab === 'stats' && (

@@ -1,11 +1,15 @@
 import { lazy, Suspense } from 'react'
 import Header from './Header'
-import SupportButton from '../SupportButton'
 
 // Extracted from App.jsx (behavior-preserving — no visual change). Wraps the
 // logged-in main-app view: header, error banner, page content, footer,
-// support button, feedback modal, and the toast — everything that surrounds
-// whatever tab/detail content App.jsx passes in as children.
+// feedback modal, and the toast — everything that surrounds whatever
+// tab/detail content App.jsx passes in as children.
+//
+// The floating support button used to live here too — retired per
+// BINGR_DESIGN_SYSTEM.md's nav section (it sat in the same bottom-right
+// thumb zone a bottom nav needs) and folded into the You hub's Support tab
+// (see SupportSection.jsx / YouHub.jsx) instead of being repositioned.
 const FeedbackModal = lazy(() => import('../FeedbackModal'))
 
 export default function NavShell({
@@ -54,8 +58,6 @@ export default function NavShell({
         ))}
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>© {new Date().getFullYear()} bingr · Made in Nairobi 🇰🇪</span>
       </footer>
-
-      <SupportButton session={session} profile={profile} onShowSupporters={() => onNavigate('supporters')} />
 
       {showFeedback && (
         <Suspense fallback={null}>

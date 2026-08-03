@@ -1,16 +1,17 @@
 // Extracted from App.jsx (behavior-preserving — no visual change). Owns the
 // top bar: logo/search, user avatar menu, and the tab strip. See NavShell.jsx
 // for how this fits into the rest of the logged-in layout.
+// RD2/RD6 (BINGR_UI_AUDIT.md) — nine destinations collapsed to five:
+// Watchlist/Watching/Watched merged into Library (LibraryTab.jsx owns its
+// own status segmented control now), Stats/Rankings/Lists folded into the
+// You hub (YouHub.jsx). Still the same horizontal strip chrome as before —
+// that visual restructure is Phase 2b, kept separate from this IA change.
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
   { id: 'feed', label: '🌐 Feed' },
-  { id: 'stats', label: '📊 Stats' },
-  { id: 'rankings', label: '🏆 Rankings' },
+  { id: 'library', label: '🔖 Library' },
   { id: 'diary', label: '📔 Diary' },
-  { id: 'lists', label: '📋 Lists' },
-  { id: 'watchlist', label: '🔖 Watchlist' },
-  { id: 'watching', label: '▶ Watching' },
-  { id: 'watched', label: '✅ Watched' },
+  { id: 'you', label: '👤 You' },
 ]
 
 export default function Header({
@@ -25,9 +26,10 @@ export default function Header({
 
   const tabLabel = (t) => {
     if (t.id === 'feed') return `🌐 Feed${feedCount ? ` (${feedCount})` : ''}`
-    if (t.id === 'watchlist') return `🔖 Watchlist${counts.watchlist ? ` (${counts.watchlist})` : ''}`
-    if (t.id === 'watching') return `▶ Watching${counts.watching ? ` (${counts.watching})` : ''}`
-    if (t.id === 'watched') return `✅ Watched${counts.watched ? ` (${counts.watched})` : ''}`
+    if (t.id === 'library') {
+      const total = (counts.watchlist || 0) + (counts.watching || 0) + (counts.watched || 0)
+      return `🔖 Library${total ? ` (${total})` : ''}`
+    }
     return t.label
   }
 

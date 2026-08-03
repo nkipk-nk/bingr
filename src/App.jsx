@@ -34,10 +34,8 @@ const PublicListPage = lazy(() => import('./pages/PublicListPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const SupportersPage = lazy(() => import('./pages/SupportersPage'))
 const AdminPanel = lazy(() => import('./pages/AdminPanel'))
-const Rankings = lazy(() => import('./pages/Rankings'))
-const StatsPage = lazy(() => import('./pages/StatsPage'))
 const DiaryPage = lazy(() => import('./pages/DiaryPage'))
-const ListsPage = lazy(() => import('./pages/ListsPage'))
+const YouHub = lazy(() => import('./pages/YouHub'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./pages/TermsOfService'))
 const DeleteAccount = lazy(() => import('./pages/DeleteAccount'))
@@ -390,20 +388,22 @@ export default function App() {
               <FindPeople session={session} followsHook={followsHook} onOpenProfile={(username) => { window.location.href = `/@${username}` }} />
             </div>
           </div>
-        ) : tab === 'stats' ? (
-          <Suspense fallback={<PageFallback />}><StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} /></Suspense>
-        ) : tab === 'rankings' ? (
-          <Suspense fallback={<PageFallback />}><Rankings library={library} onOpen={openDetail} /></Suspense>
         ) : tab === 'diary' ? (
           <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} /></Suspense>
-        ) : tab === 'lists' ? (
-          <Suspense fallback={<PageFallback />}><ListsPage listsHook={listsHook} onOpenItem={openDetail} /></Suspense>
-        ) : (
+        ) : tab === 'library' ? (
           <>
             <ExportPanel library={library} />
-            <LibraryTab status={tab} library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
+            <LibraryTab library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
           </>
-        )}
+        ) : tab === 'you' ? (
+          <Suspense fallback={<PageFallback />}>
+            <YouHub
+              session={session} profile={profile} library={library}
+              diaryHook={diaryHook} episodeHook={episodeHook} listsHook={listsHook}
+              onOpenItem={openDetail} onShowSupporters={() => navigate('supporters')}
+            />
+          </Suspense>
+        ) : null}
       </NavShell>
     </>
   )

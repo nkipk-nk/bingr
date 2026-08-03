@@ -2,35 +2,54 @@ import { useState } from 'react'
 import { IMG } from '../lib/tmdb'
 import { STATUS_LABELS } from '../lib/constants'
 
+const STATUSES = ['watchlist', 'watching', 'watched']
 const ICONS = { watchlist: '🔖', watching: '▶️', watched: '✅' }
-const EMPTY = {
-  watchlist: 'Your watchlist is empty',
-  watching: 'Nothing in progress',
-  watched: 'Nothing watched yet',
-}
 
-export default function LibraryTab({ status, library, onOpen, onRemove, episodeProps }) {
+// RD2 (BINGR_UI_AUDIT.md) — Watchlist/Watching/Watched used to be three
+// separate nav tabs around one parameterized component. Now one Library
+// destination with a status segmented control doing the job all three
+// tabs used to.
+export default function LibraryTab({ library, onOpen, onRemove, episodeProps }) {
+  const [status, setStatus] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
 
-  const items = Object.values(library).filter(x => x.status === status)
-  const movies = items.filter(x => x.media_type === 'movie')
-  const shows = items.filter(x => x.media_type === 'tv')
-  const filtered = typeFilter === 'movie' ? movies : typeFilter === 'tv' ? shows : items
+  const all = Object.values(library).filter(x => STATUSES.includes(x.status))
+  const byStatus = status === 'all' ? all : all.filter(x => x.status === status)
+  const movies = byStatus.filter(x => x.media_type === 'movie')
+  const shows = byStatus.filter(x => x.media_type === 'tv')
+  const filtered = typeFilter === 'movie' ? movies : typeFilter === 'tv' ? shows : byStatus
 
-  if (!items.length) return (
+  const statusCount = (s) => all.filter(x => x.status === s).length
+
+  if (!all.length) return (
     <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
-      <div style={{ fontSize: 48, marginBottom: 12 }}>{ICONS[status]}</div>
-      <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>{EMPTY[status]}</div>
+      <div style={{ fontSize: 48, marginBottom: 12 }}>🔖</div>
+      <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>Your library is empty</div>
       <div style={{ fontSize: 14 }}>Browse Discover to add titles</div>
     </div>
   )
 
   return (
     <div>
-      {/* Header + filter */}
+      {/* Status segmented control */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12, flexWrap: 'wrap' }}>
+        {['all', ...STATUSES].map(s => (
+          <button key={s} onClick={() => setStatus(s)} style={{
+            padding: '6px 14px', borderRadius: 20, fontSize: 13, cursor: 'pointer',
+            border: `1px solid ${status === s ? 'var(--accent)' : 'var(--border)'}`,
+            background: status === s ? 'var(--accent)' : 'var(--bg-input)',
+            color: status === s ? '#fff' : 'var(--text-muted)',
+            fontFamily: 'inherit', fontWeight: status === s ? 600 : 400,
+          }}>
+            {s === 'all' ? `All (${all.length})` : `${ICONS[s]} ${STATUS_LABELS[s]} (${statusCount(s)})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Header + type filter */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>
-          {STATUS_LABELS[status]} ({filtered.length})
+          {status === 'all' ? 'Library' : STATUS_LABELS[status]} ({filtered.length})
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           {['all', 'movie', 'tv'].map(f => (
@@ -41,12 +60,15 @@ export default function LibraryTab({ status, library, onOpen, onRemove, episodeP
               color: typeFilter === f ? '#fff' : 'var(--text-muted)',
               fontFamily: 'inherit',
             }}>
-              {f === 'all' ? `All (${items.length})` : f === 'movie' ? `🎬 Movies (${movies.length})` : `📺 TV (${shows.length})`}
+              {f === 'all' ? `All (${byStatus.length})` : f === 'movie' ? `🎬 Movies (${movies.length})` : `📺 TV (${shows.length})`}
             </button>
           ))}
         </div>
       </div>
 
+      {!filtered.length ? (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-muted)', fontSize: 14 }}>Nothing here yet</div>
+      ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {filtered.map(item => {
           const title = item.title || item.name || ''
@@ -76,7 +98,7 @@ export default function LibraryTab({ status, library, onOpen, onRemove, episodeP
               <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }} onClick={() => onOpen({ ...item, id: item.tmdb_id })}>
                 <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>
-                  {year} · {isTV ? 'TV' : 'Film'}{tmdbR ? ` · ★ ${tmdbR}` : ''}
+                  {year} · {isTV ? 'TV' : 'Film'}{tmdbR ? ` · ★ ${tmdbR}` : ''}{status === 'all' ? ` · ${ICONS[item.status]} ${STATUS_LABELS[item.status]}` : ''}
                 </div>
                 {item.rating > 0 && (
                   <div style={{ fontSize: 11, color: '#ef9f27', marginTop: 2 }}>{'★'.repeat(item.rating)} {item.rating}/10</div>
@@ -96,7 +118,7 @@ export default function LibraryTab({ status, library, onOpen, onRemove, episodeP
                 )}
               </div>
 
-              <button onClick={() => { if (window.confirm(`Remove "${title}" from ${STATUS_LABELS[status].toLowerCase()}?`)) onRemove(item.tmdb_id) }} title="Remove" style={{
+              <button onClick={() => { if (window.confirm(`Remove "${title}" from ${STATUS_LABELS[item.status].toLowerCase()}?`)) onRemove(item.tmdb_id) }} title="Remove" style={{
                 width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border)',
                 background: 'var(--bg-input)', cursor: 'pointer', fontSize: 14,
                 color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
@@ -108,6 +130,7 @@ export default function LibraryTab({ status, library, onOpen, onRemove, episodeP
           )
         })}
       </div>
+      )}
     </div>
   )
 }
