@@ -1082,8 +1082,8 @@ Shipped as [`supabase/migrations/20260803_p1a_library_visibility.sql`](supabase/
 | m13 | ✅ **Fixed** (in an earlier round, alongside M7). `SupportersPage` summed `amount_kes` with no null guard — a single null amount produced `NaN`. Now guarded with `(d.amount_kes || 0)`. | [SupportersPage.jsx:18](src/pages/SupportersPage.jsx#L18) |
 | m14 | ✅ **Fixed** (via the C8 migration). `bingr_comments` index was `(tmdb_id, media_type, created_at desc)` but the actual query filters on `status = 'visible'` too. `20260803_p0_security.sql` replaced it with `idx_comments_title_visible` covering `(tmdb_id, media_type, created_at desc) where status = 'visible'`. | [supabase_comments.sql:68](supabase/supabase_comments.sql#L68) |
 | m15 | ✅ **Fixed.** Landing page claimed "500K+ Titles in database" as if it were bingr's own catalogue, when it's TMDB's. Relabelled to "Titles searchable" and added a small attribution line ("Catalogue data provided by The Movie Database (TMDB)") under the stats bar. | [LandingPage.jsx:12](src/pages/LandingPage.jsx#L12) |
-| m16 | `README.md` is still the unmodified Vite template. No setup instructions, no env var documentation, no schema bootstrap order. | [README.md](README.md) |
-| m17 | Zero tests of any kind. No test runner in `devDependencies`. | repo-wide |
+| m16 | ✅ **Fixed.** `README.md` was the unmodified Vite template — no setup instructions, no env var documentation, no schema bootstrap order. Rewritten with the actual stack, local setup steps, an `.env.example` (newly added — the README's own instructions now work), an env var table split into client vars and the separate Edge Function secrets, and the `supabase_*.sql` → `supabase/migrations/*.sql` bootstrap order. | [README.md](README.md) |
+| m17 | ✅ **Fixed.** Zero tests, no test runner in `devDependencies`. Added Vitest + React Testing Library, wired into CI (`npm run test`, now a required CI step alongside lint and build). Three targeted regression suites rather than a coverage push for its own sake: `errors.test.js` pins `assertAffected`'s contract (the M21 fix — throws on an RLS-filtered zero-row write, passes through on a real one) plus `sanitise`/`friendlyAuthError`; `stats.test.js` covers the m12 runtime-fallback math item-by-item; `UserProfilePage.test.jsx` mounts the component with a mocked Supabase client and asserts it doesn't throw — **this is a direct regression test for C1**, verified for real: reintroduced the exact original bug (`useMemo` before its `useState` dependency) locally, confirmed the test fails with the identical `ReferenceError: Cannot access 'diary' before initialization` at the same line, then reverted. Running `npm audit fix` while installing these surfaced 3 pre-existing high-severity transitive vulnerabilities (`brace-expansion`, `postcss`, `vite` itself — none introduced by the new test deps); resolved cleanly with no forced major-version bumps. | repo-wide |
 
 ---
 
@@ -1618,8 +1618,8 @@ not just reasoned about.
 | m13 | 🟡 Minor | SupportersPage NaN on null amount | Claude | ✅ fixed |
 | m14 | 🟡 Minor | Comments index doesn't cover status filter | Claude | ✅ fixed |
 | m15 | 🟡 Minor | Landing page TMDB stat attribution | Claude | ✅ fixed |
-| m16 | 🟡 Minor | README still Vite template | | open |
-| m17 | 🟡 Minor | Zero tests | | open |
+| m16 | 🟡 Minor | README still Vite template | Claude | ✅ fixed |
+| m17 | 🟡 Minor | Zero tests | Claude | ✅ fixed — Vitest added to CI, 23 tests including a verified C1 regression test |
 
 ### Outstanding actions for the maintainer
 
