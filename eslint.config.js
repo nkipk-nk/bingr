@@ -43,6 +43,8 @@ const MIGRATED_FILES = [
   'src/components/CommentsSection.jsx',
   'src/components/LogEntryModal.jsx',
   'src/components/EpisodeTracker.jsx',
+  'src/components/OnboardingModal.jsx',
+  'src/components/FeedbackModal.jsx',
 ]
 
 export default defineConfig([

@@ -1,0 +1,25 @@
+.header { text-align: center; margin-bottom: var(--space-6); }
+.avatar { width: 60px; height: 60px; border-radius: var(--radius-full); margin-bottom: var(--space-3); border: 3px solid var(--magenta-bright); }
+.title { font-family: var(--font-display); font-size: var(--text-display-md-size); font-weight: var(--text-display-md-weight); color: var(--text-primary); margin-bottom: var(--space-2); }
+.subtitle { font-family: var(--font-body); font-size: var(--text-body-md-size); color: var(--text-secondary); line-height: 1.6; }
+
+.field { margin-bottom: var(--space-4); }
+.label { display: block; font-family: var(--font-body); font-size: var(--text-body-sm-size); font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-2); }
+.required { color: var(--danger); }
+.optional { color: var(--text-tertiary); font-weight: 400; }
+.hint { font-family: var(--font-body); font-size: var(--text-body-xs-size); margin-top: var(--space-1); }
+.hintOk { color: var(--success); }
+.hintBad { color: var(--danger); }
+.hintNeutral { color: var(--text-tertiary); }
+
+.usernameWrap { position: relative; }
+.usernameAt { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); font-family: var(--font-body); font-size: var(--text-body-md-size); color: var(--text-tertiary); }
+.usernameInput { padding-left: 28px; }
+
+.errorBox {
+  font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--danger);
+  padding: var(--space-2) var(--space-3); background: color-mix(in srgb, var(--danger) 10%, transparent); border-radius: var(--radius-sm); margin-bottom: var(--space-3);
+}
+
+.fullWidthBtn { width: 100%; }
+.footnote { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); text-align: center; margin-top: var(--space-3); }
