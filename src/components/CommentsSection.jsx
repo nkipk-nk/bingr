@@ -4,6 +4,7 @@ import Avatar from './ui/Avatar'
 import Button from './ui/Button'
 import ConfirmDialog from './ui/ConfirmDialog'
 import { formatDate } from '../lib/dates'
+import { useToast } from '../contexts/useToast'
 import styles from './CommentsSection.module.css'
 
 function timeAgo(dateStr) {
@@ -86,6 +87,7 @@ function CommentRow({ comment, session, onDelete, onFlag, onOpenProfile }) {
 
 export default function CommentsSection({ commentsHook, session, onOpenProfile, onShowAuth }) {
   const { comments, loading, posting, postComment, deleteComment, flagComment } = commentsHook
+  const { showToast } = useToast()
   const [text, setText] = useState('')
   const [error, setError] = useState('')
 
@@ -94,7 +96,7 @@ export default function CommentsSection({ commentsHook, session, onOpenProfile, 
     setError('')
     const { error } = await postComment(text)
     if (error) setError(error)
-    else setText('')
+    else { setText(''); showToast('Comment posted', { tone: 'success' }) }
   }
 
   return (

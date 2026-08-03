@@ -5,6 +5,7 @@ import './index.css'
 import './styles/tokens.css'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
+import { ToastProvider } from './contexts/ToastContext.jsx'
 
 // Initialise Sentry — replace VITE_SENTRY_DSN in .env / Vercel env vars
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN
@@ -48,7 +49,9 @@ async function renderRoot() {
   root.render(
     <StrictMode>
       <ErrorBoundary>
-        <App />
+        <ToastProvider>
+          <App />
+        </ToastProvider>
       </ErrorBoundary>
     </StrictMode>,
   )

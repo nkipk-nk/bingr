@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Download, ChevronDown } from 'lucide-react'
 import { exportTXT, exportCSV } from '../lib/export'
+import { useToast } from '../contexts/useToast'
 import Card from './ui/Card'
 import Select from './ui/Select'
 import Button from './ui/Button'
@@ -12,6 +13,7 @@ import styles from './ExportPanel.module.css'
 // (`items`, already filtered/sorted there), and only owns the one control
 // genuinely specific to exporting: how many rows to include.
 export default function ExportPanel({ items, status, mediaType }) {
+  const { showToast } = useToast()
   const [limit, setLimit] = useState('all')
   const [open, setOpen] = useState(false)
 
@@ -21,6 +23,7 @@ export default function ExportPanel({ items, status, mediaType }) {
     const opts = { status, mediaType }
     if (format === 'txt') exportTXT(preview, opts)
     if (format === 'csv') exportCSV(preview, opts)
+    showToast(`Library exported as ${format.toUpperCase()}`, { tone: 'success' })
   }
 
   return (

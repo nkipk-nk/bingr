@@ -8,6 +8,7 @@ import { useFollows } from './hooks/useFollows'
 import { useFeed } from './hooks/useFeed'
 import { useProfile } from './hooks/useProfile'
 import { useAdmin } from './hooks/useAdmin'
+import { useToast } from './contexts/useToast'
 import { tmdb, mapWithConcurrency } from './lib/tmdb'
 import { logger } from './lib/logger'
 import { supabase } from './lib/supabase'
@@ -82,8 +83,7 @@ export default function App() {
   const [query, setQuery] = useState('')
   const [searchType, setSearchType] = useState('multi')
   const [detailItem, setDetailItem] = useState(null)
-  const [toast, setToast] = useState('')
-  const [toastTimer, setToastTimer] = useState(null)
+  const { toast, showToast, clearToast } = useToast()
   const [showFeedback, setShowFeedback] = useState(false)
   const [youTab, setYouTab] = useState('stats')
 
@@ -169,12 +169,6 @@ export default function App() {
     )
   }, [library])
 
-  const showToast = useCallback((msg) => {
-    setToast(msg)
-    if (toastTimer) clearTimeout(toastTimer)
-    setToastTimer(setTimeout(() => setToast(''), 2400))
-  }, [toastTimer])
-
   const handleAuth = async (mode, email, password, username, country) =>
     mode === 'signup' ? signUp(email, password, username, country) : signIn(email, password)
 
@@ -186,7 +180,7 @@ export default function App() {
       setSearchResults((data.results || []).filter(x => x.media_type !== 'person'))
     } catch (err) {
       logger.error('Search failed', err)
-      showToast('Search failed. Please try again.')
+      showToast('Search failed. Please try again.', { tone: 'error' })
     } finally { setSearchLoading(false) }
   }
 
@@ -194,14 +188,14 @@ export default function App() {
     const cur = library[item.id]
     await setStatus(item, status)
     if (cur?.status === status) showToast('Status removed')
-    else showToast(status === 'watched' ? 'Marked as watched ✓' : status === 'watching' ? 'Added to watching' : 'Added to watchlist')
+    else showToast(status === 'watched' ? 'Marked as watched ✓' : status === 'watching' ? 'Added to watching' : 'Added to watchlist', { tone: 'success' })
   }
 
   const handleSetRating = async (item, rating) => {
     const cur = library[item.id]?.rating
     await setRating(item, rating)
     if (cur === rating) showToast('Rating removed')
-    else showToast(`Rated ${rating}/10 — ${RATING_LABELS[rating]}`)
+    else showToast(`Rated ${rating}/10 — ${RATING_LABELS[rating]}`, { tone: 'success' })
   }
 
   const openDetail = (item) => {
@@ -313,7 +307,7 @@ export default function App() {
         onGoHome={goHome} onNavigate={navigate}
         libError={libError}
         showFeedback={showFeedback} setShowFeedback={setShowFeedback}
-        toast={toast}
+        toast={toast} onClearToast={clearToast}
       >
         {detailItem ? (
           <DetailPanel

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { ArrowLeft, Globe, Lock, Package } from 'lucide-react'
 import { downloadFullExport } from '../lib/export'
+import { useToast } from '../contexts/useToast'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Avatar from '../components/ui/Avatar'
@@ -9,11 +10,11 @@ import styles from './ProfilePage.module.css'
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
 
 export default function ProfilePage({ profile, session, onUpdate, checkUsername, onExportAllData, onBack }) {
+  const { showToast } = useToast()
   const [username, setUsername] = useState(profile?.username || '')
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
   const [usernameState, setUsernameState] = useState('idle') // idle | checking | available | taken | invalid
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const [privacySaving, setPrivacySaving] = useState(false)
   const [privacyError, setPrivacyError] = useState('')
@@ -46,17 +47,17 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
     setExporting(false)
     if (error) { setExportNotice({ kind: 'err', msg: error }); return }
     downloadFullExport(bundle)
-    setExportNotice(
-      incomplete?.length
-        ? { kind: 'err', msg: `Downloaded, but couldn't include: ${incomplete.join(', ')}. Try again in a moment for the full export.` }
-        : { kind: 'ok', msg: '✓ Downloaded' }
-    )
+    if (incomplete?.length) {
+      setExportNotice({ kind: 'err', msg: `Downloaded, but couldn't include: ${incomplete.join(', ')}. Try again in a moment for the full export.` })
+    } else {
+      setExportNotice(null)
+      showToast('Data export downloaded', { tone: 'success' })
+    }
   }
 
   const handleUsernameChange = (val) => {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, '')
     setUsername(clean)
-    setSaved(false)
     if (!clean || clean === profile?.username) { setUsernameState('idle'); return }
     if (clean.length < 3) { setUsernameState('invalid'); return }
     if (!USERNAME_RE.test(clean)) { setUsernameState('invalid'); return }
@@ -79,7 +80,7 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
     const { error } = await onUpdate(patch)
     setSaving(false)
     if (error) setError(error)
-    else { setSaved(true); setTimeout(() => setSaved(false), 2500) }
+    else showToast('Profile saved', { tone: 'success' })
   }
 
   const usernameHint = () => {
@@ -149,7 +150,6 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
           </div>
 
           {error && <div className={styles.errorBox}>{error}</div>}
-          {saved && <div className={styles.successBox}>✓ Profile saved</div>}
 
           <Button variant="primary" className={styles.fullWidthBtn} onClick={save} disabled={!canSave} loading={saving}>Save changes</Button>
         </div>

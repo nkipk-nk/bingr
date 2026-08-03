@@ -3,6 +3,7 @@ import { Search, Clapperboard, Tv, Play, Clock, Star, BookOpen, Layers, ArrowLef
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { computeStats, formatHours } from '../lib/stats'
+import { useToast } from '../contexts/useToast'
 import RankedList from '../components/RankedList'
 import WatchLogCard from '../components/WatchLogCard'
 import FollowerListSheet from '../components/FollowerListSheet'
@@ -17,6 +18,7 @@ import ActivityChart from '../components/stats/ActivityChart'
 import styles from './UserProfilePage.module.css'
 
 export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook }) {
+  const { showToast } = useToast()
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
   const [followLoading, setFollowLoading] = useState(false)
   const [profile, setProfile] = useState(null)
@@ -119,6 +121,9 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
       followers: amFollowing ? prev.followers - 1 : prev.followers + 1
     }))
     setFollowLoading(false)
+    // GP9 (BINGR_UI_AUDIT.md) — follow toggled used to give zero feedback
+    // beyond the button's own state flip.
+    showToast(amFollowing ? `Unfollowed @${profile.username}` : `Following @${profile.username}`, { tone: 'success' })
   }
 
   const openProfile = (u) => { window.location.href = `/@${u}` }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { useToast } from '../contexts/useToast'
 import Avatar from './ui/Avatar'
 import Input from './ui/Input'
 import FollowButton from './ui/FollowButton'
@@ -26,11 +27,20 @@ const UserRow = ({ user, isFollowing, onToggleFollow, onOpenProfile }) => (
 )
 
 export default function FindPeople({ session, followsHook, onOpenProfile }) {
+  const { showToast } = useToast()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [suggested, setSuggested] = useState([])
   const [loading, setLoading] = useState(false)
   const searchTimer = useRef(null)
+
+  // GP9 (BINGR_UI_AUDIT.md) — follow toggled used to give zero feedback
+  // beyond the button's own state flip.
+  const handleToggleFollow = (u) => {
+    const wasFollowing = followsHook.isFollowing(u.id)
+    followsHook.toggleFollow(u.id)
+    showToast(wasFollowing ? `Unfollowed @${u.username}` : `Following @${u.username}`, { tone: 'success' })
+  }
 
   // Load a handful of suggested users (most recently active) on mount
   useEffect(() => {
@@ -75,7 +85,7 @@ export default function FindPeople({ session, followsHook, onOpenProfile }) {
         <div>
           <div className={styles.sectionLabel}>{loading ? 'Searching…' : `${results.length} result${results.length !== 1 ? 's' : ''}`}</div>
           <div className={styles.list}>
-            {results.map(u => <UserRow key={u.id} user={u} isFollowing={followsHook.isFollowing(u.id)} onToggleFollow={() => followsHook.toggleFollow(u.id)} onOpenProfile={onOpenProfile} />)}
+            {results.map(u => <UserRow key={u.id} user={u} isFollowing={followsHook.isFollowing(u.id)} onToggleFollow={() => handleToggleFollow(u)} onOpenProfile={onOpenProfile} />)}
           </div>
           {!loading && !results.length && (
             <div className={styles.centeredMsg}>No users found matching "{query}"</div>
@@ -86,7 +96,7 @@ export default function FindPeople({ session, followsHook, onOpenProfile }) {
           <div className={styles.sectionLabel}>Recently active on bingr</div>
           {suggested.length ? (
             <div className={styles.list}>
-              {suggested.map(u => <UserRow key={u.id} user={u} isFollowing={followsHook.isFollowing(u.id)} onToggleFollow={() => followsHook.toggleFollow(u.id)} onOpenProfile={onOpenProfile} />)}
+              {suggested.map(u => <UserRow key={u.id} user={u} isFollowing={followsHook.isFollowing(u.id)} onToggleFollow={() => handleToggleFollow(u)} onOpenProfile={onOpenProfile} />)}
             </div>
           ) : (
             <div className={styles.centeredMsg}>No other users yet — invite your friends!</div>

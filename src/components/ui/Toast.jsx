@@ -7,7 +7,7 @@ const DISMISS_MS = 3500
 
 // §8 Toast spec: auto-dismiss 3.5s, pauses on hover/touch, optional inline
 // action (e.g. Undo — resolves BINGR_UI_AUDIT.md CX10's action-less toasts).
-export default function Toast({ message, tone = 'neutral', action, onDismiss }) {
+export default function Toast({ message, tone = 'neutral', action, onDismiss, className = '' }) {
   const [leaving, setLeaving] = useState(false)
   const timerRef = useRef(null)
 
@@ -31,7 +31,7 @@ export default function Toast({ message, tone = 'neutral', action, onDismiss }) 
 
   return (
     <div
-      className={[styles.toast, leaving ? styles.leaving : ''].filter(Boolean).join(' ')}
+      className={[styles.toast, leaving ? styles.leaving : '', className].filter(Boolean).join(' ')}
       onMouseEnter={() => clearTimeout(timerRef.current)}
       onMouseLeave={startTimer}
       role="status"

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Layers, Plus, ArrowLeft, Pencil, Trash2, Globe, Lock, Download, Film, X } from 'lucide-react'
 import { IMG } from '../lib/tmdb'
 import { exportListTXT, exportListCSV } from '../lib/export'
+import { useToast } from '../contexts/useToast'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
@@ -12,6 +13,7 @@ import EmptyState from '../components/ui/EmptyState'
 import styles from './ListsPage.module.css'
 
 function CreateListModal({ onClose, onCreate }) {
+  const { showToast } = useToast()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [isPublic, setIsPublic] = useState(false)
@@ -23,6 +25,7 @@ function CreateListModal({ onClose, onCreate }) {
     await onCreate(name.trim(), description.trim(), isPublic)
     setLoading(false)
     onClose()
+    showToast(`List "${name.trim()}" created`, { tone: 'success' })
   }
 
   return (
@@ -53,6 +56,7 @@ function CreateListModal({ onClose, onCreate }) {
 }
 
 function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, removeFromList, onOpenItem }) {
+  const { showToast } = useToast()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -133,8 +137,8 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
           <div className={styles.exportRow}>
             <span className={styles.exportLabel}><Download size={14} /> Export this list</span>
             <div className={styles.exportBtns}>
-              <Button variant="secondary" size="sm" onClick={() => exportListTXT(list.name, items)}>TXT</Button>
-              <Button variant="secondary" size="sm" onClick={() => exportListCSV(list.name, items)}>CSV</Button>
+              <Button variant="secondary" size="sm" onClick={() => { exportListTXT(list.name, items); showToast('List exported as TXT', { tone: 'success' }) }}>TXT</Button>
+              <Button variant="secondary" size="sm" onClick={() => { exportListCSV(list.name, items); showToast('List exported as CSV', { tone: 'success' }) }}>CSV</Button>
             </div>
           </div>
         </Card>

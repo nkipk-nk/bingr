@@ -11,6 +11,7 @@ import EpisodeTracker from './EpisodeTracker'
 import LogEntryModal from './LogEntryModal'
 import CommentsSection from './CommentsSection'
 import { useComments } from '../hooks/useComments'
+import { useToast } from '../contexts/useToast'
 import Button from './ui/Button'
 import Card from './ui/Card'
 import Modal from './ui/Modal'
@@ -41,6 +42,7 @@ const ProviderChips = ({ items, label }) => items.length ? (
 ) : null
 
 export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [], session, profile, onShowAuth }) {
+  const { showToast } = useToast()
   const [details, setDetails] = useState(null)
   const [providers, setProviders] = useState({})
   const [recs, setRecs] = useState([])
@@ -270,6 +272,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
             await onLogDiary(item, opts)
             // If a rating was given and it's a first watch, also set the overall rating
             if (opts.rating && !isRewatchLog) onSetRating(item, opts.rating)
+            showToast(isRewatchLog ? 'Rewatch logged' : 'Logged to diary', { tone: 'success' })
           }}
           onClose={() => setShowLogModal(false)}
         />

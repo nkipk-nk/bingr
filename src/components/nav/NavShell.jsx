@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react'
 import Header from './Header'
 import BottomNav from './BottomNav'
 import SideRail from './SideRail'
+import Toast from '../ui/Toast'
 import styles from './NavShell.module.css'
 
 // Extracted from App.jsx (behavior-preserving — no visual change origin;
@@ -23,7 +24,7 @@ export default function NavShell({
   onGoHome, onNavigate,
   libError,
   showFeedback, setShowFeedback,
-  toast,
+  toast, onClearToast,
   children,
 }) {
   return (
@@ -65,7 +66,16 @@ export default function NavShell({
         </Suspense>
       )}
 
-      {toast && <div className={styles.toast}>{toast}</div>}
+      {toast && (
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          tone={toast.tone}
+          action={toast.action}
+          onDismiss={onClearToast}
+          className={styles.toastOffset}
+        />
+      )}
 
       <BottomNav tab={tab} onSelectTab={onSelectTab} />
     </div>

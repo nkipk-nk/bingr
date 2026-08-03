@@ -15,26 +15,13 @@
   }
 }
 
-/* §8 Toast spec: "fixed bottom-center on mobile (above any bottom nav)" */
-.toast {
-  position: fixed;
-  bottom: 88px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 9999;
-  background: var(--bg-surface-2);
-  color: var(--text-primary);
-  padding: var(--space-3) var(--space-5);
-  border-radius: var(--radius-md);
-  font-family: var(--font-body);
-  font-size: var(--text-body-sm-size);
-  font-weight: 500;
-  box-shadow: var(--elevation-2-shadow);
-  white-space: nowrap;
-}
+/* §8 Toast spec: "fixed bottom-center on mobile (above any bottom nav)" —
+   overrides the ui/Toast.jsx primitive's default bottom offset, which
+   doesn't know about BottomNav.jsx sitting underneath it here. */
+.toastOffset { bottom: 88px; }
 
 @media (min-width: 1024px) {
-  .toast { bottom: 24px; }
+  .toastOffset { bottom: 24px; }
 }
 
 .errorBanner {
