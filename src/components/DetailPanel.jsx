@@ -1,23 +1,38 @@
 import { useEffect, useState } from 'react'
+import {
+  ArrowLeft, CheckCircle2, Play, Bookmark, BookOpen, Repeat2,
+  Layers, MonitorPlay, Globe, Lock,
+} from 'lucide-react'
 import { tmdb, IMG } from '../lib/tmdb'
 import { logger } from '../lib/logger'
-import { STATUS_COLORS, STATUS_LABELS } from '../lib/constants'
+import { STATUS_LABELS } from '../lib/constants'
 import StarRating from './StarRating'
 import EpisodeTracker from './EpisodeTracker'
 import LogEntryModal from './LogEntryModal'
 import CommentsSection from './CommentsSection'
 import { useComments } from '../hooks/useComments'
+import Button from './ui/Button'
+import Card from './ui/Card'
+import Modal from './ui/Modal'
+import PosterTile from './ui/PosterTile'
+import ProgressBar from './ui/ProgressBar'
+import { PageTabBar } from './ui/Tab'
+import styles from './DetailPanel.module.css'
 
-// Hoisted to module scope — was defined inside DetailPanel on every render.
-// Only depends on its props and the module-level IMG helper, so it needed
-// no changes to become a standalone component.
+const STATUS_ICON = { watched: CheckCircle2, watching: Play, watchlist: Bookmark }
+const STATUS_ACTIVE_CLASS = {
+  watched: styles.statusBtnActiveWatched,
+  watching: styles.statusBtnActiveWatching,
+  watchlist: styles.statusBtnActiveWatchlist,
+}
+
 const ProviderChips = ({ items, label }) => items.length ? (
-  <div style={{ marginBottom: 10 }}>
-    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+  <div className={styles.providerGroup}>
+    <div className={styles.providerLabel}>{label}</div>
+    <div className={styles.providerScroll}>
       {items.map(p => (
-        <div key={p.provider_id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-input)', fontSize: 13 }}>
-          {p.logo_path && <img src={IMG(p.logo_path, 'w45')} alt="" style={{ width: 18, height: 18, borderRadius: 4 }} />}
+        <div key={p.provider_id} className={styles.providerChip}>
+          {p.logo_path && <img src={IMG(p.logo_path, 'w45')} alt="" className={styles.providerLogo} />}
           {p.provider_name}
         </div>
       ))}
@@ -66,7 +81,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
   const title = item.title || item.name || ''
   const year = (item.release_date || item.first_air_date || '').slice(0, 4)
   const tmdbRating = item.vote_average ? item.vote_average.toFixed(1) : ''
-  const poster = IMG(item.poster_path, 'w342')
+  const poster = IMG(item.poster_path, 'w780')
   const genres = (details?.genres || []).map(g => g.name).join(', ')
   const extra = details?.runtime ? `${details.runtime} min`
     : details?.number_of_seasons ? `${details.number_of_seasons} season${details.number_of_seasons > 1 ? 's' : ''} · ${details.number_of_episodes} eps` : ''
@@ -91,123 +106,92 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
     ? episodeProps.getShowProgress(item.id, details.seasons)
     : null
 
-
   return (
     <div>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6, padding: 0, marginBottom: 16, fontFamily: 'inherit' }}>
-        ← Back
-      </button>
+      <Button variant="ghost" size="sm" className={styles.backBtn} onClick={() => onBack()}>
+        <ArrowLeft size={16} /> Back
+      </Button>
 
-      <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, overflow: 'hidden', marginBottom: 16 }}>
-        {/* Hero */}
-        <div style={{ display: 'flex', gap: 20, padding: '1.5rem' }}>
-          <div style={{ width: 110, height: 165, borderRadius: 10, overflow: 'hidden', background: 'var(--bg-input)', flexShrink: 0 }}>
-            {poster
-              ? <img src={poster} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>🎬</div>
-            }
+      {/* Hero — full-bleed poster art, per BINGR_DESIGN_SYSTEM.md §9 */}
+      <div className={styles.hero}>
+        {poster
+          ? <img src={poster} alt={title} className={styles.heroImg} />
+          : <div className={styles.heroFallback}>🎬</div>
+        }
+        <div className={styles.heroGradient} />
+        <div className={styles.heroContent}>
+          <h1 className={styles.title}>{title}</h1>
+          <div className={styles.meta}>
+            {[year, isTV ? 'TV Series' : 'Movie', genres, extra].filter(Boolean).join(' · ')}
+            {tmdbRating && ` · TMDB ★ ${tmdbRating}`}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', margin: '0 0 4px', lineHeight: 1.3 }}>{title}</h1>
-            <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10 }}>
-              {[year, isTV ? 'TV Series' : 'Movie', genres, extra].filter(Boolean).join(' · ')}
-              {tmdbRating && ` · TMDB ★ ${tmdbRating}`}
-            </div>
 
-            {loadError && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#e24b4a', background: 'rgba(226,75,74,0.08)', padding: '8px 12px', borderRadius: 8, marginBottom: 12 }}>
-                <span>Couldn't load full details. You can still rate and track this title.</span>
-                <button onClick={() => setRetryTick(t => t + 1)} style={{ background: 'none', border: 'none', color: '#e24b4a', textDecoration: 'underline', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0, flexShrink: 0 }}>Retry</button>
-              </div>
-            )}
-
-            {/* Overall progress for TV */}
-            {showProgress && showProgress.total > 0 && (
-              <div style={{ marginBottom: 10 }}>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
-                  {showProgress.watched}/{showProgress.total} episodes watched
-                  {nextEp && <span style={{ marginLeft: 8, color: '#ba7517', fontWeight: 500 }}>▶ Next: S{String(nextEp.season).padStart(2,'0')}E{String(nextEp.episode).padStart(2,'0')}</span>}
-                  {!nextEp && showProgress.watched === showProgress.total && <span style={{ marginLeft: 8, color: '#1d9e75', fontWeight: 500 }}>All caught up ✓</span>}
-                </div>
-                <div style={{ height: 5, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${(showProgress.watched / showProgress.total) * 100}%`, background: '#1d9e75', borderRadius: 4, transition: 'width 0.3s' }} />
-                </div>
-              </div>
-            )}
-
-            {/* Status buttons */}
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
-              {['watched', 'watching', 'watchlist'].map(s => (
-                <button key={s} onClick={() => onSetStatus(itemForStatus, s)} style={{
-                  padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
-                  fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
-                  background: entry.status === s ? STATUS_COLORS[s] : 'var(--bg-input)',
-                  color: entry.status === s ? '#fff' : 'var(--text-muted)',
-                  border: `1px solid ${entry.status === s ? 'transparent' : 'var(--border)'}`,
-                  transition: 'all 0.15s',
-                }}>{STATUS_LABELS[s]}{entry.status === s ? ' ✓' : ''}</button>
-              ))}
-            </div>
-
-            {/* Diary logging */}
-            {onLogDiary && (
-              <div style={{ display: 'inline-flex', gap: 8, marginBottom: 12, marginRight: 8 }}>
-                <button onClick={() => { setIsRewatchLog(diaryEntries.length > 0); setShowLogModal(true) }}
-                  style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  {diaryEntries.length > 0 ? `🔁 Log rewatch (${diaryEntries.length})` : '📔 Log to diary'}
+          <div className={styles.statusRow}>
+            {['watched', 'watching', 'watchlist'].map(s => {
+              const Icon = STATUS_ICON[s]
+              const active = entry.status === s
+              return (
+                <button key={s} onClick={() => onSetStatus(itemForStatus, s)}
+                  className={[styles.statusBtn, active ? STATUS_ACTIVE_CLASS[s] : ''].filter(Boolean).join(' ')}>
+                  <Icon size={14} /> {STATUS_LABELS[s]}
                 </button>
-              </div>
-            )}
-
-            {/* Add to list */}
-            {lists.length > 0 && (
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 12 }}>
-                <button onClick={() => setShowListPicker(v => !v)} style={{ padding: '6px 14px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  📋 Add to list
-                </button>
-                {showListPicker && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 6, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '6px', minWidth: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.15)', zIndex: 100 }}>
-                    {lists.map(list => (
-                      <button key={list.id} onClick={async () => {
-                        const ok = await onAddToList(list.id, item)
-                        if (ok) { setAddedToList(list.name); setTimeout(() => setAddedToList(null), 2000) }
-                        setShowListPicker(false)
-                      }} style={{ display: 'block', width: '100%', padding: '8px 12px', background: 'none', border: 'none', borderRadius: 8, textAlign: 'left', fontSize: 13, color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}
-                        onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-input)'}
-                        onMouseLeave={e => e.currentTarget.style.background = 'none'}
-                      >
-                        {list.is_public ? '🌐' : '🔒'} {list.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {addedToList && <span style={{ marginLeft: 10, fontSize: 12, color: '#1d9e75' }}>✓ Added to {addedToList}</span>}
-              </div>
-            )}
-
-            <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, margin: 0 }}>
-              {details?.overview || item.overview || ''}
-            </p>
+              )
+            })}
           </div>
         </div>
+      </div>
 
-        {/* Sub-tabs for TV: Overview / Episodes */}
-        {isTV && (
-          <div style={{ display: 'flex', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-            {['Overview', 'Episodes'].map(t => (
-              <button key={t} onClick={() => setEpTab(t === 'Episodes')} style={{
-                flex: 1, padding: '10px', fontSize: 13, cursor: 'pointer',
-                background: 'none', border: 'none', fontFamily: 'inherit',
-                borderBottom: `2px solid ${(t === 'Episodes') === epTab ? 'var(--accent)' : 'transparent'}`,
-                color: (t === 'Episodes') === epTab ? 'var(--accent)' : 'var(--text-muted)',
-                fontWeight: (t === 'Episodes') === epTab ? 600 : 400,
-              }}>{t}</button>
-            ))}
+      <div className={styles.body}>
+        {loadError && (
+          <div className={styles.errorBanner}>
+            <span>Couldn't load full details. You can still rate and track this title.</span>
+            <Button variant="ghost" size="sm" onClick={() => setRetryTick(t => t + 1)}>Retry</Button>
           </div>
         )}
 
+        {/* Overall progress for TV */}
+        {showProgress && showProgress.total > 0 && (
+          <div>
+            <div className={styles.progressLine}>
+              {showProgress.watched}/{showProgress.total} episodes watched
+              {nextEp && <span className={styles.progressNext}>▶ Next: S{String(nextEp.season).padStart(2, '0')}E{String(nextEp.episode).padStart(2, '0')}</span>}
+              {!nextEp && showProgress.watched === showProgress.total && <span className={styles.progressDone}>All caught up ✓</span>}
+            </div>
+            <ProgressBar value={showProgress.watched} max={showProgress.total} />
+          </div>
+        )}
+
+        {/* Diary logging / Add to list */}
+        <div className={styles.actionsRow}>
+          {onLogDiary && (
+            <Button variant="secondary" size="sm" onClick={() => { setIsRewatchLog(diaryEntries.length > 0); setShowLogModal(true) }}>
+              {diaryEntries.length > 0 ? <><Repeat2 size={14} /> Log rewatch ({diaryEntries.length})</> : <><BookOpen size={14} /> Log to diary</>}
+            </Button>
+          )}
+          {lists.length > 0 && (
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setShowListPicker(true)}>
+                <Layers size={14} /> Add to list
+              </Button>
+              {addedToList && <span className={styles.addedNotice}>✓ Added to {addedToList}</span>}
+            </>
+          )}
+        </div>
+
+        <p className={styles.overview}>{details?.overview || item.overview || ''}</p>
+
+        {/* Sub-tabs for TV: Overview / Episodes */}
+        {isTV && (
+          <PageTabBar
+            className={styles.subTabs}
+            value={epTab ? 'episodes' : 'overview'}
+            onChange={id => setEpTab(id === 'episodes')}
+            items={[{ id: 'overview', label: 'Overview' }, { id: 'episodes', label: 'Episodes' }]}
+          />
+        )}
+
         {epTab && isTV && details ? (
-          <div style={{ padding: '1.25rem 1.5rem' }}>
+          <Card>
             <EpisodeTracker
               show={details}
               isWatched={(sid, s, e) => episodeProps?.isWatched(sid, s, e)}
@@ -215,65 +199,67 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
               markSeasonWatched={(sid, s, eps) => episodeProps?.markSeasonWatched(sid, s, eps, episodeRuntime)}
               getSeasonProgress={(sid, s, count) => episodeProps?.getSeasonProgress(sid, s, count)}
             />
-          </div>
+          </Card>
         ) : (
           <>
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
-
-            {/* Streaming */}
-            <div style={{ padding: '1.25rem 1.5rem' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>🎥 Where to watch</div>
+            <Card>
+              <div className={styles.sectionTitle}><MonitorPlay size={16} className={styles.sectionIcon} />Where to watch</div>
               {flat.length || rent.length || buy.length ? (
                 <><ProviderChips items={flat} label="Stream" /><ProviderChips items={rent} label="Rent" /><ProviderChips items={buy} label="Buy" /></>
               ) : (
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{loadError ? 'Streaming info unavailable right now.' : details ? 'No streaming info available for your region.' : 'Loading...'}</div>
+                <div className={styles.noProviders}>{loadError ? 'Streaming info unavailable right now.' : details ? 'No streaming info available for your region.' : 'Loading...'}</div>
               )}
-            </div>
+            </Card>
 
-            <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: 0 }} />
-
-            {/* Rating */}
-            <div style={{ padding: '1.25rem 1.5rem' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>⭐ Your rating</div>
+            <Card>
+              <div className={styles.sectionTitle}>Your rating</div>
               <StarRating value={entry.rating || 0} onChange={r => onSetRating(item, r)} />
-            </div>
+            </Card>
           </>
+        )}
+
+        {/* Recommendations */}
+        {!epTab && recs.length > 0 && (
+          <div>
+            <div className={styles.sectionTitle}>You might also like</div>
+            <div className={styles.recsGrid}>
+              {recs.map(r => (
+                <div key={r.id} className={styles.recCard} onClick={() => onBack(r)}>
+                  <PosterTile size="md" src={r.poster_path ? IMG(r.poster_path) : null} alt={r.title || r.name} />
+                  <div className={styles.recTitle}>{r.title || r.name}</div>
+                  <div className={styles.recYear}>{(r.release_date || r.first_air_date || '').slice(0, 4)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Comments — always visible regardless of episode tab */}
+        {!epTab && (
+          <CommentsSection
+            commentsHook={commentsHook}
+            session={session}
+            profile={profile}
+            onOpenProfile={(username) => { window.location.href = `/@${username}` }}
+            onShowAuth={onShowAuth}
+          />
         )}
       </div>
 
-      {/* Recommendations */}
-      {!epTab && recs.length > 0 && (
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 12 }}>✨ You might also like</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10 }}>
-            {recs.map(r => (
-              <div key={r.id} onClick={() => onBack(r)} style={{ cursor: 'pointer', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ aspectRatio: '2/3', background: 'var(--bg-input)', overflow: 'hidden' }}>
-                  {r.poster_path
-                    ? <img src={IMG(r.poster_path)} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🎬</div>
-                  }
-                </div>
-                <div style={{ padding: '7px 9px 9px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{r.title || r.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{(r.release_date || r.first_air_date || '').slice(0, 4)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Comments — always visible regardless of episode tab */}
-      {!epTab && (
-        <CommentsSection
-          commentsHook={commentsHook}
-          session={session}
-          profile={profile}
-          onOpenProfile={(username) => { window.location.href = `/@${username}` }}
-          onShowAuth={onShowAuth}
-        />
-      )}
+      {/* Add-to-list — bottom-sheet picker per BINGR_DESIGN_SYSTEM.md §9,
+          resolving BINGR_UI_AUDIT.md CX9's inline-dropdown/sheet split */}
+      <Modal open={showListPicker} onClose={() => setShowListPicker(false)} title="Add to list" size="compact">
+        {lists.map(list => (
+          <button key={list.id} className={styles.listOption} onClick={async () => {
+            const ok = await onAddToList(list.id, item)
+            if (ok) { setAddedToList(list.name); setTimeout(() => setAddedToList(null), 2000) }
+            setShowListPicker(false)
+          }}>
+            {list.is_public ? <Globe size={14} className={styles.listIcon} /> : <Lock size={14} className={styles.listIcon} />}
+            {list.name}
+          </button>
+        ))}
+      </Modal>
 
       {showLogModal && (
         <LogEntryModal
