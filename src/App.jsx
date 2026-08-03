@@ -17,8 +17,7 @@ import AuthPage from './pages/AuthPage'
 import DetailPanel from './components/DetailPanel'
 import DiscoverPage from './pages/DiscoverPage'
 import FeedPage from './pages/FeedPage'
-import LibraryTab from './pages/LibraryTab'
-import ExportPanel from './components/ExportPanel'
+import LibraryPage from './pages/LibraryPage'
 import OnboardingModal from './components/OnboardingModal'
 import NavShell from './components/nav/NavShell'
 
@@ -347,10 +346,7 @@ export default function App() {
         ) : tab === 'diary' ? (
           <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} /></Suspense>
         ) : tab === 'library' ? (
-          <>
-            <ExportPanel library={library} />
-            <LibraryTab library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
-          </>
+          <LibraryPage library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
         ) : tab === 'you' ? (
           <Suspense fallback={<PageFallback />}>
             <YouHub

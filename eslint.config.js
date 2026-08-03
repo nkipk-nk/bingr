@@ -24,6 +24,9 @@ const MIGRATED_FILES = [
   'src/pages/FeedPage.jsx',
   'src/components/WatchLogCard.jsx',
   'src/pages/DiaryPage.jsx',
+  'src/pages/LibraryPage.jsx',
+  'src/pages/LibraryTab.jsx',
+  'src/components/ExportPanel.jsx',
 ]
 
 export default defineConfig([

@@ -1,0 +1,17 @@
+.segmented { display: flex; gap: var(--space-2); margin-bottom: var(--space-4); flex-wrap: wrap; }
+.segmentBtn {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-pill);
+  border: var(--border-width-hairline) solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm-size);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.segmentBtnActive { background: var(--magenta-deep); border-color: var(--magenta-deep); color: var(--text-primary); font-weight: 600; }
+
+.controlsRow { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
+.filterInput { flex: 1; min-width: 180px; }
+.selectSm { min-width: 130px; }
