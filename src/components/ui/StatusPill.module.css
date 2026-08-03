@@ -1,0 +1,19 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-pill);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-body);
+  font-size: var(--text-body-xs-size);
+  font-weight: var(--text-body-xs-weight);
+  letter-spacing: var(--text-body-xs-tracking);
+  text-transform: uppercase;
+  line-height: var(--text-body-xs-leading);
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.watched { background: var(--status-watched); }
+.watching { background: var(--status-watching); }
+.watchlist { background: var(--status-watchlist); }

@@ -1,0 +1,54 @@
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--bg-surface-2);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-2-shadow);
+  padding: var(--space-3) var(--space-4);
+  z-index: 9999;
+  animation: enter var(--duration-base) var(--ease-emphasized);
+}
+
+.toast.leaving { animation: leave var(--duration-fast) var(--ease-standard) forwards; }
+
+@keyframes enter {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@keyframes leave {
+  from { opacity: 1; transform: translate(-50%, 0); }
+  to { opacity: 0; transform: translate(-50%, 12px); }
+}
+
+.message {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md-size);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icon { flex-shrink: 0; }
+.success { color: var(--success); }
+.error { color: var(--danger); }
+.neutral { color: var(--text-secondary); }
+
+.action {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--magenta-bright);
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  padding: 0;
+  margin-left: var(--space-2);
+}

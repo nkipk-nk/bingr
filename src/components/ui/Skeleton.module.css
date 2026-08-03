@@ -1,0 +1,22 @@
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-surface-2);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--bg-input), transparent);
+  animation: shimmer 1400ms linear infinite;
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}
+
+.rect { border-radius: var(--radius-sm); }
+.circle { border-radius: var(--radius-full); }
+.poster { border-radius: var(--radius-md); aspect-ratio: 2 / 3; width: 100%; }

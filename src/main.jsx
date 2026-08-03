@@ -34,10 +34,23 @@ if (sentryDsn) {
   window.__Sentry__ = Sentry
 }
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </StrictMode>,
-)
+// Dev-only design-system component sandbox (Phase 0 of the implementation
+// plan) — verify each primitive in isolation before wiring it into any
+// production screen. Dynamic import behind a static DEV check so it's fully
+// tree-shaken out of production builds, not just unreachable at runtime.
+async function renderRoot() {
+  const root = createRoot(document.getElementById('root'))
+  if (import.meta.env.DEV && window.location.pathname === '/_dev/components') {
+    const { default: ComponentPlayground } = await import('./dev/ComponentPlayground.jsx')
+    root.render(<StrictMode><ComponentPlayground /></StrictMode>)
+    return
+  }
+  root.render(
+    <StrictMode>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </StrictMode>,
+  )
+}
+renderRoot()

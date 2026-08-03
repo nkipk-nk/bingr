@@ -1,0 +1,54 @@
+/* ── Primary navigation (bottom bar) ─────────────────────────────────── */
+.navBar {
+  display: flex;
+  align-items: stretch;
+}
+.navItem {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  background: none;
+  border: none;
+  border-top: 2px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: var(--text-body-xs-size);
+  font-weight: var(--text-body-xs-weight);
+  letter-spacing: var(--text-body-xs-tracking);
+  transition: color var(--duration-instant) var(--ease-standard);
+}
+.navItemActive {
+  color: var(--magenta-bright);
+  border-top-color: var(--magenta-bright);
+}
+
+/* ── In-page tabs ─────────────────────────────────────────────────────── */
+.pageBar {
+  display: flex;
+  gap: var(--space-6);
+  border-bottom: var(--border-width-hairline) solid var(--border-subtle);
+  position: relative;
+}
+.pageItem {
+  background: none;
+  border: none;
+  padding: var(--space-3) 0;
+  font-family: var(--font-body);
+  font-size: var(--text-body-md-size);
+  color: var(--text-secondary);
+  cursor: pointer;
+  position: relative;
+}
+.pageItemActive { color: var(--magenta-bright); font-weight: var(--weight-medium); }
+.pageIndicator {
+  position: absolute;
+  bottom: -1px;
+  height: 2px;
+  background: var(--magenta-bright);
+  transition: left var(--duration-base) var(--ease-standard), width var(--duration-base) var(--ease-standard);
+}
