@@ -16,8 +16,8 @@ import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import ActivityFeed from './pages/ActivityFeed'
 import FindPeople from './components/FindPeople'
-import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
+import DiscoverPage from './pages/DiscoverPage'
 import LibraryTab from './pages/LibraryTab'
 import ExportPanel from './components/ExportPanel'
 import OnboardingModal from './components/OnboardingModal'
@@ -43,17 +43,6 @@ const DeleteAccount = lazy(() => import('./pages/DeleteAccount'))
 const PageFallback = () => (
   <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
     <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading…</div>
-  </div>
-)
-
-// Hoisted to module scope (was defined inside App() on every render, which
-// resets its identity and any internal state each time). Takes what it
-// needs as props instead of closing over App's local variables.
-const CardGrid = ({ items, library, onOpen, onSetStatus }) => (
-  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-    {items.map(item => (
-      <MovieCard key={item.id} item={item} entry={library[item.id] || {}} onOpen={onOpen} onSetStatus={onSetStatus} />
-    ))}
   </div>
 )
 
@@ -342,44 +331,13 @@ export default function App() {
             onShowAuth={() => { setAuthMode('login'); navigate('auth') }}
           />
         ) : tab === 'discover' ? (
-          searchLoading ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: 14 }}>Searching…</div>
-          ) : searchResults ? (
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 14 }}>
-                Search results ({searchResults.length})
-                <button onClick={() => setSearchResults(null)} style={{ marginLeft: 12, fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Clear ✕</button>
-              </div>
-              {searchResults.length ? <CardGrid items={searchResults} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} /> : (
-                <div style={{ color: 'var(--text-muted)', fontSize: 14, padding: '2rem 0' }}>
-                  No results for "{query}".
-                  {/* RD8 (BINGR_UI_AUDIT.md) — this search covers titles only;
-                      point people-searchers at where that actually lives
-                      instead of leaving the scope silently ambiguous. */}
-                  <div style={{ marginTop: 6, fontSize: 13 }}>
-                    Looking for a person?{' '}
-                    <span onClick={() => { setSearchResults(null); setTab('feed'); setTimeout(() => document.getElementById('find-people')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
-                      style={{ color: 'var(--accent)', cursor: 'pointer', textDecoration: 'underline' }}>
-                      Search people in Feed →
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : trendingError ? (
-            <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>📡</div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Couldn't load trending</div>
-              <button onClick={() => window.location.reload()} style={{ padding: '8px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>Retry</button>
-            </div>
-          ) : (
-            <div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 14 }}>🔥 Trending movies this week</div>
-              <div style={{ marginBottom: 32 }}><CardGrid items={trending.movies} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} /></div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 14 }}>📺 Trending TV shows this week</div>
-              <CardGrid items={trending.tv} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} />
-            </div>
-          )
+          <DiscoverPage
+            library={library} trending={trending} trendingError={trendingError}
+            searchResults={searchResults} searchLoading={searchLoading} query={query}
+            onClearSearch={() => setSearchResults(null)}
+            onOpen={openDetail} onSetStatus={handleSetStatus}
+            onFindPeople={() => { setSearchResults(null); setTab('feed'); setTimeout(() => document.getElementById('find-people')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
+          />
         ) : tab === 'feed' ? (
           <div>
             <ActivityFeed

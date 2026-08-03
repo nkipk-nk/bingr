@@ -17,6 +17,8 @@ const MIGRATED_FILES = [
   'src/pages/ResetPassword.jsx',
   'src/pages/AdminPanel.jsx',
   'src/components/DetailPanel.jsx',
+  'src/components/MovieCard.jsx',
+  'src/pages/DiscoverPage.jsx',
 ]
 
 export default defineConfig([
