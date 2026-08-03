@@ -1583,11 +1583,11 @@ not just reasoned about.
 | M10 | 🟠 Moderate | No DB length constraints | Claude | ✅ fixed for comments / diary notes / bio / feedback |
 | M11 | 🟠 Moderate | CSP blocks Google avatars | Claude | ✅ **verified live** in response headers |
 | M12 | 🟠 Moderate | Schema not in version control | Claude | ✅ fixed — `supabase/` tracked, migrations added |
-| M13 | 🟠 Moderate | 1.08 MB single bundle | | open |
-| M14 | 🟠 Moderate | Queries rely solely on RLS | | open |
+| M13 | 🟠 Moderate | 1.08 MB single bundle | Claude | ✅ fixed — route-level `lazy()`/`Suspense` splitting + vendor chunk separation; app chunk 1,087 KB → 130 KB |
+| M14 | 🟠 Moderate | Queries rely solely on RLS | Claude | ✅ fixed — `useLibrary.load` and `useEpisodes.load` were the only two gaps |
 | M15 | 🟠 Moderate | Privacy Policy inaccurate | Claude | ✅ fixed — §1 data list corrected, §4 retention matches the M1/M2 fix, §6 RLS claim no longer overstated |
 | M16 | 🟠 Moderate | No full data export / privacy toggle | Claude | 🔶 **partial** — visibility toggle shipped and **verified live** (protects diary and, via C10, ratings/rankings); full-account JSON export still not built |
-| M17 | 🟠 Moderate | Comment reports do nothing | | open |
+| M17 | 🟠 Moderate | Comment reports do nothing | Claude | 🔶 client confirmation shipped; server auto-hide trigger written, awaiting `p1b` migration |
 | M18 | 🟠 Moderate | Edge Function CORS `*` | | open |
 | M19 | 🟠 Moderate | `useLibrary.upsert` dep churn | | open |
 | M20 | 🟠 Moderate | In-memory auth rate limit | | open |
@@ -1600,5 +1600,11 @@ not just reasoned about.
 2. ~~Redeploy the `delete-account` Edge Function~~ — ✅ **done**, verified via CORS header on the live function.
 3. ~~Replace the placeholder M-Pesa number~~ — ✅ **done**, live.
 4. ~~Run `20260803_p1a_library_visibility.sql`~~ — ✅ **done**, verified live (C10 closed). Public "Top Rated" rankings now work, and the privacy toggle correctly hides them when a profile is set private.
+5. **Run [`supabase/migrations/20260803_p1b_comment_flags.sql`](supabase/migrations/20260803_p1b_comment_flags.sql)** — closes the server-side half of **M17**. Until then, reported comments still don't auto-hide (`flag_count` stays 0), though the client now at least confirms the report was received.
 
-### All P0 and this round of P1 fixes are verified closed. No outstanding actions remain.
+### Round 3 (P1 continuation) — findings closed
+
+- **#22 confirmation dialogs**: diary entry delete ([DiaryPage.jsx](src/pages/DiaryPage.jsx)), library remove ([LibraryTab.jsx](src/pages/LibraryTab.jsx)), and comment delete ([CommentsSection.jsx](src/components/CommentsSection.jsx)) now all use `window.confirm`, matching the pattern already established for list deletion and admin actions. Deliberately **not** added to `MovieCard`'s quick status-toggle buttons — that's a fluid tag-while-browsing interaction, not a "remove entirely" action, and adding a confirm there would be a UX regression, not a fix.
+- **M14 defense-in-depth**: `useLibrary.load()` and `useEpisodes.load()` were the only two queries relying entirely on RLS with no explicit `.eq('user_id', ...)`. Both fixed — every other hook already had it or intentionally reads broader data (public comments, admin-wide reads).
+- **M17 finished**: [`supabase/migrations/20260803_p1b_comment_flags.sql`](supabase/migrations/20260803_p1b_comment_flags.sql) adds a trigger that increments `flag_count` and auto-sets `status = 'flagged'` at 3 reports — the existing C8 select policy (`status = 'visible' or auth.uid() = user_id`) then hides it automatically, no client change needed for the hide itself. `CommentsSection.jsx` now shows the reporter a "✓ Reported" confirmation instead of the comment just silently vanishing with no feedback. **Requires the maintainer to run the migration** (see above).
+- **M13 bundle size**: [App.jsx](src/App.jsx) now lazy-loads everything off the landing → auth → discover critical path (`AdminPanel`, `UserProfilePage`, `PublicListPage`, both legal pages, `SupportersPage`, `ForgotPassword`/`ResetPassword`, `ProfilePage`, `DeleteAccount`, `FeedbackModal`, and the `Rankings`/`StatsPage`/`DiaryPage`/`ListsPage` tabs), each behind a `Suspense` boundary at its render site. [vite.config.js](vite.config.js) also now splits `react`/`react-dom`, `@supabase/supabase-js`, and `@sentry/react` into their own chunks via `manualChunks` (written as a function — this project's Vite 8 uses the Rolldown build engine, which doesn't accept the classic Rollup object-map form). Net effect: the app's own code chunk dropped from **1,087 KB to 130 KB** (32 KB gzip); vendor/Supabase/Sentry chunks are unchanged by app deploys and stay cached in a returning visitor's browser, so a repeat visit after a future deploy only re-fetches the small app chunk. This did not require the React Router migration (R8) — the existing hand-rolled conditional router works fine with `lazy()`/`Suspense`, so that migration stays deferred as a separate, higher-risk item.

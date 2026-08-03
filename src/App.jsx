@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useLibrary } from './hooks/useLibrary'
 import { useEpisodes } from './hooks/useEpisodes'
@@ -13,29 +13,40 @@ import { logger } from './lib/logger'
 import { supabase } from './lib/supabase'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
-import ForgotPassword from './pages/ForgotPassword'
-import ResetPassword from './pages/ResetPassword'
-import ProfilePage from './pages/ProfilePage'
-import PublicListPage from './pages/PublicListPage'
-import UserProfilePage from './pages/UserProfilePage'
-import SupportersPage from './pages/SupportersPage'
-import AdminPanel from './pages/AdminPanel'
 import ActivityFeed from './pages/ActivityFeed'
 import FindPeople from './components/FindPeople'
 import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
-import Rankings from './pages/Rankings'
-import StatsPage from './pages/StatsPage'
-import DiaryPage from './pages/DiaryPage'
-import ListsPage from './pages/ListsPage'
 import ExportPanel from './components/ExportPanel'
-import PrivacyPolicy from './pages/PrivacyPolicy'
-import TermsOfService from './pages/TermsOfService'
-import DeleteAccount from './pages/DeleteAccount'
 import SupportButton from './components/SupportButton'
-import FeedbackModal from './components/FeedbackModal'
 import OnboardingModal from './components/OnboardingModal'
+
+// Code-split everything that isn't on the landing → auth → discover path.
+// Before this the whole app — admin panel, both legal pages, public profile
+// page, etc. — shipped in one ~1.1MB bundle to every visitor, including
+// anonymous ones who will never see most of it.
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
+const ResetPassword = lazy(() => import('./pages/ResetPassword'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const PublicListPage = lazy(() => import('./pages/PublicListPage'))
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
+const SupportersPage = lazy(() => import('./pages/SupportersPage'))
+const AdminPanel = lazy(() => import('./pages/AdminPanel'))
+const Rankings = lazy(() => import('./pages/Rankings'))
+const StatsPage = lazy(() => import('./pages/StatsPage'))
+const DiaryPage = lazy(() => import('./pages/DiaryPage'))
+const ListsPage = lazy(() => import('./pages/ListsPage'))
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
+const TermsOfService = lazy(() => import('./pages/TermsOfService'))
+const DeleteAccount = lazy(() => import('./pages/DeleteAccount'))
+const FeedbackModal = lazy(() => import('./components/FeedbackModal'))
+
+const PageFallback = () => (
+  <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading…</div>
+  </div>
+)
 
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
@@ -252,21 +263,27 @@ export default function App() {
   )
 
   // ── Public pages (no auth needed) ──
-  if (page === 'public-list') return <PublicListPage listId={pageParam} onSignUp={() => { setAuthMode('signup'); navigate('auth') }} />
-  if (page === 'user-profile') return (
-    <UserProfilePage
-      username={pageParam}
-      currentUserId={session?.user?.id || null}
-      followsHook={session ? followsHook : null}
-      onOpenItem={(item) => { navigate('app'); setTab('discover'); openDetail(item) }}
-      onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
-    />
+  if (page === 'public-list') return (
+    <Suspense fallback={<PageFallback />}>
+      <PublicListPage listId={pageParam} onSignUp={() => { setAuthMode('signup'); navigate('auth') }} />
+    </Suspense>
   )
-  if (page === 'supporters') return <SupportersPage onBack={() => navigate('app')} />
-  if (page === 'privacy') return <PrivacyPolicy onBack={() => navigate(session ? 'app' : 'landing')} />
-  if (page === 'terms') return <TermsOfService onBack={() => navigate(session ? 'app' : 'landing')} />
-  if (page === 'reset') return <ResetPassword onDone={() => { navigate('auth'); setAuthMode('login') }} />
-  if (page === 'forgot') return <ForgotPassword onBack={() => navigate('auth')} />
+  if (page === 'user-profile') return (
+    <Suspense fallback={<PageFallback />}>
+      <UserProfilePage
+        username={pageParam}
+        currentUserId={session?.user?.id || null}
+        followsHook={session ? followsHook : null}
+        onOpenItem={(item) => { navigate('app'); setTab('discover'); openDetail(item) }}
+        onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
+      />
+    </Suspense>
+  )
+  if (page === 'supporters') return <Suspense fallback={<PageFallback />}><SupportersPage onBack={() => navigate('app')} /></Suspense>
+  if (page === 'privacy') return <Suspense fallback={<PageFallback />}><PrivacyPolicy onBack={() => navigate(session ? 'app' : 'landing')} /></Suspense>
+  if (page === 'terms') return <Suspense fallback={<PageFallback />}><TermsOfService onBack={() => navigate(session ? 'app' : 'landing')} /></Suspense>
+  if (page === 'reset') return <Suspense fallback={<PageFallback />}><ResetPassword onDone={() => { navigate('auth'); setAuthMode('login') }} /></Suspense>
+  if (page === 'forgot') return <Suspense fallback={<PageFallback />}><ForgotPassword onBack={() => navigate('auth')} /></Suspense>
 
   // ── Not logged in ──
   if (!session) {
@@ -290,10 +307,10 @@ export default function App() {
   }
 
   // ── Logged in — protected pages ──
-  if (page === 'delete-account') return <DeleteAccount userEmail={session.user.email} onBack={() => navigate('app')} onDelete={deleteAccount} />
-  if (page === 'profile') return <ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onBack={() => navigate('app')} />
+  if (page === 'delete-account') return <Suspense fallback={<PageFallback />}><DeleteAccount userEmail={session.user.email} onBack={() => navigate('app')} onDelete={deleteAccount} /></Suspense>
+  if (page === 'profile') return <Suspense fallback={<PageFallback />}><ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onBack={() => navigate('app')} /></Suspense>
   if (page === 'admin') return adminHook.isAdmin
-    ? <AdminPanel adminHook={adminHook} onBack={() => navigate('app')} />
+    ? <Suspense fallback={<PageFallback />}><AdminPanel adminHook={adminHook} onBack={() => navigate('app')} /></Suspense>
     : <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Access denied.</div>
 
   // ── Main app ──
@@ -458,13 +475,13 @@ export default function App() {
             </div>
           </div>
         ) : tab === 'stats' ? (
-          <StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} />
+          <Suspense fallback={<PageFallback />}><StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} /></Suspense>
         ) : tab === 'rankings' ? (
-          <Rankings library={library} onOpen={openDetail} />
+          <Suspense fallback={<PageFallback />}><Rankings library={library} onOpen={openDetail} /></Suspense>
         ) : tab === 'diary' ? (
-          <DiaryPage diaryHook={diaryHook} onOpen={openDetail} />
+          <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} /></Suspense>
         ) : tab === 'lists' ? (
-          <ListsPage listsHook={listsHook} onOpenItem={openDetail} />
+          <Suspense fallback={<PageFallback />}><ListsPage listsHook={listsHook} onOpenItem={openDetail} /></Suspense>
         ) : (
           <>
             <ExportPanel library={library} />
@@ -489,7 +506,11 @@ export default function App() {
 
       <SupportButton session={session} profile={profile} onShowSupporters={() => navigate('supporters')} />
 
-      {showFeedback && <FeedbackModal session={session} profile={profile} onClose={() => setShowFeedback(false)} />}
+      {showFeedback && (
+        <Suspense fallback={null}>
+          <FeedbackModal session={session} profile={profile} onClose={() => setShowFeedback(false)} />
+        </Suspense>
+      )}
 
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 9999, whiteSpace: 'nowrap' }}>{toast}</div>

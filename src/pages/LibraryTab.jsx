@@ -96,7 +96,7 @@ export default function LibraryTab({ status, library, onOpen, onRemove, episodeP
                 )}
               </div>
 
-              <button onClick={() => onRemove(item.tmdb_id)} title="Remove" style={{
+              <button onClick={() => { if (window.confirm(`Remove "${title}" from ${STATUS_LABELS[status].toLowerCase()}?`)) onRemove(item.tmdb_id) }} title="Remove" style={{
                 width: 30, height: 30, borderRadius: '50%', border: '1px solid var(--border)',
                 background: 'var(--bg-input)', cursor: 'pointer', fontSize: 14,
                 color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,

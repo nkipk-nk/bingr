@@ -10,7 +10,10 @@ export function useEpisodes(session) {
     if (!session) { setEpisodes({}); return }
     try {
       const data = await withRetry(async () => {
-        const { data, error } = await supabase.from('bingr_episodes').select('*')
+        // Explicit .eq('user_id', ...) alongside RLS, not instead of it — see
+        // the same note in useLibrary.js.
+        const { data, error } = await supabase.from('bingr_episodes')
+          .select('*').eq('user_id', session.user.id)
         if (error) throw new DatabaseError('Failed to load episodes', { supabaseError: error.message })
         return data
       }, { label: 'loadEpisodes' })

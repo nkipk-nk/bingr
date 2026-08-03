@@ -59,7 +59,7 @@ export default function DiaryPage({ diaryHook, onOpen }) {
                     </div>
                     {e.notes && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3, fontStyle: 'italic' }}>"{e.notes}"</div>}
                   </div>
-                  <button onClick={() => deleteEntry(e.id)} title="Remove entry"
+                  <button onClick={() => { if (window.confirm(`Remove this diary entry for "${e.title}"?`)) deleteEntry(e.id) }} title="Remove entry"
                     style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-input)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
                     onMouseEnter={e2 => { e2.currentTarget.style.background = '#e24b4a'; e2.currentTarget.style.color = '#fff' }}
                     onMouseLeave={e2 => { e2.currentTarget.style.background = 'var(--bg-input)'; e2.currentTarget.style.color = 'var(--text-muted)' }}>✕</button>

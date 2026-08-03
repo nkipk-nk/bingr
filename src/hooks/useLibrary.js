@@ -12,9 +12,13 @@ export function useLibrary(session) {
     if (!session) { setLibrary({}); return }
     try {
       const data = await withRetry(async () => {
+        // Explicit .eq('user_id', ...) alongside RLS, not instead of it — RLS is
+        // still the real access boundary, but a query that only asks for what
+        // it needs fails safe if a future policy change is ever too permissive.
         const { data, error } = await supabase
           .from('bingr_library')
           .select('*')
+          .eq('user_id', session.user.id)
           .order('updated_at', { ascending: false })
         if (error) throw new DatabaseError('Failed to load library', { supabaseError: error.message })
         return data

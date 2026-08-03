@@ -15,13 +15,20 @@ function timeAgo(dateStr) {
 function CommentRow({ comment, session, onDelete, onFlag, onOpenProfile }) {
   const [showMenu, setShowMenu] = useState(false)
   const [flagging, setFlagging] = useState(false)
+  const [flagResult, setFlagResult] = useState(null) // null | 'ok' | error string
   const isOwn = session?.user?.id === comment.user_id
 
   const handleFlag = async () => {
     setFlagging(true)
-    await onFlag(comment.id)
+    const { error } = await onFlag(comment.id)
     setFlagging(false)
     setShowMenu(false)
+    // Comment removal from the list (if it crosses the auto-hide threshold,
+    // see migration p1b) is driven by the reload, not this state — this is
+    // only local feedback so the reporter isn't left wondering if anything
+    // happened, since flagComment previously gave no confirmation at all.
+    setFlagResult(error ? error : 'ok')
+    setTimeout(() => setFlagResult(null), 3000)
   }
 
   return (
@@ -41,11 +48,17 @@ function CommentRow({ comment, session, onDelete, onFlag, onOpenProfile }) {
         <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.6, margin: 0, wordBreak: 'break-word' }}>{comment.comment}</p>
       </div>
       <div style={{ position: 'relative', flexShrink: 0 }}>
-        <button onClick={() => setShowMenu(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 16, padding: '0 4px' }}>⋯</button>
+        {flagResult ? (
+          <span style={{ fontSize: 11, color: flagResult === 'ok' ? '#1d9e75' : '#e24b4a', whiteSpace: 'nowrap' }}>
+            {flagResult === 'ok' ? '✓ Reported' : flagResult}
+          </span>
+        ) : (
+          <button onClick={() => setShowMenu(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 16, padding: '0 4px' }}>⋯</button>
+        )}
         {showMenu && (
           <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, padding: 6, minWidth: 140, boxShadow: '0 6px 20px rgba(0,0,0,0.15)', zIndex: 50 }}>
             {isOwn ? (
-              <button onClick={() => { onDelete(comment.id); setShowMenu(false) }}
+              <button onClick={() => { if (window.confirm('Delete this comment? This cannot be undone.')) onDelete(comment.id); setShowMenu(false) }}
                 style={{ display: 'block', width: '100%', padding: '7px 10px', background: 'none', border: 'none', borderRadius: 6, textAlign: 'left', fontSize: 12, color: '#e24b4a', cursor: 'pointer', fontFamily: 'inherit' }}>
                 🗑️ Delete
               </button>
