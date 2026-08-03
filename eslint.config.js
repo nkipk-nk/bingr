@@ -22,6 +22,8 @@ const MIGRATED_FILES = [
   'src/pages/ActivityFeed.jsx',
   'src/components/FindPeople.jsx',
   'src/pages/FeedPage.jsx',
+  'src/components/WatchLogCard.jsx',
+  'src/pages/DiaryPage.jsx',
 ]
 
 export default defineConfig([

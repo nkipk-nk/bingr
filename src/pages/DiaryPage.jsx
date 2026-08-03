@@ -1,16 +1,15 @@
-import { IMG } from '../lib/tmdb'
+import { BookOpen } from 'lucide-react'
+import WatchLogCard from '../components/WatchLogCard'
+import EmptyState from '../components/ui/EmptyState'
+import styles from './DiaryPage.module.css'
 
 export default function DiaryPage({ diaryHook, onOpen }) {
   const { entries, loading, deleteEntry } = diaryHook
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)', fontSize: 14 }}>Loading…</div>
+  if (loading) return <div className={styles.centeredMsg}>Loading…</div>
 
   if (!entries.length) return (
-    <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
-      <div style={{ fontSize: 48, marginBottom: 12 }}>📔</div>
-      <div style={{ fontSize: 16, fontWeight: 500, color: 'var(--text)', marginBottom: 6 }}>Your diary is empty</div>
-      <div style={{ fontSize: 14 }}>Log when you watch something from the title's detail page</div>
-    </div>
+    <EmptyState icon={BookOpen} title="Your diary is empty" description="Log when you watch something from the title's detail page" />
   )
 
   // Group entries by month
@@ -22,48 +21,33 @@ export default function DiaryPage({ diaryHook, onOpen }) {
     groups[key].push(e)
   })
 
+  const openEntry = (e) => onOpen({ id: e.tmdb_id, media_type: e.media_type, title: e.title, poster_path: e.poster_path, release_date: e.release_date })
+
   return (
     <div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>📔 My Diary</div>
-      <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 20 }}>{entries.length} entr{entries.length !== 1 ? 'ies' : 'y'} logged</div>
+      <div className={styles.header}><BookOpen size={18} /> My Diary</div>
+      <div className={styles.sub}>{entries.length} entr{entries.length !== 1 ? 'ies' : 'y'} logged</div>
 
       {Object.entries(groups).map(([month, monthEntries]) => (
-        <div key={month} style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.5 }}>{month}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {monthEntries.map(e => {
-              const day = new Date(e.watched_date).getDate()
-              const poster = IMG(e.poster_path)
-              return (
-                <div key={e.id} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
-                  <div style={{ width: 32, textAlign: 'center', flexShrink: 0 }}>
-                    <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>{day}</div>
-                  </div>
-                  <div onClick={() => onOpen({ id: e.tmdb_id, media_type: e.media_type, title: e.title, poster_path: e.poster_path, release_date: e.release_date })}
-                    style={{ width: 36, height: 54, borderRadius: 5, overflow: 'hidden', flexShrink: 0, background: 'var(--bg-input)', cursor: 'pointer' }}>
-                    {poster
-                      ? <img src={poster} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🎬</div>
-                    }
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0, cursor: 'pointer' }}
-                    onClick={() => onOpen({ id: e.tmdb_id, media_type: e.media_type, title: e.title, poster_path: e.poster_path, release_date: e.release_date })}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {e.title}{e.rewatch && <span style={{ fontSize: 11, color: 'var(--accent)', marginLeft: 6 }}>🔁 Rewatch</span>}
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                      {(e.release_date || '').slice(0, 4)} · {e.media_type === 'tv' ? 'TV' : 'Film'}
-                      {e.rating ? ` · ★ ${e.rating}/10` : ''}
-                    </div>
-                    {e.notes && <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 3, fontStyle: 'italic' }}>"{e.notes}"</div>}
-                  </div>
-                  <button onClick={() => { if (window.confirm(`Remove this diary entry for "${e.title}"?`)) deleteEntry(e.id) }} title="Remove entry"
-                    style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--bg-input)', border: '1px solid var(--border)', cursor: 'pointer', fontSize: 13, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
-                    onMouseEnter={e2 => { e2.currentTarget.style.background = '#e24b4a'; e2.currentTarget.style.color = '#fff' }}
-                    onMouseLeave={e2 => { e2.currentTarget.style.background = 'var(--bg-input)'; e2.currentTarget.style.color = 'var(--text-muted)' }}>✕</button>
-                </div>
-              )
-            })}
+        <div key={month} className={styles.monthGroup}>
+          <div className={styles.monthLabel}>{month}</div>
+          <div className={styles.list}>
+            {monthEntries.map(e => (
+              <WatchLogCard
+                key={e.id}
+                variant="diary"
+                day={new Date(e.watched_date).getDate()}
+                posterPath={e.poster_path}
+                title={e.title}
+                year={(e.release_date || '').slice(0, 4)}
+                mediaType={e.media_type}
+                rating={e.rating}
+                notes={e.notes}
+                rewatch={e.rewatch}
+                onOpenTitle={() => openEntry(e)}
+                onDelete={() => { if (window.confirm(`Remove this diary entry for "${e.title}"?`)) deleteEntry(e.id) }}
+              />
+            ))}
           </div>
         </div>
       ))}
