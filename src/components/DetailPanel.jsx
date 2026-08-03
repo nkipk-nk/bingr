@@ -8,7 +8,24 @@ import LogEntryModal from './LogEntryModal'
 import CommentsSection from './CommentsSection'
 import { useComments } from '../hooks/useComments'
 
-export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [], session, profile, onOpenProfile, onShowAuth }) {
+// Hoisted to module scope — was defined inside DetailPanel on every render.
+// Only depends on its props and the module-level IMG helper, so it needed
+// no changes to become a standalone component.
+const ProviderChips = ({ items, label }) => items.length ? (
+  <div style={{ marginBottom: 10 }}>
+    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+      {items.map(p => (
+        <div key={p.provider_id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-input)', fontSize: 13 }}>
+          {p.logo_path && <img src={IMG(p.logo_path, 'w45')} alt="" style={{ width: 18, height: 18, borderRadius: 4 }} />}
+          {p.provider_name}
+        </div>
+      ))}
+    </div>
+  </div>
+) : null
+
+export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [], session, profile, onShowAuth }) {
   const [details, setDetails] = useState(null)
   const [providers, setProviders] = useState({})
   const [recs, setRecs] = useState([])
@@ -67,19 +84,6 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
     ? episodeProps.getShowProgress(item.id, details.seasons)
     : null
 
-  const ProviderChips = ({ items, label }) => items.length ? (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-        {items.map(p => (
-          <div key={p.provider_id} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 20, border: '1px solid var(--border)', background: 'var(--bg-input)', fontSize: 13 }}>
-            {p.logo_path && <img src={IMG(p.logo_path, 'w45')} alt="" style={{ width: 18, height: 18, borderRadius: 4 }} />}
-            {p.provider_name}
-          </div>
-        ))}
-      </div>
-    </div>
-  ) : null
 
   return (
     <div>
@@ -128,7 +132,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               {['watched', 'watching', 'watchlist'].map(s => (
                 <button key={s} onClick={() => onSetStatus(item, s)} style={{
-                  padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                  padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
                   fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
                   background: entry.status === s ? STATUS_COLORS[s] : 'var(--bg-input)',
                   color: entry.status === s ? '#fff' : 'var(--text-muted)',
@@ -199,7 +203,6 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
           <div style={{ padding: '1.25rem 1.5rem' }}>
             <EpisodeTracker
               show={details}
-              episodes={episodeProps?.episodes || {}}
               isWatched={(sid, s, e) => episodeProps?.isWatched(sid, s, e)}
               toggleEpisode={(sid, s, e) => episodeProps?.toggleEpisode(sid, s, e)}
               markSeasonWatched={(sid, s, eps) => episodeProps?.markSeasonWatched(sid, s, eps)}

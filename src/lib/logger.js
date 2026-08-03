@@ -43,7 +43,11 @@ export const logger = {
           extra: { ...data, ...getContext() },
         })
       }
-    } catch {}
+    } catch {
+      // Deliberately empty: this file's whole contract is "never throws —
+      // logging must never crash the app" (see header comment). If Sentry
+      // itself is what's failing, there's nowhere left to report that to.
+    }
   },
 
   /**
@@ -72,7 +76,11 @@ export const logger = {
           }
         })
       }
-    } catch {}
+    } catch {
+      // Deliberately empty: this file's whole contract is "never throws —
+      // logging must never crash the app" (see header comment). If Sentry
+      // itself is what's failing, there's nowhere left to report that to.
+    }
   },
 
   /**
@@ -83,7 +91,11 @@ export const logger = {
       if (window.__Sentry__) {
         window.__Sentry__.setUser({ id: userId, email })
       }
-    } catch {}
+    } catch {
+      // Deliberately empty: this file's whole contract is "never throws —
+      // logging must never crash the app" (see header comment). If Sentry
+      // itself is what's failing, there's nowhere left to report that to.
+    }
   },
 
   /**
@@ -94,6 +106,10 @@ export const logger = {
       if (window.__Sentry__) {
         window.__Sentry__.setUser(null)
       }
-    } catch {}
+    } catch {
+      // Deliberately empty: this file's whole contract is "never throws —
+      // logging must never crash the app" (see header comment). If Sentry
+      // itself is what's failing, there's nowhere left to report that to.
+    }
   },
 }

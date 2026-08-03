@@ -1,6 +1,15 @@
 import { useState } from 'react'
 import { filterLibrary, exportTXT, exportCSV } from '../lib/export'
 
+// Hoisted to module scope — was defined inside ExportPanel on every render;
+// takes everything it needs as props already, so no other changes needed.
+const Sel = ({ value, onChange, children }) => (
+  <select value={value} onChange={e => onChange(e.target.value)}
+    style={{ padding: '6px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}>
+    {children}
+  </select>
+)
+
 export default function ExportPanel({ library }) {
   const [status, setStatus] = useState('all')
   const [mediaType, setMediaType] = useState('all')
@@ -19,13 +28,6 @@ export default function ExportPanel({ library }) {
     if (format === 'txt') exportTXT(items, opts)
     if (format === 'csv') exportCSV(items, opts)
   }
-
-  const Sel = ({ value, onChange, children }) => (
-    <select value={value} onChange={e => onChange(e.target.value)}
-      style={{ padding: '6px 10px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}>
-      {children}
-    </select>
-  )
 
   return (
     <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>

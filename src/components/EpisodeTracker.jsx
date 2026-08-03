@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { tmdb } from '../lib/tmdb'
 import { logger } from '../lib/logger'
 
-export default function EpisodeTracker({ show, episodes, isWatched, toggleEpisode, markSeasonWatched, getSeasonProgress }) {
+export default function EpisodeTracker({ show, isWatched, toggleEpisode, markSeasonWatched, getSeasonProgress }) {
   const [activeSeason, setActiveSeason] = useState(null)
   const [seasonData, setSeasonData] = useState({})
   const [loading, setLoading] = useState(false)

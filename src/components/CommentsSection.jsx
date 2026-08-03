@@ -75,7 +75,7 @@ function CommentRow({ comment, session, onDelete, onFlag, onOpenProfile }) {
   )
 }
 
-export default function CommentsSection({ commentsHook, session, profile, onOpenProfile, onShowAuth }) {
+export default function CommentsSection({ commentsHook, session, onOpenProfile, onShowAuth }) {
   const { comments, loading, posting, postComment, deleteComment, flagComment } = commentsHook
   const [text, setText] = useState('')
   const [error, setError] = useState('')

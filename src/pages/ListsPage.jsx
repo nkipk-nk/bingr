@@ -65,7 +65,6 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
   const [editDesc, setEditDesc] = useState(list.description || '')
   const [editPublic, setEditPublic] = useState(list.is_public)
   const [copied, setCopied] = useState(false)
-  const [showExport, setShowExport] = useState(false)
 
   useEffect(() => {
     getListItems(list.id).then(data => { setItems(data); setLoading(false) })
@@ -184,7 +183,7 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
 }
 
 export default function ListsPage({ listsHook, onOpenItem }) {
-  const { lists, loading, createList, updateList, deleteList, addToList, removeFromList, getListItems } = listsHook
+  const { lists, createList, updateList, deleteList, removeFromList, getListItems } = listsHook
   const [showCreate, setShowCreate] = useState(false)
   const [activeList, setActiveList] = useState(null)
 

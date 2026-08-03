@@ -49,6 +49,17 @@ const PageFallback = () => (
   </div>
 )
 
+// Hoisted to module scope (was defined inside App() on every render, which
+// resets its identity and any internal state each time). Takes what it
+// needs as props instead of closing over App's local variables.
+const CardGrid = ({ items, library, onOpen, onSetStatus }) => (
+  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+    {items.map(item => (
+      <MovieCard key={item.id} item={item} entry={library[item.id] || {}} onOpen={onOpen} onSetStatus={onSetStatus} />
+    ))}
+  </div>
+)
+
 const TABS = [
   { id: 'discover', label: '🔍 Discover' },
   { id: 'feed', label: '🌐 Feed' },
@@ -237,11 +248,6 @@ export default function App() {
     navigate('app')
   }
 
-  const goBack = () => {
-    if (detailItem) { setDetailItem(null); return }
-    if (searchResults) { setSearchResults(null); return }
-    navigate('app')
-  }
 
   const episodeProps = {
     episodes: episodeHook.episodes,
@@ -331,13 +337,6 @@ export default function App() {
     return t.label
   }
 
-  const CardGrid = ({ items }) => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
-      {items.map(item => (
-        <MovieCard key={item.id} item={item} entry={library[item.id] || {}} onOpen={openDetail} onSetStatus={handleSetStatus} />
-      ))}
-    </div>
-  )
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-page)', fontFamily: 'var(--font)' }}>
@@ -449,7 +448,7 @@ export default function App() {
                 Search results ({searchResults.length})
                 <button onClick={() => setSearchResults(null)} style={{ marginLeft: 12, fontSize: 12, color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>Clear ✕</button>
               </div>
-              {searchResults.length ? <CardGrid items={searchResults} /> : <div style={{ color: 'var(--text-muted)', fontSize: 14, padding: '2rem 0' }}>No results for "{query}".</div>}
+              {searchResults.length ? <CardGrid items={searchResults} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} /> : <div style={{ color: 'var(--text-muted)', fontSize: 14, padding: '2rem 0' }}>No results for "{query}".</div>}
             </div>
           ) : trendingError ? (
             <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -460,9 +459,9 @@ export default function App() {
           ) : (
             <div>
               <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 14 }}>🔥 Trending movies this week</div>
-              <div style={{ marginBottom: 32 }}><CardGrid items={trending.movies} /></div>
+              <div style={{ marginBottom: 32 }}><CardGrid items={trending.movies} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} /></div>
               <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 14 }}>📺 Trending TV shows this week</div>
-              <CardGrid items={trending.tv} />
+              <CardGrid items={trending.tv} library={library} onOpen={openDetail} onSetStatus={handleSetStatus} />
             </div>
           )
         ) : tab === 'feed' ? (
