@@ -6,6 +6,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 import Modal from '../components/ui/Modal'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import PosterTile from '../components/ui/PosterTile'
 import EmptyState from '../components/ui/EmptyState'
 import styles from './ListsPage.module.css'
@@ -59,6 +60,7 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
   const [editDesc, setEditDesc] = useState(list.description || '')
   const [editPublic, setEditPublic] = useState(list.is_public)
   const [copied, setCopied] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   useEffect(() => {
     getListItems(list.id).then(data => { setItems(data); setLoading(false) })
@@ -108,7 +110,7 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
               <div className={styles.detailTitle}>{list.name}</div>
               <div className={styles.detailActions}>
                 <Button variant="icon" onClick={() => setEditing(true)} title="Edit"><Pencil size={16} /></Button>
-                <Button variant="icon" onClick={() => { if (window.confirm(`Delete "${list.name}"? This cannot be undone.`)) onDelete(list.id) }} title="Delete"><Trash2 size={16} /></Button>
+                <Button variant="icon" onClick={() => setConfirmDelete(true)} title="Delete"><Trash2 size={16} /></Button>
               </div>
             </div>
             <div className={styles.detailMeta}>
@@ -156,6 +158,14 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => { onDelete(list.id); setConfirmDelete(false) }}
+        title="Delete this list?"
+        message={`Delete "${list.name}"? This cannot be undone.`}
+      />
     </div>
   )
 }

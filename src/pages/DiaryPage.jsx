@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { BookOpen } from 'lucide-react'
 import WatchLogCard from '../components/WatchLogCard'
 import EmptyState from '../components/ui/EmptyState'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import styles from './DiaryPage.module.css'
 
 export default function DiaryPage({ diaryHook, onOpen }) {
   const { entries, loading, deleteEntry } = diaryHook
+  const [confirmTarget, setConfirmTarget] = useState(null)
 
   if (loading) return <div className={styles.centeredMsg}>Loading…</div>
 
@@ -45,12 +48,20 @@ export default function DiaryPage({ diaryHook, onOpen }) {
                 notes={e.notes}
                 rewatch={e.rewatch}
                 onOpenTitle={() => openEntry(e)}
-                onDelete={() => { if (window.confirm(`Remove this diary entry for "${e.title}"?`)) deleteEntry(e.id) }}
+                onDelete={() => setConfirmTarget(e)}
               />
             ))}
           </div>
         </div>
       ))}
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={() => { deleteEntry(confirmTarget.id); setConfirmTarget(null) }}
+        title="Remove diary entry?"
+        message={confirmTarget ? `Remove this diary entry for "${confirmTarget.title}"?` : ''}
+      />
     </div>
   )
 }

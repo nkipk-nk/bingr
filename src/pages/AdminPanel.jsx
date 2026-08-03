@@ -8,6 +8,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { PageTabBar } from '../components/ui/Tab'
 import styles from './AdminPanel.module.css'
 
@@ -23,15 +24,22 @@ export default function AdminPanel({ adminHook, onBack }) {
   const [userSearch, setUserSearch] = useState('')
   const [saving, setSaving] = useState(false)
   const [notice, setNotice] = useState(null) // { kind: 'ok'|'err', msg }
+  const [confirmAction, setConfirmAction] = useState(null) // { title, message, danger, run }
 
   const flash = (kind, msg) => { setNotice({ kind, msg }); setTimeout(() => setNotice(null), 4000) }
 
-  const handlePromote = async (u) => {
+  const handlePromote = (u) => {
     const nextRole = u.role === 'admin' ? 'user' : 'admin'
-    if (!window.confirm(`${nextRole === 'admin' ? 'Make admin' : 'Remove admin from'}: @${u.username}?`)) return
-    const { error } = await promoteUser(u.id, nextRole)
-    if (error) flash('err', error)
-    else flash('ok', `@${u.username} is now ${nextRole}`)
+    setConfirmAction({
+      title: nextRole === 'admin' ? 'Make admin?' : 'Remove admin?',
+      message: `${nextRole === 'admin' ? 'Make admin' : 'Remove admin from'}: @${u.username}?`,
+      danger: false,
+      run: async () => {
+        const { error } = await promoteUser(u.id, nextRole)
+        if (error) flash('err', error)
+        else flash('ok', `@${u.username} is now ${nextRole}`)
+      },
+    })
   }
 
   useEffect(() => { loadAll() }, [])
@@ -239,7 +247,7 @@ export default function AdminPanel({ adminHook, onBack }) {
                       <Button variant="secondary" size="sm" onClick={() => updateDonation(d.id, { show_on_wall: !d.show_on_wall })}>
                         {d.show_on_wall ? 'Remove from wall' : 'Add to wall'}
                       </Button>
-                      <Button variant="danger" size="sm" onClick={() => { if (window.confirm('Delete this donation record?')) deleteDonation(d.id) }}>Delete</Button>
+                      <Button variant="danger" size="sm" onClick={() => setConfirmAction({ title: 'Delete donation record?', message: 'This cannot be undone.', danger: true, run: () => deleteDonation(d.id) })}>Delete</Button>
                     </div>
                   </Card>
                 ))}
@@ -275,7 +283,7 @@ export default function AdminPanel({ adminHook, onBack }) {
                           ) : (
                             <Button variant="secondary" size="sm" onClick={() => restoreComment(c.id)}>Restore</Button>
                           )}
-                          <Button variant="danger" size="sm" onClick={() => { if (window.confirm('Permanently delete this comment?')) deleteCommentAdmin(c.id) }}>Delete</Button>
+                          <Button variant="danger" size="sm" onClick={() => setConfirmAction({ title: 'Permanently delete comment?', message: 'This cannot be undone.', danger: true, run: () => deleteCommentAdmin(c.id) })}>Delete</Button>
                         </div>
                       </div>
                       <p className={styles.itemBody}>{c.comment}</p>
@@ -287,6 +295,15 @@ export default function AdminPanel({ adminHook, onBack }) {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => { confirmAction.run(); setConfirmAction(null) }}
+        title={confirmAction?.title}
+        message={confirmAction?.message}
+        danger={confirmAction?.danger ?? true}
+      />
     </div>
   )
 }

@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import { IMG } from '../lib/tmdb'
 import { STATUS_LABELS } from '../lib/constants'
 import PosterTile from '../components/ui/PosterTile'
 import ProgressBar from '../components/ui/ProgressBar'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import styles from './LibraryTab.module.css'
 
 // Pure row list — status/type/sort/filter state lives one level up in
@@ -10,6 +12,8 @@ import styles from './LibraryTab.module.css'
 // is only used to decide whether the per-row status label is needed
 // (redundant when a single status is already selected).
 export default function LibraryTab({ items, status, onOpen, onRemove, episodeProps }) {
+  const [confirmTarget, setConfirmTarget] = useState(null)
+
   if (!items.length) return <div className={styles.centeredMsg}>No titles match your filters</div>
 
   return (
@@ -50,13 +54,20 @@ export default function LibraryTab({ items, status, onOpen, onRemove, episodePro
               )}
             </div>
 
-            <button className={styles.removeBtn} title="Remove"
-              onClick={() => { if (window.confirm(`Remove "${title}" from ${STATUS_LABELS[item.status].toLowerCase()}?`)) onRemove(item.tmdb_id) }}>
+            <button className={styles.removeBtn} title="Remove" onClick={() => setConfirmTarget(item)}>
               <X size={14} />
             </button>
           </div>
         )
       })}
+
+      <ConfirmDialog
+        open={!!confirmTarget}
+        onClose={() => setConfirmTarget(null)}
+        onConfirm={() => { onRemove(confirmTarget.tmdb_id); setConfirmTarget(null) }}
+        title="Remove from library?"
+        message={confirmTarget ? `Remove "${confirmTarget.title || confirmTarget.name}" from ${STATUS_LABELS[confirmTarget.status].toLowerCase()}?` : ''}
+      />
     </div>
   )
 }
