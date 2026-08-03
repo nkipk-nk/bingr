@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { tmdb, IMG } from '../lib/tmdb'
+import { logger } from '../lib/logger'
 import StarRating from './StarRating'
 import EpisodeTracker from './EpisodeTracker'
 import LogEntryModal from './LogEntryModal'
@@ -13,6 +14,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
   const [details, setDetails] = useState(null)
   const [providers, setProviders] = useState({})
   const [recs, setRecs] = useState([])
+  const [loadError, setLoadError] = useState(false)
   const [epTab, setEpTab] = useState(false)
   const [showListPicker, setShowListPicker] = useState(false)
   const [addedToList, setAddedToList] = useState(null)
@@ -22,18 +24,29 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
   const commentsHook = useComments(item.id, type, session, profile)
   const isTV = type === 'tv'
 
+  const [retryTick, setRetryTick] = useState(0)
+
   useEffect(() => {
-    setDetails(null); setProviders({}); setRecs([]); setEpTab(false)
+    let cancelled = false
+    setDetails(null); setProviders({}); setRecs([]); setEpTab(false); setLoadError(false)
     Promise.all([
       isTV ? tmdb.tvDetails(item.id) : tmdb.movieDetails(item.id),
       tmdb.providers(type, item.id),
       tmdb.recommendations(type, item.id),
     ]).then(([d, p, r]) => {
+      if (cancelled) return
       setDetails(d)
       setProviders(p.results || {})
       setRecs((r.results || []).slice(0, 8).map(x => ({ ...x, media_type: type })))
+    }).catch(err => {
+      // Previously unhandled — a TMDB failure left `details` null forever and
+      // "Where to watch" showed "Loading..." with no way out.
+      if (cancelled) return
+      logger.error('Failed to load title details', err, { tmdbId: item.id, type })
+      setLoadError(true)
     })
-  }, [item.id, type])
+    return () => { cancelled = true }
+  }, [item.id, type, retryTick])
 
   const title = item.title || item.name || ''
   const year = (item.release_date || item.first_air_date || '').slice(0, 4)
@@ -91,6 +104,13 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
               {[year, isTV ? 'TV Series' : 'Movie', genres, extra].filter(Boolean).join(' · ')}
               {tmdbRating && ` · TMDB ★ ${tmdbRating}`}
             </div>
+
+            {loadError && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#e24b4a', background: 'rgba(226,75,74,0.08)', padding: '8px 12px', borderRadius: 8, marginBottom: 12 }}>
+                <span>Couldn't load full details. You can still rate and track this title.</span>
+                <button onClick={() => setRetryTick(t => t + 1)} style={{ background: 'none', border: 'none', color: '#e24b4a', textDecoration: 'underline', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0, flexShrink: 0 }}>Retry</button>
+              </div>
+            )}
 
             {/* Overall progress for TV */}
             {showProgress && showProgress.total > 0 && (
@@ -198,7 +218,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
               {flat.length || rent.length || buy.length ? (
                 <><ProviderChips items={flat} label="Stream" /><ProviderChips items={rent} label="Rent" /><ProviderChips items={buy} label="Buy" /></>
               ) : (
-                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{details ? 'No streaming info available for your region.' : 'Loading...'}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{loadError ? 'Streaming info unavailable right now.' : details ? 'No streaming info available for your region.' : 'Loading...'}</div>
               )}
             </div>
 

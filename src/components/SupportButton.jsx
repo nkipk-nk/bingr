@@ -23,7 +23,14 @@ export default function SupportButton({ session, profile, onShowSupporters }) {
       .eq('show_on_wall', true)
       .order('donated_at', { ascending: false })
       .limit(3)
-      .then(({ data }) => setSupporters(data || []))
+      .then(({ data, error }) => {
+        // This is a small supplementary list inside a modal, not its own
+        // page — on failure it just stays empty rather than showing a
+        // dedicated error state, but the failure is at least logged now
+        // instead of silently discarded.
+        if (error) { logger.warn('Failed to load recent supporters', { message: error.message }); return }
+        setSupporters(data || [])
+      })
   }, [open])
 
   const handleCopy = async () => {

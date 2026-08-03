@@ -1142,7 +1142,14 @@ export function useLibrary(session) {
 **Effort:** 🟡 2–3 days for all nine hooks. Do `useFeed` + `useLibrary` first (half a day) for most of
 the benefit.
 
-#### R2 — Wire the TMDB layer with caching, retry, and abort *(addresses §2.2, M7, M8)*
+#### R2 — Wire the TMDB layer with caching, retry, and abort *(addresses §2.2, M7, M8)* — ✅ implemented
+
+**Status: shipped**, close to the shape proposed below. [lib/tmdb.js](src/lib/tmdb.js) now caches by
+path (6h TTL — TMDB catalogue metadata is near-static within a session), deduplicates concurrent
+identical requests via an in-flight map, retries through the existing `withRetry`, and uses
+`AbortSignal.timeout(10000)`. The season fan-out in [App.jsx](src/App.jsx) is bounded to 4 concurrent
+requests via a new `mapWithConcurrency` helper instead of firing one request per library show at once.
+Kept for reference — the original proposal, which the shipped version follows closely:
 
 Even before R1, `lib/tmdb.js` should not be a bare `fetch`:
 
@@ -1577,8 +1584,8 @@ not just reasoned about.
 | M4 | 🟠 Moderate | Landing legal links dead | Claude | ✅ **verified live** |
 | M5 | 🟠 Moderate | Feed CTA dead click | Claude | ✅ fixed |
 | M6 | 🟠 Moderate | Feed never auto-refreshes | Claude | ✅ fixed |
-| M7 | 🟠 Moderate | No `.catch()` on TMDB chains | | open |
-| M8 | 🟠 Moderate | TMDB N+1 fan-out | | open |
+| M7 | 🟠 Moderate | No `.catch()` on TMDB chains | Claude | ✅ fixed — `DetailPanel`, `EpisodeTracker` now show a real error state with Retry instead of hanging on "Loading..." forever; also fixed the same missing-`error`-check bug in `SupportersPage`/`SupportButton` (Supabase, same failure class) |
+| M8 | 🟠 Moderate | TMDB N+1 fan-out | Claude | ✅ fixed — bounded to 4 concurrent requests via `mapWithConcurrency`, failures now logged instead of swallowed |
 | M9 | 🟠 Moderate | Anon feedback spam vector | Claude | ✅ **verified** — anon insert → `401` |
 | M10 | 🟠 Moderate | No DB length constraints | Claude | ✅ fixed for comments / diary notes / bio / feedback |
 | M11 | 🟠 Moderate | CSP blocks Google avatars | Claude | ✅ **verified live** in response headers |
@@ -1601,6 +1608,19 @@ not just reasoned about.
 3. ~~Replace the placeholder M-Pesa number~~ — ✅ **done**, live.
 4. ~~Run `20260803_p1a_library_visibility.sql`~~ — ✅ **done**, verified live (C10 closed). Public "Top Rated" rankings now work, and the privacy toggle correctly hides them when a profile is set private.
 5. **Run [`supabase/migrations/20260803_p1b_comment_flags.sql`](supabase/migrations/20260803_p1b_comment_flags.sql)** — closes the server-side half of **M17**. Until then, reported comments still don't auto-hide (`flag_count` stays 0), though the client now at least confirms the report was received.
+
+### Round 4 (P1/P2 continuation) — findings closed
+
+- **M7 / M8 / R2**: `lib/tmdb.js` rewritten with request caching (6h TTL, keyed by path), in-flight
+  deduplication, and retry via the existing `withRetry`. `DetailPanel.jsx` and `EpisodeTracker.jsx` no
+  longer hang on "Loading..." forever on a TMDB failure — both now show a real error state with a
+  Retry button (implemented via a `cancelled` flag + `retryTick` dependency, so a stale in-flight
+  request from a previous title can't clobber state after the user has moved on). The season-list
+  fan-out in `App.jsx` (previously one simultaneous request per TV show in the library) is now bounded
+  to 4 concurrent requests via a new `mapWithConcurrency` helper, with failures logged instead of
+  silently swallowed. Also fixed the identical missing-`error`-check bug in `SupportersPage.jsx` and
+  `SupportButton.jsx` (Supabase queries, not TMDB, but the same failure class — a query error rendered
+  identically to "no supporters yet").
 
 ### Round 3 (P1 continuation) — findings closed
 

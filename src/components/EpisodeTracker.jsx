@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react'
 import { tmdb } from '../lib/tmdb'
+import { logger } from '../lib/logger'
 
 export default function EpisodeTracker({ show, episodes, isWatched, toggleEpisode, markSeasonWatched, getSeasonProgress }) {
   const [activeSeason, setActiveSeason] = useState(null)
   const [seasonData, setSeasonData] = useState({})
   const [loading, setLoading] = useState(false)
+  const [loadError, setLoadError] = useState(false)
+  const [retryTick, setRetryTick] = useState(0)
 
   const seasons = (show.seasons || []).filter(s => s.season_number > 0)
 
@@ -18,11 +21,19 @@ export default function EpisodeTracker({ show, episodes, isWatched, toggleEpisod
     if (activeSeason === null) return
     if (seasonData[activeSeason]) return
     setLoading(true)
+    setLoadError(false)
     tmdb.seasonDetails(show.id, activeSeason).then(data => {
       setSeasonData(prev => ({ ...prev, [activeSeason]: data }))
       setLoading(false)
+    }).catch(err => {
+      // Previously unhandled — a failure here left the season permanently
+      // stuck on "Loading episodes..." with no way to recover without
+      // switching tabs and back.
+      logger.error('Failed to load season episodes', err, { showId: show.id, season: activeSeason })
+      setLoading(false)
+      setLoadError(true)
     })
-  }, [activeSeason, show.id])
+  }, [activeSeason, show.id, retryTick])
 
   const currentSeasonEps = seasonData[activeSeason]?.episodes || []
   const prog = activeSeason ? getSeasonProgress(show.id, activeSeason, currentSeasonEps.length) : { watched: 0, total: 0 }
@@ -91,6 +102,11 @@ export default function EpisodeTracker({ show, episodes, isWatched, toggleEpisod
       {/* Episode list */}
       {loading ? (
         <div style={{ fontSize: 13, color: 'var(--text-muted)', padding: '1rem 0' }}>Loading episodes...</div>
+      ) : loadError ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#e24b4a', padding: '1rem 0' }}>
+          <span>Couldn't load episodes for this season.</span>
+          <button onClick={() => setRetryTick(t => t + 1)} style={{ background: 'none', border: 'none', color: '#e24b4a', textDecoration: 'underline', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', padding: 0 }}>Retry</button>
+        </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {currentSeasonEps.map(ep => {

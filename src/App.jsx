@@ -8,7 +8,7 @@ import { useFollows } from './hooks/useFollows'
 import { useFeed } from './hooks/useFeed'
 import { useProfile } from './hooks/useProfile'
 import { useAdmin } from './hooks/useAdmin'
-import { tmdb } from './lib/tmdb'
+import { tmdb, mapWithConcurrency } from './lib/tmdb'
 import { logger } from './lib/logger'
 import { supabase } from './lib/supabase'
 import LandingPage from './pages/LandingPage'
@@ -169,13 +169,19 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    Object.values(library)
-      .filter(x => x.media_type === 'tv' && !seasonsCache[x.tmdb_id])
-      .forEach(show => {
-        tmdb.tvDetails(show.tmdb_id)
-          .then(d => { if (d?.seasons) seasonsCache[show.tmdb_id] = d.seasons })
-          .catch(() => {})
+    const shows = Object.values(library).filter(x => x.media_type === 'tv' && !seasonsCache[x.tmdb_id])
+    if (!shows.length) return
+    // Bounded concurrency instead of firing one request per TV show at once —
+    // a library of any real size could trip TMDB's rate limit, and failures
+    // were previously swallowed by an empty .catch(), so a 429 silently made
+    // episode progress vanish from the Watchlist with no explanation.
+    mapWithConcurrency(shows, 4, show =>
+      tmdb.tvDetails(show.tmdb_id).then(d => {
+        if (d?.seasons) seasonsCache[show.tmdb_id] = d.seasons
+      }).catch(err => {
+        logger.warn('Failed to load season list for library show', { tmdbId: show.tmdb_id, message: err?.message })
       })
+    )
   }, [library])
 
   useEffect(() => {

@@ -1,24 +1,38 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { logger } from '../lib/logger'
 
 export default function SupportersPage({ onBack }) {
   const [supporters, setSupporters] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [total, setTotal] = useState(0)
 
-  useEffect(() => {
+  const load = useCallback(() => {
+    setLoading(true)
+    setLoadError(false)
     supabase
       .from('bingr_donations')
       .select('username, amount_kes, donated_at, note')
       .eq('confirmed', true)
       .eq('show_on_wall', true)
       .order('donated_at', { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        // Previously discarded `error` — a failed query rendered identically
+        // to "no supporters yet" instead of a distinguishable error state.
+        if (error) {
+          logger.error('Failed to load supporters', error)
+          setLoadError(true)
+          setLoading(false)
+          return
+        }
         setSupporters(data || [])
-        setTotal((data || []).reduce((s, d) => s + d.amount_kes, 0))
+        setTotal((data || []).reduce((s, d) => s + (d.amount_kes || 0), 0))
         setLoading(false)
       })
   }, [])
+
+  useEffect(() => { load() }, [load])
 
   return (
     <div style={{ maxWidth: 600, margin: '0 auto', padding: '2rem 1.5rem' }}>
@@ -40,6 +54,11 @@ export default function SupportersPage({ onBack }) {
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: 14 }}>Loading…</div>
+      ) : loadError ? (
+        <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+          <p style={{ fontSize: 14, marginBottom: 12 }}>Couldn't load supporters. Please try again.</p>
+          <button onClick={load} style={{ padding: '8px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>Retry</button>
+        </div>
       ) : supporters.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
           <p style={{ fontSize: 14, marginBottom: 16 }}>No supporters yet — be the first! 🙏</p>
