@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
+import { Coffee, Smartphone, Globe, Sparkles } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import Button from './ui/Button'
+import styles from './SupportSection.module.css'
 
 const AMOUNTS = [50, 150, 300]
 const getNumber = () => ['07', '00', '231', '485'].join('')
@@ -49,75 +52,58 @@ export default function SupportSection({ session, profile, onShowSupporters }) {
   const number = getNumber()
 
   return (
-    <div style={{ maxWidth: 480, margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-        <div style={{ fontSize: 40, marginBottom: 10 }}>☕</div>
-        <h2 style={{ fontSize: 19, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Support bingr</h2>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7 }}>
+    <div className={styles.wrap}>
+      <div className={styles.hero}>
+        <Coffee size={36} className={styles.heroIcon} />
+        <div className={styles.heroTitle}>Support bingr</div>
+        <p className={styles.heroDesc}>
           bingr is free, ad-free, and built by one developer in Nairobi.
           If it saves you time or brings you joy, a small support means a lot 🙏
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 20 }}>
-        {AMOUNTS.map(a => (
-          <div key={a} style={{ padding: '6px 14px', borderRadius: 20, background: 'var(--bg-input)', border: '1px solid var(--border)', fontSize: 13, color: 'var(--text-muted)' }}>KES {a}</div>
-        ))}
+      <div className={styles.amounts}>
+        {AMOUNTS.map(a => <div key={a} className={styles.amountChip}>KES {a}</div>)}
       </div>
 
       {!session ? (
-        <div style={{ padding: '12px 16px', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>🔒 Sign in to support bingr</div>
-        </div>
-
+        <div className={styles.notice}><div className={styles.noticeText}>Sign in to support bingr</div></div>
       ) : kenyan ? (
         !revealed ? (
-          <button onClick={() => setRevealed(true)}
-            style={{ width: '100%', padding: '13px', borderRadius: 12, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 8 }}>
-            📱 Show M-Pesa number
-          </button>
+          <Button variant="primary" className={styles.fullBtn} onClick={() => setRevealed(true)}>
+            <Smartphone size={16} /> Show M-Pesa number
+          </Button>
         ) : (
-          <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: 12, padding: '1rem 1.25rem', marginBottom: 8 }}>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 6 }}>Send to this M-Pesa number:</div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--text)', letterSpacing: 2 }}>
-                {number.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3')}
-              </div>
-              <button onClick={handleCopy} style={{ padding: '7px 14px', borderRadius: 8, border: '1px solid var(--border)', background: copied ? '#1d9e75' : 'var(--bg-card)', color: copied ? '#fff' : 'var(--text-muted)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', flexShrink: 0 }}>
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
+          <div className={styles.mpesaCard}>
+            <div className={styles.mpesaLabel}>Send to this M-Pesa number:</div>
+            <div className={styles.mpesaRow}>
+              <div className={styles.mpesaNumber}>{number.replace(/(\d{4})(\d{3})(\d{3})/, '$1 $2 $3')}</div>
+              <Button variant="secondary" size="sm" onClick={handleCopy}>{copied ? '✓ Copied' : 'Copy'}</Button>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 10, lineHeight: 1.6 }}>
-              M-Pesa → Send Money → Enter number → Enter amount → PIN
-            </div>
+            <div className={styles.mpesaHint}>M-Pesa → Send Money → Enter number → Enter amount → PIN</div>
           </div>
         )
-
       ) : (
-        <div style={{ padding: '1.25rem', background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)', textAlign: 'center', marginBottom: 8 }}>
-          <div style={{ fontSize: 28, marginBottom: 8 }}>🌍</div>
-          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>International support coming soon</div>
-          <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.7 }}>
-            We're working on international payment options. Sharing bingr with friends is equally valuable — thank you 💚
-          </div>
+        <div className={styles.intlCard}>
+          <Globe size={28} className={styles.intlIcon} />
+          <div className={styles.intlTitle}>International support coming soon</div>
+          <div className={styles.intlDesc}>We're working on international payment options. Sharing bingr with friends is equally valuable — thank you 💚</div>
         </div>
       )}
 
-      <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', margin: '10px 0' }}>
-        No pressure — bingr is free forever 💚
-      </p>
+      <p className={styles.disclaimer}>No pressure — bingr is free forever 💚</p>
 
       {supporters.length > 0 && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>🌟 Recent supporters</div>
-            <button onClick={onShowSupporters} style={{ fontSize: 12, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>View all →</button>
+        <div className={styles.recentSupporters}>
+          <div className={styles.recentHeader}>
+            <div className={styles.recentTitle}><Sparkles size={14} /> Recent supporters</div>
+            <button onClick={onShowSupporters} className={styles.recentViewAll}>View all →</button>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+          <div className={styles.recentList}>
             {supporters.map((s, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 10px', background: 'var(--bg-input)', borderRadius: 8 }}>
-                <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{s.username}</div>
-                <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600 }}>KES {s.amount_kes}</div>
+              <div key={i} className={styles.recentRow}>
+                <div className={styles.recentName}>{s.username}</div>
+                <div className={styles.recentAmount}>KES {s.amount_kes}</div>
               </div>
             ))}
           </div>

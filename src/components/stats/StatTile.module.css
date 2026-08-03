@@ -1,0 +1,7 @@
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--space-3); }
+
+.tile { display: flex; flex-direction: column; }
+.icon { color: var(--magenta-bright); margin-bottom: var(--space-2); }
+.value { font-family: var(--font-mono); font-size: var(--text-mono-lg-size); font-weight: var(--text-mono-lg-weight); color: var(--text-primary); line-height: 1.1; margin-bottom: var(--space-1); }
+.label { font-family: var(--font-body); font-size: var(--text-body-sm-size); font-weight: 600; color: var(--text-primary); }
+.sub { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); margin-top: 2px; }

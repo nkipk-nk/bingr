@@ -53,7 +53,7 @@ export default function WatchLogCard({
         {notes && <div className={styles.notes}>"{notes}"</div>}
       </div>
 
-      {variant === 'diary' && (
+      {variant === 'diary' && onDelete && (
         <button className={styles.deleteBtn} title="Remove entry" onClick={e => { e.stopPropagation(); onDelete() }}>
           <X size={14} />
         </button>

@@ -29,6 +29,11 @@ const MIGRATED_FILES = [
   'src/components/ExportPanel.jsx',
   'src/pages/LandingPage.jsx',
   'src/pages/AuthPage.jsx',
+  'src/pages/StatsPage.jsx',
+  'src/components/RankedList.jsx',
+  'src/pages/ListsPage.jsx',
+  'src/pages/YouHub.jsx',
+  'src/components/SupportSection.jsx',
 ]
 
 export default defineConfig([
