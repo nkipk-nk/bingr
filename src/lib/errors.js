@@ -36,6 +36,35 @@ export class DatabaseError extends BingrError {
 }
 
 /**
+ * Assert that a Supabase mutation actually affected a row.
+ *
+ * PostgREST returns 200/204 with NO error when RLS filters a write down to
+ * zero rows. Checking only `error` therefore reports success for writes that
+ * silently did nothing — this is what hid the signup username loss (C4) and
+ * the undeletable-hidden-comment bug (C8) in the audit.
+ *
+ * Usage: pass a query that ends in `.select()` so rows come back.
+ *
+ *   const { data, error } = await supabase.from('x').delete().eq(...).select()
+ *   assertAffected({ data, error }, 'deleteComment', { commentId })
+ *
+ * @throws {DatabaseError} if the query errored or matched no rows
+ */
+export function assertAffected({ data, error }, label, context = {}) {
+  if (error) {
+    throw new DatabaseError(`${label} failed`, { supabaseError: error.message, ...context })
+  }
+  const rows = Array.isArray(data) ? data.length : data ? 1 : 0
+  if (rows === 0) {
+    throw new DatabaseError(
+      `${label} affected no rows — the record is missing or blocked by access rules`,
+      { ...context, zeroRows: true },
+    )
+  }
+  return data
+}
+
+/**
  * Retry an async function with exponential backoff
  * @param {function} fn - async function to retry
  * @param {object} opts

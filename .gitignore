@@ -13,5 +13,10 @@ dist/
 .DS_Store
 .vscode/
 
-#supabase
-supabase/
+# Supabase
+# NOTE: schema/migrations MUST be tracked — they are the source of truth for
+# RLS policies and are reviewable alongside the code that depends on them.
+# Only ignore local/generated state.
+supabase/.branches/
+supabase/.temp/
+supabase/config.toml

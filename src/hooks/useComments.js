@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { moderateComment, checkCommentRateLimit } from '../lib/moderation'
+import { assertAffected } from '../lib/errors'
 
 export function useComments(tmdbId, mediaType, session, profile) {
   const [comments, setComments] = useState([])
@@ -64,17 +65,23 @@ export function useComments(tmdbId, mediaType, session, profile) {
   }, [session, profile, tmdbId, mediaType])
 
   const deleteComment = useCallback(async (commentId) => {
-    if (!session) return
+    if (!session) return { error: 'You must be signed in.' }
     try {
-      const { error } = await supabase
+      // .select() so we can tell a real delete from an RLS-filtered no-op —
+      // PostgREST returns 204 for both. Without this the comment vanished from
+      // the UI while still living in the database.
+      const res = await supabase
         .from('bingr_comments')
         .delete()
         .eq('id', commentId)
         .eq('user_id', session.user.id)
-      if (error) throw error
+        .select()
+      assertAffected(res, 'deleteComment', { commentId, userId: session.user.id })
       setComments(prev => prev.filter(c => c.id !== commentId))
+      return { error: null }
     } catch (err) {
       logger.error('deleteComment failed', err, { commentId })
+      return { error: 'Could not delete that comment. Please refresh and try again.' }
     }
   }, [session])
 

@@ -449,9 +449,9 @@ export default function App() {
               following={followsHook.following}
               onOpenItem={openDetail}
               onOpenProfile={(username) => { window.location.href = `/@${username}` }}
-              onDiscover={() => {}}
+              onDiscover={() => document.getElementById('find-people')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             />
-            <div style={{ marginTop: 32 }}>
+            <div id="find-people" style={{ marginTop: 32, scrollMarginTop: 100 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>👥 Find people to follow</div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Search by username or browse recently active users</div>
               <FindPeople session={session} followsHook={followsHook} onOpenProfile={(username) => { window.location.href = `/@${username}` }} />

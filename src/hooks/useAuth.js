@@ -51,21 +51,37 @@ export function useAuth() {
         if (existing) return { data: null, error: { message: 'That username is already taken.' } }
       }
 
+      const cleanUsername = username ? username.toLowerCase().trim() : null
+
       const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: {
+          emailRedirectTo: window.location.origin,
+          // Carried into auth.users.raw_user_meta_data so the handle_new_user()
+          // trigger can populate the profile server-side. This is the only path
+          // that works when email confirmation is enabled — in that mode signUp
+          // returns no session, so the client UPDATE below is unauthenticated
+          // and RLS filters it to zero rows.
+          data: {
+            ...(cleanUsername ? { username: cleanUsername } : {}),
+            ...(country ? { country_code: country } : {}),
+          },
+        },
       })
       if (error) return { data: null, error: { message: friendlyAuthError(error.message) } }
 
-      // Save username by updating the profile row the trigger just created
-      // We retry a few times since the trigger may take a moment
-      if (data.user?.id && username) {
-        const cleanUsername = username.toLowerCase().trim()
+      // Belt-and-braces: if we did get a session (email confirmation disabled),
+      // write the profile directly too, in case the trigger hasn't been updated
+      // to read the metadata yet. Retries cover trigger latency on row creation.
+      if (data.user?.id && data.session && cleanUsername) {
         let saved = false
         for (let attempt = 1; attempt <= 5; attempt++) {
           await new Promise(r => setTimeout(r, attempt * 400))
-          const { error: updateErr } = await supabase
+          // .select() matters: an RLS-filtered UPDATE returns no error and no
+          // rows, which the previous code counted as success and broke out of
+          // the retry loop on the first attempt.
+          const { data: rows, error: updateErr } = await supabase
             .from('profiles')
             .update({
               username: cleanUsername,
@@ -73,9 +89,14 @@ export function useAuth() {
               ...(country ? { country_code: country } : {}),
             })
             .eq('id', data.user.id)
-          if (!updateErr) { saved = true; break }
+            .select()
+          if (!updateErr && rows?.length) { saved = true; break }
         }
-        if (!saved) logger.warn('Username save failed after retries', { userId: data.user.id })
+        if (!saved) {
+          logger.error('Username save failed after retries', new Error('profile_update_no_rows'), {
+            userId: data.user.id, hasSession: !!data.session,
+          })
+        }
       }
 
       logger.info('User signed up')

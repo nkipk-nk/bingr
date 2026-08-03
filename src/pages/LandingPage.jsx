@@ -1,4 +1,4 @@
-export default function LandingPage({ onSignUp, onSignIn }) {
+export default function LandingPage({ onSignUp, onSignIn, onShowPrivacy, onShowTerms }) {
   const features = [
     { icon: '🎬', title: 'Track everything', desc: 'Movies, TV shows, individual episodes — all in one place. Never lose track of where you left off.' },
     { icon: '⭐', title: 'Rate & rank', desc: 'Rate on a 10-point scale and build your personal rankings. Know exactly what was worth your time.' },
@@ -114,8 +114,14 @@ export default function LandingPage({ onSignUp, onSignIn }) {
           <img src="/logo.png" alt="" style={{ width: 20, height: 20, borderRadius: 4, objectFit: 'contain' }} />
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--accent)' }}>bingr</span>
         </span>
-        {['Privacy Policy', 'Terms of Service'].map(label => (
-          <span key={label} style={{ fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}>{label}</span>
+        {[
+          { label: 'Privacy Policy', action: onShowPrivacy },
+          { label: 'Terms of Service', action: onShowTerms },
+        ].map(item => (
+          <span key={item.label} onClick={item.action}
+            style={{ fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>{item.label}</span>
         ))}
         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>© {new Date().getFullYear()} bingr · Made in Nairobi 🇰🇪</span>
       </footer>

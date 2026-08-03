@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import { IMG } from '../lib/tmdb'
+import { logger } from '../lib/logger'
 import { computeStats, formatHours } from '../lib/stats'
 
 const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
@@ -11,12 +12,16 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
   const [profile, setProfile] = useState(null)
   const [library, setLibrary] = useState([])
   const [libraryMap, setLibraryMap] = useState({})
-  const stats = useMemo(() => computeStats(diary, libraryMap, {}), [diary, libraryMap])
   const [diary, setDiary] = useState([])
   const [lists, setLists] = useState([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [tab, setTab] = useState('rankings')
+
+  // Must stay below the useState declarations above — referencing `diary` in the
+  // dependency array before its `const` binding is initialised throws a
+  // ReferenceError (temporal dead zone) and crashes every /@username page.
+  const stats = useMemo(() => computeStats(diary, libraryMap, {}), [diary, libraryMap])
 
   useEffect(() => {
     if (!username) { setNotFound(true); setLoading(false); return }
@@ -61,6 +66,7 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, curren
 
         setLoading(false)
       } catch (err) {
+        logger.error('UserProfilePage load failed', err, { username })
         if (!cancelled) {
           setNotFound(true)
           setLoading(false)

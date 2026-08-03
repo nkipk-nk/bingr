@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 
@@ -6,6 +6,7 @@ export function useFeed(session, following) {
   const [feed, setFeed] = useState([])
   const [loading, setLoading] = useState(false)
   const [loaded, setLoaded] = useState(false)
+  const [error, setError] = useState(null)
 
   const load = useCallback(async () => {
     if (!session || following.length === 0) {
@@ -14,23 +15,29 @@ export function useFeed(session, following) {
       return
     }
     setLoading(true)
+    setError(null)
     try {
-      // Fetch recent diary entries from followed users
-      const { data: diaryData } = await supabase
+      // NOTE: `error` must be read on every query below. PostgREST reports a
+      // missing embed (e.g. a absent foreign key) as HTTP 400 with data
+      // undefined — discarding `error` here made the feed render an ordinary
+      // "nothing yet" empty state for weeks, with nothing reaching Sentry.
+      const { data: diaryData, error: diaryErr } = await supabase
         .from('bingr_diary')
         .select('*, profiles!inner(username, display_name)')
         .in('user_id', following)
         .order('watched_date', { ascending: false })
         .limit(60)
+      if (diaryErr) throw diaryErr
 
-      // Fetch recent ratings from followed users (library items with rating > 0, recently updated)
-      const { data: ratingData } = await supabase
+      // Recent ratings from followed users (library items with rating > 0)
+      const { data: ratingData, error: ratingErr } = await supabase
         .from('bingr_library')
         .select('*, profiles!inner(username, display_name)')
         .in('user_id', following)
         .gt('rating', 0)
         .order('updated_at', { ascending: false })
         .limit(40)
+      if (ratingErr) throw ratingErr
 
       // Merge and sort by date
       const diaryItems = (diaryData || []).map(e => ({
@@ -76,12 +83,23 @@ export function useFeed(session, following) {
       setFeed(merged)
       setLoaded(true)
     } catch (err) {
-      logger.error('useFeed.load failed', err, { userId: session?.user.id })
+      logger.error('useFeed.load failed', err, {
+        userId: session?.user.id,
+        followingCount: following.length,
+      })
+      setError("Couldn't load your feed. Please try again.")
       setLoaded(true)
     } finally {
       setLoading(false)
     }
   }, [session, following])
 
-  return { feed, loading, loaded, load }
+  // Reload whenever the follow list changes. useFollows resolves asynchronously,
+  // so on first mount `following` is [] — without this, the feed latched on
+  // loaded=true against an empty list and never refreshed once follows arrived.
+  useEffect(() => {
+    if (session) load()
+  }, [load, session])
+
+  return { feed, loading, loaded, error, load }
 }

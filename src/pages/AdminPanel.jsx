@@ -11,6 +11,17 @@ export default function AdminPanel({ adminHook, onBack }) {
   const [donationForm, setDonationForm] = useState({ username: '', amount_kes: '', note: '', show_on_wall: false, confirmed: true })
   const [userSearch, setUserSearch] = useState('')
   const [saving, setSaving] = useState(false)
+  const [notice, setNotice] = useState(null) // { kind: 'ok'|'err', msg }
+
+  const flash = (kind, msg) => { setNotice({ kind, msg }); setTimeout(() => setNotice(null), 4000) }
+
+  const handlePromote = async (u) => {
+    const nextRole = u.role === 'admin' ? 'user' : 'admin'
+    if (!window.confirm(`${nextRole === 'admin' ? 'Make admin' : 'Remove admin from'}: @${u.username}?`)) return
+    const { error } = await promoteUser(u.id, nextRole)
+    if (error) flash('err', error)
+    else flash('ok', `@${u.username} is now ${nextRole}`)
+  }
 
   useEffect(() => { loadAll() }, [])
 
@@ -47,10 +58,21 @@ export default function AdminPanel({ adminHook, onBack }) {
       <div style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', gap: 16 }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, fontFamily: 'inherit', padding: 0 }}>← Back to bingr</button>
         <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)' }}>⚙️ Admin Panel</div>
-        <div style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--text-muted)', padding: '4px 10px', background: 'rgba(232,57,42,0.1)', borderRadius: 20, color: 'var(--accent)', fontWeight: 600 }}>ADMIN</div>
+        <div style={{ marginLeft: 'auto', fontSize: 12, padding: '4px 10px', background: 'rgba(232,57,42,0.1)', borderRadius: 20, color: 'var(--accent)', fontWeight: 600 }}>ADMIN</div>
       </div>
 
       <div style={{ padding: '1.5rem' }}>
+
+        {notice && (
+          <div style={{
+            marginBottom: 16, padding: '10px 14px', borderRadius: 10, fontSize: 13,
+            color: notice.kind === 'ok' ? '#1d9e75' : '#e24b4a',
+            background: notice.kind === 'ok' ? 'rgba(29,158,117,0.08)' : 'rgba(226,75,74,0.08)',
+            border: `1px solid ${notice.kind === 'ok' ? 'rgba(29,158,117,0.25)' : 'rgba(226,75,74,0.25)'}`,
+          }}>
+            {notice.kind === 'ok' ? '✓ ' : '⚠ '}{notice.msg}
+          </div>
+        )}
 
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12, marginBottom: 24 }}>
@@ -112,7 +134,7 @@ export default function AdminPanel({ adminHook, onBack }) {
                         </td>
                         <td style={{ padding: '10px 12px' }}>
                           <button
-                            onClick={() => { if (window.confirm(`${u.role === 'admin' ? 'Remove admin from' : 'Make admin'}: @${u.username}?`)) promoteUser(u.id, u.role === 'admin' ? 'user' : 'admin') }}
+                            onClick={() => handlePromote(u)}
                             style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-input)', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'inherit' }}>
                             {u.role === 'admin' ? 'Remove admin' : 'Make admin'}
                           </button>

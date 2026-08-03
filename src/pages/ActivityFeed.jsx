@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { IMG } from '../lib/tmdb'
 
 const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
@@ -74,11 +73,22 @@ function FeedItem({ item, onOpenItem, onOpenProfile }) {
 }
 
 export default function ActivityFeed({ feedHook, following, onOpenItem, onOpenProfile, onDiscover }) {
-  const { feed, loading, loaded, load } = feedHook
+  const { feed, loading, loaded, error, load } = feedHook
 
-  useEffect(() => {
-    if (!loaded) load()
-  }, [loaded, load])
+  // useFeed now loads itself and reloads when `following` changes, so there is
+  // no mount-time fetch here. Doing it here previously latched loaded=true
+  // against an empty follow list and the feed never recovered.
+
+  if (error) return (
+    <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>
+      <div style={{ fontSize: 48, marginBottom: 12 }}>📡</div>
+      <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 6 }}>Couldn't load your feed</div>
+      <div style={{ fontSize: 14, marginBottom: 20 }}>{error}</div>
+      <button onClick={load} style={{ padding: '9px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500 }}>
+        Try again
+      </button>
+    </div>
+  )
 
   if (following.length === 0) return (
     <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-muted)' }}>

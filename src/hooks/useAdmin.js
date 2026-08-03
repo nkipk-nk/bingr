@@ -81,9 +81,22 @@ export function useAdmin(profile) {
   }, [])
 
   const promoteUser = useCallback(async (userId, role) => {
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId)
-    if (!error) setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
-    return { error }
+    // .select() is required: without an admin UPDATE policy on profiles this
+    // returned 200/[] with no error, and the optimistic setUsers below made the
+    // UI show a role change that never persisted. See migration p0b / C9.
+    const { data, error } = await supabase
+      .from('profiles').update({ role }).eq('id', userId).select()
+    if (error) {
+      logger.error('promoteUser failed', error, { userId, role })
+      return { error: error.message }
+    }
+    if (!data?.length) {
+      const err = 'Role change did not apply — you may not have permission.'
+      logger.error('promoteUser affected no rows', new Error('zero_rows'), { userId, role })
+      return { error: err }
+    }
+    setUsers(prev => prev.map(u => u.id === userId ? { ...u, role } : u))
+    return { error: null }
   }, [])
 
   const deleteUser = useCallback(async (userId) => {
