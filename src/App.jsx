@@ -11,6 +11,7 @@ import { useAdmin } from './hooks/useAdmin'
 import { tmdb, mapWithConcurrency } from './lib/tmdb'
 import { logger } from './lib/logger'
 import { supabase } from './lib/supabase'
+import { RATING_LABELS } from './lib/constants'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import ActivityFeed from './pages/ActivityFeed'
@@ -220,11 +221,10 @@ export default function App() {
   }
 
   const handleSetRating = async (item, rating) => {
-    const LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
     const cur = library[item.id]?.rating
     await setRating(item, rating)
     if (cur === rating) showToast('Rating removed')
-    else showToast(`Rated ${rating}/10 — ${LABELS[rating]}`)
+    else showToast(`Rated ${rating}/10 — ${RATING_LABELS[rating]}`)
   }
 
   const openDetail = (item) => {

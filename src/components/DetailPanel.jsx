@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
 import { tmdb, IMG } from '../lib/tmdb'
 import { logger } from '../lib/logger'
+import { STATUS_COLORS, STATUS_LABELS } from '../lib/constants'
 import StarRating from './StarRating'
 import EpisodeTracker from './EpisodeTracker'
 import LogEntryModal from './LogEntryModal'
 import CommentsSection from './CommentsSection'
 import { useComments } from '../hooks/useComments'
-
-const STATUS_COLORS = { watched: '#1d9e75', watching: '#ba7517', watchlist: '#378add' }
-const STATUS_LABELS = { watched: 'Watched ✓', watching: 'Watching', watchlist: 'Watchlist' }
 
 export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [], session, profile, onOpenProfile, onShowAuth }) {
   const [details, setDetails] = useState(null)
@@ -136,7 +134,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
                   color: entry.status === s ? '#fff' : 'var(--text-muted)',
                   border: `1px solid ${entry.status === s ? 'transparent' : 'var(--border)'}`,
                   transition: 'all 0.15s',
-                }}>{STATUS_LABELS[s]}</button>
+                }}>{STATUS_LABELS[s]}{entry.status === s ? ' ✓' : ''}</button>
               ))}
             </div>
 

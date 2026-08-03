@@ -1,7 +1,5 @@
 import { IMG } from '../lib/tmdb'
 
-const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
-
 export default function DiaryPage({ diaryHook, onOpen }) {
   const { entries, loading, deleteEntry } = diaryHook
 

@@ -3,8 +3,7 @@
  * Exports watchlist/library data as TXT or CSV
  */
 
-const STATUS_LABELS = { watchlist: 'Want to Watch', watching: 'Watching', watched: 'Watched' }
-const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
+import { EXPORT_STATUS_LABELS as STATUS_LABELS, RATING_LABELS } from './constants'
 
 /**
  * Download a text file in the browser

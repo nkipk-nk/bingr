@@ -1,4 +1,4 @@
-import { withRetry } from './errors'
+import { withRetry, NetworkError } from './errors'
 import { logger } from './logger'
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY
@@ -27,18 +27,14 @@ async function get(path) {
     const res = await fetch(`${BASE}${path}${sep}api_key=${API_KEY}`, {
       signal: AbortSignal.timeout(10000),
     })
-    if (!res.ok) {
-      const err = new Error(`TMDB ${res.status}`)
-      err.status = res.status
-      throw err
-    }
+    if (!res.ok) throw new NetworkError(`TMDB ${res.status}`, { path, status: res.status })
     return res.json()
   }, { retries: 2, label: `tmdb:${path}` })
     .then(data => { cache.set(path, { at: Date.now(), data }); return data })
     .catch(err => {
       // 4xx (bad id, not found) won't succeed on retry and shouldn't poison
       // the cache — but do let the caller's own .catch()/try-catch see it.
-      logger.warn('TMDB request failed', { path, status: err?.status, message: err?.message })
+      logger.warn('TMDB request failed', { path, status: err?.context?.status, message: err?.message })
       throw err
     })
     .finally(() => inflight.delete(path))

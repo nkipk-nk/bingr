@@ -1,6 +1,5 @@
 import { useState } from 'react'
-
-const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
+import { RATING_LABELS } from '../lib/constants'
 
 export default function LogEntryModal({ item, currentRating, onSave, onClose, isRewatch }) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))

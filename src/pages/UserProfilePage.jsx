@@ -3,8 +3,7 @@ import { supabase } from '../lib/supabase'
 import { IMG } from '../lib/tmdb'
 import { logger } from '../lib/logger'
 import { computeStats, formatHours } from '../lib/stats'
-
-const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
+import { RATING_LABELS } from '../lib/constants'
 
 export default function UserProfilePage({ username, onOpenItem, onSignUp, currentUserId, followsHook }) {
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })

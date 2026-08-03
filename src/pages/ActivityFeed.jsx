@@ -1,6 +1,5 @@
 import { IMG } from '../lib/tmdb'
-
-const RATING_LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
+import { RATING_LABELS } from '../lib/constants'
 
 function FeedItem({ item, onOpenItem, onOpenProfile }) {
   const poster = IMG(item.poster_path)

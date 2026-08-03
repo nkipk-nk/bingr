@@ -1,7 +1,5 @@
 import { IMG } from '../lib/tmdb'
-
-const STATUS_COLORS = { watched: '#1d9e75', watching: '#ba7517', watchlist: '#378add' }
-const STATUS_LABELS = { watched: 'Watched', watching: 'Watching', watchlist: 'Watchlist' }
+import { STATUS_COLORS, STATUS_LABELS } from '../lib/constants'
 
 export default function MovieCard({ item, entry = {}, onOpen, onSetStatus }) {
   const title = item.title || item.name || ''

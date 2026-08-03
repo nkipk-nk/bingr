@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { IMG } from '../lib/tmdb'
+import { STATUS_LABELS } from '../lib/constants'
 
-const STATUS_LABELS = { watched: 'Watched', watching: 'Watching', watchlist: 'Watchlist' }
 const ICONS = { watchlist: '🔖', watching: '▶️', watched: '✅' }
 const EMPTY = {
   watchlist: 'Your watchlist is empty',

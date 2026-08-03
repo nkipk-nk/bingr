@@ -1599,7 +1599,11 @@ not just reasoned about.
 | M19 | 🟠 Moderate | `useLibrary.upsert` dep churn | | open |
 | M20 | 🟠 Moderate | In-memory auth rate limit | | open |
 | M21 | 🟠 Moderate | Zero-row writes treated as success (root cause of C4, C8, C9) | Claude | ✅ fixed — `assertAffected()` applied to `signUp`, `deleteComment`, `promoteUser`, `deleteEntry`, `deleteList`, `addToList`, `removeFromList`, `useLibrary.remove`; `useFollows.unfollow` handled separately since a missing row there is a legitimate no-op, not a failure |
-| m1–m17 | 🟡 Minor | See §5 Minor table | | open (m2 dupe-key fixed) |
+| m1 | 🟡 Minor | 44 ESLint errors, no CI | Claude | 🔶 down to 41 (C1's `react-hooks/immutability` and one dupe-key fixed in earlier rounds; DiaryPage's dead `RATING_LABELS` removed this round). Remaining 41 are pre-existing patterns (`set-state-in-effect` across ~15 hooks/pages, `static-components`, unused vars) — not individually re-triaged this round. CI workflow not yet added. |
+| m2 | 🟡 Minor | Duplicate object keys | Claude | ✅ fixed (both instances, earlier round) |
+| m4 | 🟡 Minor | ~460 LOC dead code | Claude | ✅ fixed — deleted `App.css`, `UsernamePrompt.jsx`, unused `src/assets/*`; wired the previously-unused `NetworkError` (now used in `tmdb.js`) and `sanitise()` (now used in `useDiary`, `useLists`, `useProfile`, `FeedbackModal`) instead of deleting them, per the report's own recommendation. `geo.js` kept per explicit instruction — it's superseded by design (see §7.4), not abandoned. `getPublicDiary`/`getPublicList`/`deleteUser` still unused — no natural call site yet. |
+| m5 | 🟡 Minor | Duplicated constants | Claude | ✅ fixed — new `src/lib/constants.js` is now the single source for `RATING_LABELS` (was in 7 files) and `STATUS_LABELS`/`STATUS_COLORS` (was in 3-4 files with divergent values). Resolved the divergence deliberately: canonical `STATUS_LABELS` is the plain form ('Watched', not 'Watched ✓') since the checkmark only made sense as a "currently selected" indicator on `DetailPanel`'s toggle buttons — that component now appends it itself rather than baking it into every consumer's label. `export.js`'s distinct 'Want to Watch' phrasing kept as `EXPORT_STATUS_LABELS` since exported text reads better as a full phrase than a badge word. |
+| m3, m6–m17 | 🟡 Minor | See §5 Minor table | | open |
 
 ### Outstanding actions for the maintainer
 

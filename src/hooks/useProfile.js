@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { sanitise } from '../lib/errors'
 
 export function useProfile(session) {
   const [profile, setProfile] = useState(null)
@@ -54,9 +55,14 @@ export function useProfile(session) {
     if (!session || !profile) return { error: null }
     try {
       const extra = patch.username ? { username_set: true } : {}
+      // Sanitise free-text fields at the boundary that actually reaches
+      // Supabase, regardless of what the caller already trimmed.
+      const cleanPatch = { ...patch }
+      if ('display_name' in cleanPatch) cleanPatch.display_name = sanitise(cleanPatch.display_name, 50) || null
+      if ('bio' in cleanPatch) cleanPatch.bio = sanitise(cleanPatch.bio, 300) || null
       const { data, error } = await supabase
         .from('profiles')
-        .update({ ...patch, ...extra, updated_at: new Date().toISOString() })
+        .update({ ...cleanPatch, ...extra, updated_at: new Date().toISOString() })
         .eq('id', session.user.id)
         .select()
         .single()

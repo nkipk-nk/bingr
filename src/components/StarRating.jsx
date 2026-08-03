@@ -1,6 +1,5 @@
 import { useState } from 'react'
-
-const LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
+import { RATING_LABELS as LABELS } from '../lib/constants'
 
 export default function StarRating({ value = 0, onChange, size = 22 }) {
   const [hovered, setHovered] = useState(0)

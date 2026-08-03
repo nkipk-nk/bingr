@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { withRetry, DatabaseError, assertAffected } from '../lib/errors'
+import { withRetry, DatabaseError, assertAffected, sanitise } from '../lib/errors'
 
 export function useDiary(session) {
   const [entries, setEntries] = useState([])
@@ -44,7 +44,7 @@ export function useDiary(session) {
         watched_date: watchedDate || new Date().toISOString().slice(0, 10),
         rewatch,
         rating: rating || null,
-        notes: notes.trim().slice(0, 1000) || null,
+        notes: sanitise(notes, 1000) || null,
       }
       const { data, error } = await supabase.from('bingr_diary').insert(payload).select().single()
       if (error) throw error

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
+import { sanitise } from '../lib/errors'
 
 const CATEGORIES = [
   { value: 'bug', label: '🐛 Bug report', desc: 'Something is broken or not working' },
@@ -27,7 +28,7 @@ export default function FeedbackModal({ session, profile, onClose }) {
         username: profile?.username || null,
         email: email.trim() || null,
         category,
-        message: message.trim().slice(0, 2000),
+        message: sanitise(message, 2000),
       })
       if (error) throw error
       logger.info('Feedback submitted', { category })

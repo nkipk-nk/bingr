@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { withRetry, DatabaseError, assertAffected } from '../lib/errors'
+import { withRetry, DatabaseError, assertAffected, sanitise } from '../lib/errors'
 
 export function useLists(session) {
   const [lists, setLists] = useState([])
@@ -35,8 +35,8 @@ export function useLists(session) {
         .from('bingr_lists')
         .insert({
           user_id: session.user.id,
-          name: name.trim().slice(0, 100),
-          description: description.trim().slice(0, 500),
+          name: sanitise(name, 100),
+          description: sanitise(description, 500),
           is_public: isPublic,
           updated_at: new Date().toISOString(),
         })
@@ -56,9 +56,14 @@ export function useLists(session) {
   const updateList = useCallback(async (listId, patch) => {
     if (!session) return
     try {
+      // Sanitise here too, not just in createList — this is the boundary
+      // that actually reaches Supabase, regardless of what the caller sent.
+      const cleanPatch = { ...patch }
+      if ('name' in cleanPatch) cleanPatch.name = sanitise(cleanPatch.name, 100)
+      if ('description' in cleanPatch) cleanPatch.description = sanitise(cleanPatch.description, 500)
       const { data, error } = await supabase
         .from('bingr_lists')
-        .update({ ...patch, updated_at: new Date().toISOString() })
+        .update({ ...cleanPatch, updated_at: new Date().toISOString() })
         .eq('id', listId)
         .eq('user_id', session.user.id)
         .select()

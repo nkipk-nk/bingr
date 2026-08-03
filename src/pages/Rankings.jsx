@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { IMG } from '../lib/tmdb'
-
-const LABELS = ['','Terrible','Poor','Disappointing','Below average','Average','Decent','Good','Great','Excellent','Masterpiece']
+import { RATING_LABELS as LABELS } from '../lib/constants'
 
 export default function Rankings({ library, onOpen }) {
   const [filter, setFilter] = useState('all')
