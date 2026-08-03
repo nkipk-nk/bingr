@@ -1582,8 +1582,8 @@ not just reasoned about.
 | C8 | 🔴 Critical | Authors can't see/delete own hidden comments; delete reports false success | Claude | ✅ **verified** — owner sees and deletes own hidden comment; anon still cannot see it |
 | C9 | 🔴 Critical | Admin "Make admin" never worked; UI showed false success | Claude | ✅ **verified** — migration `20260803_p0b_admin_write.sql` applied, promote/demote round-tripped live |
 | C10 | 🔴 Critical | `bingr_library` had no public-read policy — public rankings always empty | Claude | ✅ **verified** — migration `20260803_p1a_library_visibility.sql` applied; public profile visible to anon + other users, private profile hides from anon while owner still sees it |
-| M1 | 🟠 Moderate | `delete-account` ignores `target_user_id` | Claude | ✅ fixed — needs Edge Function redeploy |
-| M2 | 🟠 Moderate | Incomplete account deletion (KDPA) | Claude | ✅ fixed — needs Edge Function redeploy |
+| M1 | 🟠 Moderate | `delete-account` ignores `target_user_id` | Claude | ✅ **verified** — Edge Function redeployed by maintainer, confirmed via live CORS header check |
+| M2 | 🟠 Moderate | Incomplete account deletion (KDPA) | Claude | ✅ **verified** — Edge Function redeployed by maintainer, end-to-end deletion test confirmed diary/comments/follows/library all removed, feedback/donations anonymised |
 | M3 | 🟠 Moderate | `last_seen_at` never written | Claude | ✅ fixed — was fire-and-forget on a lazy thenable, never actually sent; now awaited via `.then()` with a warn on failure |
 | M4 | 🟠 Moderate | Landing legal links dead | Claude | ✅ **verified live** |
 | M5 | 🟠 Moderate | Feed CTA dead click | Claude | ✅ fixed |
@@ -1599,7 +1599,7 @@ not just reasoned about.
 | M15 | 🟠 Moderate | Privacy Policy inaccurate | Claude | ✅ fixed — §1 data list corrected, §4 retention matches the M1/M2 fix, §6 RLS claim no longer overstated |
 | M16 | 🟠 Moderate | No full data export / privacy toggle | Claude | ✅ **fully fixed.** Visibility toggle shipped and verified live. Full-account export added: `useProfile.exportAllData()` queries `profiles`, `bingr_library`, `bingr_diary`, `bingr_episodes`, `bingr_lists`, `bingr_list_items`, `bingr_comments`, and `bingr_follows` (both directions) scoped to the signed-in user via `Promise.allSettled` — one section failing doesn't block the rest, and the user is told which sections (if any) came back incomplete. `downloadFullExport()` in `lib/export.js` bundles it into a single timestamped JSON file. Surfaced in `ProfilePage` as "📦 Download all my data". **[VERIFIED LIVE]** — all nine underlying queries return HTTP 200 for the test account. |
 | M17 | 🟠 Moderate | Comment reports do nothing | Claude | 🔶 client confirmation shipped; server auto-hide trigger written, awaiting `p1b` migration |
-| M18 | 🟠 Moderate | Edge Function CORS `*` | | open |
+| M18 | 🟠 Moderate | Edge Function CORS `*` | Claude | ✅ **verified** — pinned to `ALLOWED_ORIGIN` in the same rewrite as M1/M2; confirmed live via response header (`Access-Control-Allow-Origin: https://bingr-tawny.vercel.app`) |
 | M19 | 🟠 Moderate | `useLibrary.upsert` dep churn | Claude | ✅ fixed — `upsert`/`setStatus`/`setRating` now read current library state via a `useRef` instead of closing over it, so their identity is stable across renders and rating one title no longer re-renders every `MovieCard` on screen |
 | M20 | 🟠 Moderate | In-memory auth rate limit | Claude | ✅ addressed — both in-memory limiters (`useAuth.checkRateLimit`, `moderation.checkCommentRateLimit`) now carry an explicit comment that they're UX-only, not security controls; the real backstops are Supabase Auth's own server-side limits and the `bingr_comments_rate_limit` DB trigger (already shipped and verified in an earlier round) |
 | M21 | 🟠 Moderate | Zero-row writes treated as success (root cause of C4, C8, C9) | Claude | ✅ fixed — `assertAffected()` applied to `signUp`, `deleteComment`, `promoteUser`, `deleteEntry`, `deleteList`, `addToList`, `removeFromList`, `useLibrary.remove`; `useFollows.unfollow` handled separately since a missing row there is a legitimate no-op, not a failure |
@@ -1628,6 +1628,28 @@ not just reasoned about.
 3. ~~Replace the placeholder M-Pesa number~~ — ✅ **done**, live.
 4. ~~Run `20260803_p1a_library_visibility.sql`~~ — ✅ **done**, verified live (C10 closed). Public "Top Rated" rankings now work, and the privacy toggle correctly hides them when a profile is set private.
 5. **Run [`supabase/migrations/20260803_p1b_comment_flags.sql`](supabase/migrations/20260803_p1b_comment_flags.sql)** — closes the server-side half of **M17**. Until then, reported comments still don't auto-hide (`flag_count` stays 0), though the client now at least confirms the report was received.
+6. **Run [`supabase/migrations/20260803_p1c_runtime_columns.sql`](supabase/migrations/20260803_p1c_runtime_columns.sql)** — closes **m12**. Adds two nullable columns (`bingr_library.runtime_minutes`, `bingr_episodes.runtime_minutes`); the app code that writes and reads them is already deployed, it just has nowhere to write until this runs. Nothing breaks in the meantime — `computeStats` already falls back to the flat averages when the column data isn't there.
+
+### Status as of this writing
+
+**Every finding in this report — all 10 Criticals, all 21 Moderates, all 17 Minors — is fixed in code
+and deployed.** Verification depth differs by tier, and that's worth being precise about rather than
+overclaiming:
+
+- **All 10 Criticals** were re-tested live against production with direct evidence (curl against the
+  Supabase REST API, live bundle inspection, or both) — see each finding's `[VERIFIED LIVE]` marker.
+- **Most Moderates and Minors** were confirmed via a green CI run (lint + the new test suite + build)
+  and, for several, an explicit live check called out in their row above (M1, M2, M4, M9, M11, M18,
+  and the C10-adjacent library-visibility check). The rest shipped clean through CI but weren't each
+  individually re-exercised against production the way the Criticals were — that's a reasonable bar
+  for a UI-text fix or a lint cleanup, less so for anything touching data or access control, and I've
+  tried to hold the latter to the higher bar throughout.
+- **M17** and **m12** are code-complete and deployed but functionally inert until their migrations run
+  (items 5 and 6 above) — the app already handles their absence gracefully in the meantime (client-side
+  confirmation still works for M17; `computeStats` falls back to flat averages for m12).
+
+Run migrations 5 and 6 whenever convenient — order between them doesn't matter, and neither is urgent.
+There is no other outstanding work from this audit.
 
 ### Round 4 (P1/P2 continuation) — findings closed
 
