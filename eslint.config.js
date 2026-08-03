@@ -4,6 +4,12 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
+// Design-system migration allowlist — grows by one path per migration PR.
+// Flat config's `files` can't be an empty array, so this starts with a
+// placeholder glob that matches nothing; replace it with the first real
+// path (e.g. 'src/pages/PrivacyPolicy.jsx') as soon as one exists.
+const MIGRATED_FILES = ['src/__migrated_placeholder__.jsx']
+
 export default defineConfig([
   globalIgnores(['dist']),
   {
@@ -30,6 +36,26 @@ export default defineConfig([
       // still fail the build; this one warns instead of blocking, and stays
       // visible in `npm run lint` output rather than being silenced.
       'react-hooks/set-state-in-effect': 'warn',
+    },
+  },
+  {
+    // Design-system migration guard (BINGR_DESIGN_SYSTEM.md / the
+    // implementation plan's Phase 0 tooling). Every screen still uses
+    // hand-typed `style={{...}}` objects today (944 of them at audit
+    // time) — that's the normal, allowed state for anything not yet
+    // migrated to CSS Modules + the shared primitives in
+    // src/components/ui/. Once a file's inline styles are fully replaced,
+    // add its path here so this rule locks in the migration and CI fails
+    // if inline styles creep back in. Grows by one entry per migration PR.
+    files: MIGRATED_FILES,
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "JSXAttribute[name.name='style']",
+          message: 'This file has been migrated off inline styles — use the CSS Module for this component instead of style={{...}}.',
+        },
+      ],
     },
   },
 ])

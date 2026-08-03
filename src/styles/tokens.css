@@ -1,0 +1,202 @@
+/**
+ * bingr design tokens
+ * Source of truth: BINGR_DESIGN_SYSTEM.md — every value here traces to a
+ * table in that document. Do not hand-tune a value here without updating
+ * the doc, and vice versa.
+ *
+ * Theme mechanism: [data-theme] on <html>, not prefers-color-scheme alone.
+ * Dark is the default (:root); light is a full override under
+ * [data-theme='light']. The attribute is set synchronously in index.html
+ * before React mounts, to avoid a flash of the wrong theme on load — see
+ * the inline <script> there.
+ *
+ * Brand/status/semantic hues are IDENTICAL across both themes (§3 of the
+ * design doc) — only the neutral/elevation scaffold changes per theme.
+ */
+
+/* ── Fonts ─────────────────────────────────────────────────────────────
+   Display: Bricolage Grotesque (variable, weight-axis only — npm package)
+   Body/UI: General Sans (Fontshare-exclusive, no npm package — self-hosted
+            woff2 in public/fonts/general-sans/, license permits this)
+   Numerals/data: Space Mono (npm package, latin subset, 400 + 700 only) */
+@import '@fontsource-variable/bricolage-grotesque/wght.css';
+@import '@fontsource/space-mono/latin-400.css';
+@import '@fontsource/space-mono/latin-700.css';
+
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans/GeneralSans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans/GeneralSans-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans/GeneralSans-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'General Sans';
+  src: url('/fonts/general-sans/GeneralSans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ── Font families ─────────────────────────────────────────────────── */
+  --font-display: 'Bricolage Grotesque Variable', 'General Sans', system-ui, sans-serif;
+  --font-body: 'General Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* ── Type scale — design doc §2 ───────────────────────────────────── */
+  /* Display (Bricolage Grotesque) */
+  --text-display-2xl-size: 3.5rem;    /* 56px */
+  --text-display-2xl-weight: 800;
+  --text-display-2xl-leading: 1.0;
+  --text-display-2xl-tracking: -0.02em;
+
+  --text-display-xl-size: 2.5rem;     /* 40px */
+  --text-display-xl-weight: 700;
+  --text-display-xl-leading: 1.05;
+  --text-display-xl-tracking: -0.015em;
+
+  --text-display-lg-size: 2rem;       /* 32px */
+  --text-display-lg-weight: 700;
+  --text-display-lg-leading: 1.1;
+  --text-display-lg-tracking: -0.01em;
+
+  --text-display-md-size: 1.5rem;     /* 24px */
+  --text-display-md-weight: 600;
+  --text-display-md-leading: 1.2;
+  --text-display-md-tracking: -0.005em;
+
+  /* Body (General Sans) */
+  --text-body-lg-size: 1.0625rem;     /* 17px */
+  --text-body-lg-leading: 1.5;
+
+  --text-body-md-size: 0.9375rem;     /* 15px */
+  --text-body-md-leading: 1.5;
+
+  --text-body-sm-size: 0.8125rem;     /* 13px */
+  --text-body-sm-leading: 1.4;
+
+  --text-body-xs-size: 0.6875rem;     /* 11px */
+  --text-body-xs-weight: 600;
+  --text-body-xs-leading: 1.3;
+  --text-body-xs-tracking: 0.02em;
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+
+  /* Mono (Space Mono) */
+  --text-mono-lg-size: 1.75rem;       /* 28px */
+  --text-mono-lg-weight: 700;
+  --text-mono-lg-leading: 1.0;
+
+  --text-mono-md-size: 0.9375rem;     /* 15px */
+  --text-mono-md-weight: 700;
+  --text-mono-md-leading: 1.2;
+
+  --text-mono-sm-size: 0.75rem;       /* 12px */
+  --text-mono-sm-weight: 400;
+  --text-mono-sm-leading: 1.3;
+  --text-mono-sm-tracking: 0.02em;
+
+  /* ── Spacing — 4px base, design doc §4 ────────────────────────────── */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
+
+  /* ── Radii — design doc §5 ─────────────────────────────────────────── */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+  --radius-full: 50%;
+
+  /* ── Borders ───────────────────────────────────────────────────────── */
+  --border-width-hairline: 1px;
+  --border-width-emphasis: 1.5px;
+
+  /* ── Motion — design doc §6 ────────────────────────────────────────── */
+  --duration-instant: 80ms;
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --duration-hero: 600ms;
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Colour — brand/status/semantic, identical across both themes ───── */
+  --magenta-bright: #F5266E;   /* text, links, icons, borders, decorative fills */
+  --magenta-deep: #C81E5C;     /* solid button fills carrying white label text */
+
+  --gold: #FFB627;             /* rating stars — the only thing this hue is used for */
+
+  --status-watched: #22C55E;
+  --status-watching: #2DD4BF;
+  --status-watchlist: #6366F1;
+
+  --success: #22C55E;
+  --danger: #EF4444;
+  --warning: #F59E0B;
+
+  /* ── Colour — neutrals, dark (default theme) ─────────────────────────
+     17.6:1 text-primary/canvas · 8.5:1 text-secondary/canvas ·
+     ≈4.5:1 text-tertiary/surface (boundary — restrict to non-critical use) */
+  --bg-canvas: #0C0A0B;
+  --bg-surface: #161315;
+  --bg-surface-2: #1F1B1E;
+  --bg-input: #211D20;
+  --border-subtle: #241F22;
+
+  --text-primary: #F5F1F2;
+  --text-secondary: #B0A8AC;
+  --text-tertiary: #827B7F;
+
+  --elevation-1-shadow: none;
+  --elevation-2-shadow: none;
+  --elevation-2-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --elevation-glow: 0 0 32px rgba(245, 38, 110, 0.25);
+}
+
+/* ── Colour — neutrals, light (full parallel theme, not an afterthought)
+   16.9:1 text-primary/canvas — verify remaining pairings with a contrast
+   tool at implementation time per the design doc's honesty note (§3). ── */
+[data-theme='light'] {
+  --bg-canvas: #FAF7F5;
+  --bg-surface: #FFFFFF;
+  --bg-surface-2: #F3EEEC;
+  --bg-input: #F3EEEC;
+  --border-subtle: #E5DEDB;
+
+  --text-primary: #1A1517;
+  --text-secondary: #5C5459;
+  --text-tertiary: #8C8388;
+
+  --elevation-1-shadow: 0 1px 2px rgba(26, 21, 23, 0.04), 0 1px 3px rgba(26, 21, 23, 0.08);
+  --elevation-2-shadow: 0 4px 16px rgba(26, 21, 23, 0.12);
+  --elevation-2-inset: none;
+  /* --elevation-glow unchanged — same brand-glow effect in both themes */
+}
