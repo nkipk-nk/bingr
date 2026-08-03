@@ -1,0 +1,20 @@
+.header {
+  background: var(--bg-surface);
+  border-bottom: var(--border-width-hairline) solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.row { padding: var(--space-3) var(--space-6); display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+
+.brand { display: flex; align-items: center; gap: var(--space-2); cursor: pointer; flex-shrink: 0; background: none; border: none; }
+.brandLogo { width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: contain; }
+.brandName { font-family: var(--font-display); font-size: var(--text-display-md-size); font-weight: 700; color: var(--magenta-bright); letter-spacing: -0.01em; }
+
+.searchGroup { flex: 1; display: flex; gap: var(--space-2); min-width: 200px; }
+.searchInput { flex: 1; }
+.typeSelect { max-width: 130px; }
+
+.rightGroup { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+.syncing { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); }
+.avatarBtn { cursor: pointer; background: none; border: none; padding: 0; }

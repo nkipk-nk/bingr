@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react'
+import { Search, Globe, ArrowLeft, Film } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { IMG } from '../lib/tmdb'
+import Button from '../components/ui/Button'
+import Card from '../components/ui/Card'
+import Badge from '../components/ui/Badge'
+import PosterTile from '../components/ui/PosterTile'
+import EmptyState from '../components/ui/EmptyState'
+import styles from './PublicListPage.module.css'
 
 export default function PublicListPage({ listId, onSignUp, onGoHome }) {
   const [list, setList] = useState(null)
@@ -22,79 +29,63 @@ export default function PublicListPage({ listId, onSignUp, onGoHome }) {
   }, [listId])
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-page)' }}>
-      <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>Loading list…</div>
-    </div>
+    <div className={styles.centered}><div className={styles.centeredText}>Loading list…</div></div>
   )
 
   if (notFound) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-page)', padding: '2rem' }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔍</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>List not found</h2>
-        <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20 }}>This list is private or doesn't exist.</p>
-        <button onClick={onGoHome} style={{ padding: '9px 20px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14 }}>Go to bingr</button>
+    <div className={styles.centered}>
+      <div className={styles.notFoundWrap}>
+        <Search size={40} className={styles.notFoundIcon} />
+        <div className={styles.notFoundTitle}>List not found</div>
+        <div className={styles.notFoundDesc}>This list is private or doesn't exist.</div>
+        <Button variant="primary" onClick={onGoHome}>Go to bingr</Button>
       </div>
     </div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-page)', fontFamily: 'var(--font)' }}>
-      {/* Header */}
-      <header style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div onClick={onGoHome} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-          <img src="/logo.png" alt="bingr" style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'contain' }} />
-          <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--accent)', letterSpacing: -0.5 }}>bingr</span>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div className={styles.headerLeft}>
+          <Button variant="ghost" size="sm" className={styles.backBtn} onClick={onGoHome}><ArrowLeft size={16} /> Back</Button>
+          <button className={styles.brand} onClick={onGoHome}>
+            <img src="/logo.png" alt="bingr" className={styles.brandLogo} />
+            <span className={styles.brandName}>bingr</span>
+          </button>
         </div>
-        <button onClick={onSignUp} style={{ padding: '8px 18px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-          Sign up free
-        </button>
+        <Button variant="primary" size="sm" onClick={onSignUp}>Sign up free</Button>
       </header>
 
-      {/* List header */}
-      <div style={{ padding: '2rem 1.5rem 1rem', maxWidth: 900, margin: '0 auto' }}>
-        <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '1.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 6 }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)', margin: 0 }}>{list.name}</h1>
-            <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)', flexShrink: 0 }}>🌐 Public list</span>
+      <div className={styles.body}>
+        <Card className={styles.listHeader}>
+          <div className={styles.listHeaderTop}>
+            <div className={styles.listTitle}>{list.name}</div>
+            <Badge tone="neutral"><Globe size={11} className={styles.badgeIcon} /> Public list</Badge>
           </div>
-          {list.description && <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 10 }}>{list.description}</p>}
-          <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>{items.length} title{items.length !== 1 ? 's' : ''}</div>
-        </div>
+          {list.description && <p className={styles.listDesc}>{list.description}</p>}
+          <div className={styles.listCount}>{items.length} title{items.length !== 1 ? 's' : ''}</div>
+        </Card>
 
-        {/* Items grid */}
         {items.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>This list is empty.</div>
+          <EmptyState icon={Film} title="This list is empty" />
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10 }}>
+          <div className={styles.itemsGrid}>
             {items.map(item => (
-              <div key={item.tmdb_id} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 12, overflow: 'hidden' }}>
-                <div style={{ aspectRatio: '2/3', background: 'var(--bg-input)', overflow: 'hidden' }}>
-                  {item.poster_path
-                    ? <img src={IMG(item.poster_path)} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🎬</div>
-                  }
-                </div>
-                <div style={{ padding: '7px 9px 9px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', lineHeight: 1.35, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{item.title || item.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{(item.release_date || '').slice(0, 4)} · {item.media_type === 'tv' ? 'TV' : 'Film'}</div>
-                </div>
+              <div key={item.tmdb_id}>
+                <PosterTile size="md" src={item.poster_path ? IMG(item.poster_path) : null} alt={item.title || item.name} />
+                <div className={styles.itemTitle}>{item.title || item.name}</div>
+                <div className={styles.itemMeta}>{(item.release_date || '').slice(0, 4)} · {item.media_type === 'tv' ? 'TV' : 'Film'}</div>
               </div>
             ))}
           </div>
         )}
 
-        {/* CTA for non-users */}
-        <div style={{ marginTop: 40, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '2rem', textAlign: 'center' }}>
-          <img src="/logo.png" alt="bingr" style={{ width: 40, height: 40, borderRadius: 10, objectFit: 'contain', marginBottom: 10 }} />
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>Track your own watch life</h2>
-          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 20, lineHeight: 1.7 }}>
-            bingr is free. Rate movies, track episodes, create your own lists and share them.
-          </p>
-          <button onClick={onSignUp} style={{ padding: '11px 28px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
-            Sign up free →
-          </button>
-        </div>
+        <Card roomy className={styles.ctaCard}>
+          <img src="/logo.png" alt="bingr" className={styles.ctaLogo} />
+          <div className={styles.ctaTitle}>Track your own watch life</div>
+          <p className={styles.ctaDesc}>bingr is free. Rate movies, track episodes, create your own lists and share them.</p>
+          <Button variant="primary" onClick={onSignUp}>Sign up free →</Button>
+        </Card>
       </div>
     </div>
   )

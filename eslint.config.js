@@ -34,6 +34,10 @@ const MIGRATED_FILES = [
   'src/pages/ListsPage.jsx',
   'src/pages/YouHub.jsx',
   'src/components/SupportSection.jsx',
+  'src/pages/UserProfilePage.jsx',
+  'src/pages/PublicListPage.jsx',
+  'src/components/FollowerListSheet.jsx',
+  'src/components/nav/Header.jsx',
 ]
 
 export default defineConfig([

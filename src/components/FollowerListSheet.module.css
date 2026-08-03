@@ -1,0 +1,5 @@
+.row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) 0; cursor: pointer; }
+.body { flex: 1; min-width: 0; }
+.name { font-family: var(--font-body); font-size: var(--text-body-md-size); font-weight: 600; color: var(--text-primary); }
+.handle { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); }
+.centeredMsg { text-align: center; padding: var(--space-8) var(--space-4); color: var(--text-secondary); font-family: var(--font-body); font-size: var(--text-body-md-size); }

@@ -83,6 +83,26 @@ export function useFollows(session) {
     }
   }, [])
 
+  // Get the actual follower/following profile rows for any user (GP1 —
+  // BINGR_UI_AUDIT.md: counts existed but weren't tappable into a real list).
+  const getUsers = useCallback(async (userId, type) => {
+    try {
+      // bingr_follows has two FKs into profiles (follower_id, following_id),
+      // so the embed needs the column name to disambiguate which one.
+      const filterColumn = type === 'followers' ? 'following_id' : 'follower_id'
+      const joinColumn = type === 'followers' ? 'follower_id' : 'following_id'
+      const { data, error } = await supabase
+        .from('bingr_follows')
+        .select(`profiles!${joinColumn}(id, username, display_name)`)
+        .eq(filterColumn, userId)
+      if (error) throw error
+      return (data || []).map(r => r.profiles).filter(Boolean)
+    } catch (err) {
+      logger.warn('getUsers failed', { message: err.message, userId, type })
+      return []
+    }
+  }, [])
+
   return {
     following,
     followers,
@@ -92,6 +112,7 @@ export function useFollows(session) {
     unfollow,
     toggleFollow,
     getCounts,
+    getUsers,
     reload: load,
   }
 }
