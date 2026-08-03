@@ -3,6 +3,8 @@
  * All calculations done client-side from already-loaded data.
  */
 
+import { formatDate } from './dates'
+
 const AVG_MOVIE_RUNTIME = 110 // minutes
 const AVG_EPISODE_RUNTIME = 42 // minutes
 
@@ -38,7 +40,7 @@ export function computeStats(diary = [], library = {}, episodes = {}) {
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
     const key = d.toISOString().slice(0, 7)
-    const label = d.toLocaleDateString('en-KE', { month: 'short' })
+    const label = formatDate(d, 'monthShort')
     const count = diary.filter(e => e.watched_date?.startsWith(key)).length
     monthlyActivity.push({ key, label, count })
   }
@@ -76,7 +78,7 @@ export function computeStats(diary = [], library = {}, episodes = {}) {
       movies: thisYearEntries.filter(e => e.media_type === 'movie').length,
       tvEntries: thisYearEntries.filter(e => e.media_type === 'tv').length,
       busiestMonth: busiestMonth
-        ? new Date(busiestMonth + '-01').toLocaleDateString('en-KE', { month: 'long' })
+        ? formatDate(busiestMonth + '-01', 'monthLong')
         : null,
       busiestCount,
     },

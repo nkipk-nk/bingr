@@ -1,4 +1,4 @@
-import { Search } from 'lucide-react'
+import { Search, Lock } from 'lucide-react'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
 import Button from '../ui/Button'
@@ -22,6 +22,10 @@ export default function Header({
   onGoHome, onOpenAccount,
 }) {
   const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
+  // GP11 (BINGR_UI_AUDIT.md) — profile privacy was invisible outside
+  // Settings. Only surfaced for the private case — public is the default,
+  // so a persistent glyph there would just be noise for most users.
+  const isPrivate = profile?.profile_public === false
 
   return (
     <header className={styles.header}>
@@ -52,8 +56,9 @@ export default function Header({
 
         <div className={styles.rightGroup}>
           {syncing && <span className={styles.syncing}>Syncing…</span>}
-          <button className={styles.avatarBtn} onClick={onOpenAccount} title={session.user.email}>
+          <button className={styles.avatarBtn} onClick={onOpenAccount} title={isPrivate ? `${session.user.email} — private profile` : session.user.email}>
             <Avatar size="sm" name={userDisplay} />
+            {isPrivate && <span className={styles.privacyBadge}><Lock size={10} /></span>}
           </button>
         </div>
       </div>

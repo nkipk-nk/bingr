@@ -4,6 +4,7 @@
  */
 
 import { EXPORT_STATUS_LABELS as STATUS_LABELS, RATING_LABELS } from './constants'
+import { formatDate } from './dates'
 
 /**
  * Download a text file in the browser
@@ -74,7 +75,7 @@ export function filterLibrary(library, { status = 'all', mediaType = 'all', sort
  * Export as plain text — human readable, editable
  */
 export function exportTXT(items, opts = {}) {
-  const date = new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' })
+  const date = formatDate(new Date(), 'full')
   const statusLabel = opts.status && opts.status !== 'all' ? STATUS_LABELS[opts.status] || opts.status : 'All'
   const typeLabel = opts.mediaType && opts.mediaType !== 'all' ? (opts.mediaType === 'movie' ? 'Movies' : 'TV Shows') : 'Movies & TV'
 
@@ -134,7 +135,7 @@ export function exportCSV(items, opts = {}) {
     item.rating || '',
     item.rating ? RATING_LABELS[item.rating] : '',
     item.vote_average ? Number(item.vote_average).toFixed(1) : '',
-    item.updated_at ? new Date(item.updated_at).toLocaleDateString('en-KE') : '',
+    item.updated_at ? formatDate(item.updated_at, 'full') : '',
   ])
 
   const csv = [headers, ...rows].map(row => row.map(escape).join(',')).join('\r\n')
@@ -146,7 +147,7 @@ export function exportCSV(items, opts = {}) {
  * Export a List as TXT
  */
 export function exportListTXT(listName, items) {
-  const date = new Date().toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' })
+  const date = formatDate(new Date(), 'full')
   let txt = `BINGR LIST: ${listName.toUpperCase()}\n`
   txt += `${'─'.repeat(40)}\n`
   txt += `Generated: ${date}\n`

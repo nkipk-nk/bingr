@@ -5,6 +5,7 @@ import { STATUS_LABELS } from '../lib/constants'
 import PosterTile from '../components/ui/PosterTile'
 import ProgressBar from '../components/ui/ProgressBar'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import StatusPill from '../components/ui/StatusPill'
 import styles from './LibraryTab.module.css'
 
 // Pure row list — status/type/sort/filter state lives one level up in
@@ -37,9 +38,10 @@ export default function LibraryTab({ items, status, onOpen, onRemove, episodePro
             <div className={styles.body} onClick={openItem}>
               <div className={styles.title}>{title}</div>
               <div className={styles.meta}>
-                {year} · {isTV ? 'TV' : 'Film'}{tmdbR ? ` · ★ ${tmdbR}` : ''}{status === 'all' ? ` · ${STATUS_LABELS[item.status]}` : ''}
+                {year} · {isTV ? 'TV' : 'Film'}{tmdbR ? ` · ★ ${tmdbR}` : ''}
                 {item.rating > 0 && <span className={styles.metaRating}> · ★ {item.rating}/10</span>}
               </div>
+              {status === 'all' && <div className={styles.statusRow}><StatusPill status={item.status} /></div>}
 
               {isTV && showProg && showProg.total > 0 && (
                 <div className={styles.progressWrap}>
