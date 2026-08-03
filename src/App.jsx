@@ -272,6 +272,7 @@ export default function App() {
         onShowTerms={() => navigate('terms')}
         onForgotPassword={() => navigate('forgot')}
         initialMode={authMode}
+        trending={trending}
       />
     )
     return (

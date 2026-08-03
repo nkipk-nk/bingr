@@ -1,11 +1,17 @@
 import { useState, useRef } from 'react'
+import { Mail, Eye, EyeOff } from 'lucide-react'
 import { friendlyAuthError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { COUNTRIES } from '../lib/countries'
+import { IMG } from '../lib/tmdb'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
+import Select from '../components/ui/Select'
+import styles from './AuthPage.module.css'
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
 const GOOGLE_ICON = (
-  <svg width="18" height="18" viewBox="0 0 24 24" style={{ flexShrink: 0 }}>
+  <svg width="18" height="18" viewBox="0 0 24 24" className={styles.googleIconSvg}>
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
     <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
     <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
@@ -13,7 +19,26 @@ const GOOGLE_ICON = (
   </svg>
 )
 
-export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotPassword, initialMode = 'login' }) {
+function CollageStrip({ trending }) {
+  const posters = [...(trending?.movies || []), ...(trending?.tv || [])]
+    .filter(x => x.poster_path)
+    .slice(0, 16)
+  if (!posters.length) return null
+  return (
+    <div className={styles.collageStrip}>
+      <div className={styles.collageGrid}>
+        {posters.map((p, i) => (
+          <div key={`${p.id}-${i}`} className={styles.collageTile}>
+            <img src={IMG(p.poster_path)} alt="" loading="lazy" />
+          </div>
+        ))}
+      </div>
+      <div className={styles.collageScrim} />
+    </div>
+  )
+}
+
+export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotPassword, initialMode = 'login', trending }) {
   const [mode, setMode] = useState(initialMode)
   const [email, setEmail] = useState('')
   const [username, setUsername] = useState('')
@@ -51,10 +76,10 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
   }
 
   const usernameHint = () => {
-    if (usernameState === 'checking') return { color: 'var(--text-muted)', msg: 'Checking availability…' }
-    if (usernameState === 'available') return { color: '#1d9e75', msg: '✓ Available' }
-    if (usernameState === 'taken') return { color: '#e24b4a', msg: '✗ Already taken' }
-    if (usernameState === 'invalid') return { color: '#e24b4a', msg: '3–20 characters, letters/numbers/underscores only' }
+    if (usernameState === 'checking') return { cls: styles.hintNeutral, msg: 'Checking availability…' }
+    if (usernameState === 'available') return { cls: styles.hintOk, msg: '✓ Available' }
+    if (usernameState === 'taken') return { cls: styles.hintBad, msg: '✗ Already taken' }
+    if (usernameState === 'invalid') return { cls: styles.hintBad, msg: '3–20 characters, letters/numbers/underscores only' }
     return null
   }
 
@@ -98,140 +123,146 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
   const hint = usernameHint()
 
   if (awaitingConfirmation) return (
-    <div style={Wrap}>
-      <div style={Card}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>📬</div>
-        <h2 style={H2}>Check your email</h2>
-        <p style={Muted}>We sent a confirmation link to:</p>
-        <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', marginBottom: 20 }}>{email}</p>
-        <p style={{ ...Muted, marginBottom: 24 }}>Click the link to activate your account, then come back and sign in. Check spam if needed.</p>
-        {resendMsg && <div style={{ fontSize: 13, color: resendMsg.includes('resent') ? '#1d9e75' : '#e24b4a', padding: '8px 12px', background: resendMsg.includes('resent') ? 'rgba(29,158,117,0.08)' : 'rgba(226,75,74,0.08)', borderRadius: 8, marginBottom: 14 }}>{resendMsg}</div>}
-        <button onClick={handleResend} disabled={resendLoading} style={{ ...BtnFull, marginBottom: 10, opacity: resendLoading ? 0.7 : 1 }}>{resendLoading ? 'Sending…' : 'Resend confirmation email'}</button>
-        <button onClick={() => switchMode('login')} style={BtnGhost}>Back to sign in</button>
+    <div className={styles.page}>
+      <CollageStrip trending={trending} />
+      <div className={styles.body}>
+        <div className={styles.card}>
+          <div className={styles.centerIcon}><Mail size={40} /></div>
+          <div className={styles.centerText}>We sent a confirmation link to:</div>
+          <div className={styles.centerEmail}>{email}</div>
+          <div className={`${styles.centerText} ${styles.centerTextSpaced}`}>Click the link to activate your account, then come back and sign in. Check spam if needed.</div>
+          {resendMsg && <div className={`${styles.resendBox} ${resendMsg.includes('resent') ? styles.resendOk : styles.resendErr}`}>{resendMsg}</div>}
+          <Button variant="primary" className={styles.fullWidthBtn} onClick={handleResend} loading={resendLoading}>Resend confirmation email</Button>
+          <Button variant="ghost" className={styles.fullWidthBtn} onClick={() => switchMode('login')}>Back to sign in</Button>
+        </div>
       </div>
     </div>
   )
 
   return (
-    <div style={Wrap}>
-      <div style={Card}>
-        <div style={{ textAlign: 'center', marginBottom: '1.75rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 6 }}>
-            <img src="/logo.png" alt="bingr" style={{ width: 38, height: 38, borderRadius: 8, objectFit: 'contain' }} />
-            <span style={{ fontSize: 28, fontWeight: 700, color: 'var(--accent)', letterSpacing: -1 }}>bingr</span>
-          </div>
-          <div style={{ fontSize: 14, color: 'var(--text-muted)' }}>{mode === 'login' ? 'Welcome back.' : 'Create your free account.'}</div>
-        </div>
-
-        <button onClick={handleGoogle} disabled={googleLoading} style={{ width: '100%', padding: '10px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', cursor: googleLoading ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16, fontWeight: 500 }}>
-          {GOOGLE_ICON} {googleLoading ? 'Redirecting…' : 'Continue with Google'}
-        </button>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>or</span>
-          <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-        </div>
-
-        {/* Username (signup only) */}
-        {mode === 'signup' && (
-          <>
-          <div style={{ marginBottom: 14 }}>
-            <label style={L}>Username *</label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: 'var(--text-muted)' }}>@</span>
-              <input value={username} onChange={e => handleUsernameChange(e.target.value)} placeholder="your_username" maxLength={20} autoFocus
-                style={{ ...I, paddingLeft: 28, borderColor: usernameState === 'taken' || usernameState === 'invalid' ? '#e24b4a' : usernameState === 'available' ? '#1d9e75' : 'var(--border)' }} />
+    <div className={styles.page}>
+      <CollageStrip trending={trending} />
+      <div className={styles.body}>
+        <div className={styles.card}>
+          <div className={styles.brandRow}>
+            <div className={styles.brandLogoRow}>
+              <img src="/logo.png" alt="bingr" className={styles.brandLogo} />
+              <span className={styles.brandName}>bingr</span>
             </div>
-            {hint && <div style={{ fontSize: 12, color: hint.color, marginTop: 4 }}>{hint.msg}</div>}
-            {!hint && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>This is how others will see you. You can change it later.</div>}
+            <div className={styles.brandSub}>{mode === 'login' ? 'Welcome back.' : 'Create your free account.'}</div>
           </div>
 
-          <div style={{ marginBottom: 14 }}>
-            <label style={L}>Country *</label>
-            <select value={country} onChange={e => setCountry(e.target.value)}
-              style={{ ...I, cursor: 'pointer' }}>
-              <option value="">Select your country...</option>
-              {COUNTRIES.map((c, i) =>
-                c.disabled
-                  ? <option key={i} disabled value="">──────────────</option>
-                  : <option key={c.code} value={c.code}>{c.name}</option>
-              )}
-            </select>
+          <button className={styles.googleBtn} onClick={handleGoogle} disabled={googleLoading}>
+            {GOOGLE_ICON} {googleLoading ? 'Redirecting…' : 'Continue with Google'}
+          </button>
+
+          <div className={styles.divider}>
+            <div className={styles.dividerLine} />
+            <span className={styles.dividerText}>or</span>
+            <div className={styles.dividerLine} />
           </div>
-          </>
-        )}
 
-        <div style={{ marginBottom: 14 }}>
-          <label style={L}>Email</label>
-          <input style={I} type="email" placeholder="you@example.com" value={email}
-            onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
-            autoFocus={mode === 'login'} autoComplete="email" />
-        </div>
-
-        <div style={{ marginBottom: mode === 'login' ? 4 : 14 }}>
-          <label style={L}>Password</label>
-          <div style={{ position: 'relative' }}>
-            <input style={{ ...I, paddingRight: 44 }} type={showPw ? 'text' : 'password'} placeholder="Password" value={password}
-              onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'} />
-            <button onClick={() => setShowPw(v => !v)} style={Eye} tabIndex={-1}>{showPw ? '🙈' : '👁️'}</button>
-          </div>
-        </div>
-
-        {mode === 'login' && (
-          <div style={{ textAlign: 'right', marginBottom: 16 }}>
-            <span onClick={onForgotPassword} style={{ fontSize: 13, color: 'var(--accent)', cursor: 'pointer' }}>Forgot password?</span>
-          </div>
-        )}
-
-        {mode === 'signup' && (
-          <>
-            <div style={{ marginBottom: 14 }}>
-              <label style={L}>Confirm password</label>
-              <div style={{ position: 'relative' }}>
-                <input style={{ ...I, paddingRight: 44 }} type={showCPw ? 'text' : 'password'} placeholder="Confirm password" value={confirm}
-                  onChange={e => setConfirm(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()} autoComplete="new-password" />
-                <button onClick={() => setShowCPw(v => !v)} style={Eye} tabIndex={-1}>{showCPw ? '🙈' : '👁️'}</button>
+          {mode === 'signup' && (
+            <>
+              <div className={styles.field}>
+                <label className={styles.label}>Username *</label>
+                <div className={styles.usernameWrap}>
+                  <span className={styles.usernameAt}>@</span>
+                  <Input
+                    className={styles.usernameInput}
+                    value={username} onChange={e => handleUsernameChange(e.target.value)}
+                    placeholder="your_username" maxLength={20} autoFocus
+                    invalid={usernameState === 'taken' || usernameState === 'invalid'}
+                  />
+                </div>
+                {hint ? <div className={`${styles.hint} ${hint.cls}`}>{hint.msg}</div> : <div className={`${styles.hint} ${styles.hintNeutral}`}>This is how others will see you. You can change it later.</div>}
               </div>
+
+              <div className={styles.field}>
+                <label className={styles.label}>Country *</label>
+                <Select value={country} onChange={e => setCountry(e.target.value)}>
+                  <option value="">Select your country...</option>
+                  {COUNTRIES.map((c, i) =>
+                    c.disabled
+                      ? <option key={i} disabled value="">──────────────</option>
+                      : <option key={c.code} value={c.code}>{c.name}</option>
+                  )}
+                </Select>
+              </div>
+            </>
+          )}
+
+          <div className={styles.field}>
+            <label className={styles.label}>Email</label>
+            <Input type="email" placeholder="you@example.com" value={email}
+              onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
+              autoFocus={mode === 'login'} autoComplete="email" />
+          </div>
+
+          <div className={mode === 'login' ? styles.fieldTight : styles.field}>
+            <label className={styles.label}>Password</label>
+            <div className={styles.passwordWrap}>
+              <Input
+                type={showPw ? 'text' : 'password'} placeholder="Password" value={password}
+                onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                className={styles.passwordInput}
+              />
+              <button className={styles.eyeBtn} onClick={() => setShowPw(v => !v)} tabIndex={-1} type="button">
+                {showPw ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 16, padding: '12px', background: 'var(--bg-input)', borderRadius: 8, border: `1px solid ${agreed ? 'var(--accent)' : 'var(--border)'}` }}>
-              <input type="checkbox" id="agree" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 2, flexShrink: 0, accentColor: 'var(--accent)', width: 15, height: 15, cursor: 'pointer' }} />
-              <label htmlFor="agree" style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6, cursor: 'pointer' }}>
-                I agree to the <span onClick={onShowTerms} style={{ color: 'var(--accent)', cursor: 'pointer' }}>Terms of Service</span> and <span onClick={onShowPrivacy} style={{ color: 'var(--accent)', cursor: 'pointer' }}>Privacy Policy</span>
-              </label>
+          </div>
+
+          {mode === 'login' && (
+            <div className={styles.forgotRow}>
+              <button className={styles.forgotLink} onClick={onForgotPassword}>Forgot password?</button>
             </div>
-          </>
-        )}
+          )}
 
-        {error && <div style={{ fontSize: 13, color: '#e24b4a', marginBottom: 12, padding: '8px 12px', background: 'rgba(226,75,74,0.08)', borderRadius: 6 }}>{error}</div>}
+          {mode === 'signup' && (
+            <>
+              <div className={styles.field}>
+                <label className={styles.label}>Confirm password</label>
+                <div className={styles.passwordWrap}>
+                  <Input
+                    type={showCPw ? 'text' : 'password'} placeholder="Confirm password" value={confirm}
+                    onChange={e => setConfirm(e.target.value)} onKeyDown={e => e.key === 'Enter' && submit()}
+                    autoComplete="new-password"
+                    className={styles.passwordInput}
+                  />
+                  <button className={styles.eyeBtn} onClick={() => setShowCPw(v => !v)} tabIndex={-1} type="button">
+                    {showCPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+              <div className={`${styles.agreeRow} ${agreed ? styles.agreeRowChecked : ''}`}>
+                <input type="checkbox" id="agree" checked={agreed} onChange={e => setAgreed(e.target.checked)} className={styles.agreeCheckbox} />
+                <label htmlFor="agree" className={styles.agreeLabel}>
+                  I agree to the <span className={styles.agreeLink} onClick={onShowTerms}>Terms of Service</span> and <span className={styles.agreeLink} onClick={onShowPrivacy}>Privacy Policy</span>
+                </label>
+              </div>
+            </>
+          )}
 
-        <button style={{ ...BtnFull, opacity: loading ? 0.7 : 1, cursor: loading ? 'not-allowed' : 'pointer' }} onClick={submit} disabled={loading}>
-          {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
-        </button>
+          {error && <div className={styles.errorBox}>{error}</div>}
 
-        <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--text-muted)', marginTop: 16 }}>
-          {mode === 'login'
-            ? <>No account? <span style={Lk} onClick={() => switchMode('signup')}>Sign up free</span></>
-            : <>Already have one? <span style={Lk} onClick={() => switchMode('login')}>Sign in</span></>
-          }
+          <Button variant="primary" className={styles.fullWidthBtn} onClick={submit} loading={loading}>
+            {mode === 'login' ? 'Sign in' : 'Create account'}
+          </Button>
+
+          <div className={styles.switchRow}>
+            {mode === 'login'
+              ? <>No account? <span className={styles.switchLink} onClick={() => switchMode('signup')}>Sign up free</span></>
+              : <>Already have one? <span className={styles.switchLink} onClick={() => switchMode('login')}>Sign in</span></>
+            }
+          </div>
         </div>
-      </div>
-      <div style={{ marginTop: 20, fontSize: 12, color: 'var(--text-muted)', display: 'flex', gap: 16 }}>
-        <span style={Lk} onClick={onShowPrivacy}>Privacy Policy</span>
-        <span style={Lk} onClick={onShowTerms}>Terms of Service</span>
+        <div className={styles.footerLinks}>
+          <span className={styles.footerLink} onClick={onShowPrivacy}>Privacy Policy</span>
+          <span className={styles.footerLink} onClick={onShowTerms}>Terms of Service</span>
+        </div>
       </div>
     </div>
   )
 }
-
-const Wrap = { minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-page)', padding: '1rem' }
-const Card = { width: '100%', maxWidth: 400, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: '2.5rem 2rem' }
-const H2 = { fontSize: 20, fontWeight: 700, color: 'var(--text)', marginBottom: 8, textAlign: 'center' }
-const Muted = { fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 8, textAlign: 'center' }
-const L = { display: 'block', fontSize: 12, color: 'var(--text-muted)', marginBottom: 5 }
-const I = { width: '100%', padding: '9px 12px', fontSize: 14, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box' }
-const Eye = { position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: 0, lineHeight: 1 }
-const BtnFull = { width: '100%', padding: '10px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', fontWeight: 500 }
-const BtnGhost = { width: '100%', padding: '10px', background: 'none', color: 'var(--text-muted)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }
-const Lk = { color: 'var(--accent)', cursor: 'pointer' }

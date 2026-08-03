@@ -28,6 +28,7 @@ const MIGRATED_FILES = [
   'src/pages/LibraryTab.jsx',
   'src/components/ExportPanel.jsx',
   'src/pages/LandingPage.jsx',
+  'src/pages/AuthPage.jsx',
 ]
 
 export default defineConfig([
