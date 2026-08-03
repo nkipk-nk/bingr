@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { withRetry, DatabaseError } from '../lib/errors'
+import { withRetry, DatabaseError, assertAffected } from '../lib/errors'
 
 export function useLists(session) {
   const [lists, setLists] = useState([])
@@ -73,12 +73,16 @@ export function useLists(session) {
   const deleteList = useCallback(async (listId) => {
     if (!session) return
     try {
-      const { error } = await supabase
+      // .select() lets an RLS-filtered no-op be told apart from a real delete
+      // (M21) — otherwise a blocked delete still returns success and the list
+      // disappears from the UI while remaining in the database.
+      const res = await supabase
         .from('bingr_lists')
         .delete()
         .eq('id', listId)
         .eq('user_id', session.user.id)
-      if (error) throw new DatabaseError('Failed to delete list', { supabaseError: error.message })
+        .select()
+      assertAffected(res, 'deleteList', { listId, userId: session.user.id })
       setLists(prev => prev.filter(l => l.id !== listId))
     } catch (err) {
       logger.error('deleteList failed', err, { userId: session.user.id, listId })
@@ -88,7 +92,7 @@ export function useLists(session) {
   const addToList = useCallback(async (listId, item) => {
     if (!session) return false
     try {
-      const { error } = await supabase
+      const res = await supabase
         .from('bingr_list_items')
         .upsert({
           list_id: listId,
@@ -100,7 +104,8 @@ export function useLists(session) {
           release_date: (item.release_date || item.first_air_date || '').slice(0, 20) || null,
           vote_average: item.vote_average || null,
         }, { onConflict: 'list_id,tmdb_id' })
-      if (error) throw new DatabaseError('Failed to add to list', { supabaseError: error.message })
+        .select()
+      assertAffected(res, 'addToList', { listId, userId: session.user.id })
       // Update count locally
       setLists(prev => prev.map(l => l.id === listId
         ? { ...l, updated_at: new Date().toISOString() }
@@ -117,13 +122,14 @@ export function useLists(session) {
   const removeFromList = useCallback(async (listId, tmdbId) => {
     if (!session) return
     try {
-      const { error } = await supabase
+      const res = await supabase
         .from('bingr_list_items')
         .delete()
         .eq('list_id', listId)
         .eq('tmdb_id', tmdbId)
         .eq('user_id', session.user.id)
-      if (error) throw new DatabaseError('Failed to remove from list', { supabaseError: error.message })
+        .select()
+      assertAffected(res, 'removeFromList', { listId, tmdbId, userId: session.user.id })
       await load()
     } catch (err) {
       logger.error('removeFromList failed', err, { userId: session.user.id, listId })

@@ -30,10 +30,16 @@ export function useProfile(session) {
 
       setProfile(data)
 
-      // Update last_seen_at silently
+      // Update last_seen_at silently. NOTE: this was previously fired without
+      // awaiting the query builder (a lazy thenable), so no request was ever
+      // sent — last_seen_at was null for every user, which also made
+      // FindPeople's "recently active" ordering meaningless.
       supabase.from('profiles')
         .update({ last_seen_at: new Date().toISOString() })
         .eq('id', session.user.id)
+        .then(({ error }) => {
+          if (error) logger.warn('last_seen_at update failed', { message: error.message })
+        })
 
     } catch (err) {
       logger.error('useProfile.load failed', err, { userId: session?.user.id })

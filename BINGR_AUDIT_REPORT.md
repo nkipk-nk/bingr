@@ -992,6 +992,51 @@ with `promoteUser` hardened via `assertAffected` and `AdminPanel` now surfacing 
 
 ---
 
+#### C10 — `bingr_library` had no public-read policy: public "Top Rated" has always been empty
+
+**Files:** `bingr_library` RLS (untracked, see M12), [UserProfilePage.jsx:41](src/pages/UserProfilePage.jsx#L41)
+
+*Discovered while building the profile-visibility toggle for M16, verifying what the toggle would
+actually protect before writing its copy.*
+
+`bingr_diary` had the `using (true)` problem (**C5** — too open). `bingr_library` had the opposite
+problem: **no public SELECT policy of any kind**, only implicit owner-only access. `UserProfilePage`'s
+"🏆 Top Rated" tab and the movie/TV/rated counts query this table using the *viewer's* auth context —
+so for any visitor other than the profile owner, the query has always returned zero rows.
+
+**[VERIFIED LIVE]**, two ways, before the fix:
+
+```
+# anon reading a title rated by a real user
+GET /bingr_library?user_id=eq.<nkipk>&select=title,rating  (no session)  → []
+
+# a different AUTHENTICATED user (not just anon) reading another user's row
+seeded a probe row for user A, read as user B (both logged in) → []
+```
+
+Wrapped in `Promise.allSettled` ([UserProfilePage.jsx:41-44](src/pages/UserProfilePage.jsx#L41-L44)), so
+this failed with the same signature as **C3**: no error, just a confidently-empty "No ratings yet."
+Every public profile's rankings tab has been empty for every visitor, always, independent of the
+`profile_public` setting — which is also why this went unnoticed even before C1 made the whole page
+crash.
+
+**Fix.** Mirror the C5 diary policy:
+```sql
+create policy "Library visible to owner or when profile is public"
+  on public.bingr_library for select
+  using (
+    (select auth.uid()) = user_id
+    or exists (select 1 from public.profiles p
+               where p.id = bingr_library.user_id and p.profile_public = true)
+  );
+```
+Shipped as [`supabase/migrations/20260803_p1a_library_visibility.sql`](supabase/migrations/20260803_p1a_library_visibility.sql).
+**Requires the maintainer to run it** — not yet applied at time of writing.
+
+**Effort:** 🟢 15 minutes.
+
+---
+
 ### 🟠 MODERATE
 
 | ID | Finding | File | Impact |
@@ -1524,10 +1569,11 @@ not just reasoned about.
 | C6 | 🔴 Critical | Comment authorship spoofable | Claude | ✅ **verified** — posting as `nkipk` → `403`; posting as own handle → `201` |
 | C7 | 🔴 Critical | Moderation client-side only | Claude | ✅ **verified** — 3,000 chars → `400` check constraint; 6 rapid inserts → `201×4` then `400` |
 | C8 | 🔴 Critical | Authors can't see/delete own hidden comments; delete reports false success | Claude | ✅ **verified** — owner sees and deletes own hidden comment; anon still cannot see it |
-| C9 | 🔴 Critical | Admin "Make admin" never worked; UI showed false success | Claude | ⏳ **code fixed, awaiting migration** — run [`20260803_p0b_admin_write.sql`](supabase/migrations/20260803_p0b_admin_write.sql) |
+| C9 | 🔴 Critical | Admin "Make admin" never worked; UI showed false success | Claude | ✅ **verified** — migration `20260803_p0b_admin_write.sql` applied, promote/demote round-tripped live |
+| C10 | 🔴 Critical | `bingr_library` had no public-read policy — public rankings always empty | Claude | ⏳ **code fixed, awaiting migration** — run [`20260803_p1a_library_visibility.sql`](supabase/migrations/20260803_p1a_library_visibility.sql) |
 | M1 | 🟠 Moderate | `delete-account` ignores `target_user_id` | Claude | ✅ fixed — needs Edge Function redeploy |
 | M2 | 🟠 Moderate | Incomplete account deletion (KDPA) | Claude | ✅ fixed — needs Edge Function redeploy |
-| M3 | 🟠 Moderate | `last_seen_at` never written | | open |
+| M3 | 🟠 Moderate | `last_seen_at` never written | Claude | ✅ fixed — was fire-and-forget on a lazy thenable, never actually sent; now awaited via `.then()` with a warn on failure |
 | M4 | 🟠 Moderate | Landing legal links dead | Claude | ✅ **verified live** |
 | M5 | 🟠 Moderate | Feed CTA dead click | Claude | ✅ fixed |
 | M6 | 🟠 Moderate | Feed never auto-refreshes | Claude | ✅ fixed |
@@ -1539,17 +1585,18 @@ not just reasoned about.
 | M12 | 🟠 Moderate | Schema not in version control | Claude | ✅ fixed — `supabase/` tracked, migrations added |
 | M13 | 🟠 Moderate | 1.08 MB single bundle | | open |
 | M14 | 🟠 Moderate | Queries rely solely on RLS | | open |
-| M15 | 🟠 Moderate | Privacy Policy inaccurate | | open |
-| M16 | 🟠 Moderate | No full data export / privacy toggle | | open |
+| M15 | 🟠 Moderate | Privacy Policy inaccurate | Claude | ✅ fixed — §1 data list corrected, §4 retention matches the M1/M2 fix, §6 RLS claim no longer overstated |
+| M16 | 🟠 Moderate | No full data export / privacy toggle | Claude | 🔶 **partial** — visibility toggle shipped (needs `p1a` migration to fully take effect); full-account JSON export still not built |
 | M17 | 🟠 Moderate | Comment reports do nothing | | open |
 | M18 | 🟠 Moderate | Edge Function CORS `*` | | open |
 | M19 | 🟠 Moderate | `useLibrary.upsert` dep churn | | open |
 | M20 | 🟠 Moderate | In-memory auth rate limit | | open |
-| M21 | 🟠 Moderate | Zero-row writes treated as success (root cause of C4, C8, C9) | Claude | 🔶 **partial** — `assertAffected()` added and applied to `signUp`, `deleteComment`, `promoteUser`; the remaining ~8 call sites in `useDiary`, `useLists`, `useLibrary`, `useFollows`, `useAdmin` still check only `error` |
+| M21 | 🟠 Moderate | Zero-row writes treated as success (root cause of C4, C8, C9) | Claude | ✅ fixed — `assertAffected()` applied to `signUp`, `deleteComment`, `promoteUser`, `deleteEntry`, `deleteList`, `addToList`, `removeFromList`, `useLibrary.remove`; `useFollows.unfollow` handled separately since a missing row there is a legitimate no-op, not a failure |
 | m1–m17 | 🟡 Minor | See §5 Minor table | | open (m2 dupe-key fixed) |
 
 ### Outstanding actions for the maintainer
 
-1. **Run [`supabase/migrations/20260803_p0b_admin_write.sql`](supabase/migrations/20260803_p0b_admin_write.sql)** — closes C9. Until then, no one can be promoted to admin through the UI, and with C2 now fixed there is no other path either. The two existing admins (`nkipk`, `claudeadmin`) are unaffected.
-2. **Redeploy the `delete-account` Edge Function** (`supabase functions deploy delete-account`) — the M1/M2 fixes are committed but Edge Functions do not deploy via Vercel.
-3. **Replace the placeholder M-Pesa number** in [SupportButton.jsx:6](src/components/SupportButton.jsx#L6) — still returns `0700 000 000` to Kenyan users on the live site.
+1. ~~Run `20260803_p0b_admin_write.sql`~~ — ✅ **done**, verified live (C9 closed).
+2. ~~Redeploy the `delete-account` Edge Function~~ — ✅ **done**, verified via CORS header on the live function.
+3. ~~Replace the placeholder M-Pesa number~~ — ✅ **done**, live.
+4. **Run [`supabase/migrations/20260803_p1a_library_visibility.sql`](supabase/migrations/20260803_p1a_library_visibility.sql)** — closes **C10**. Until then, the "🏆 Top Rated" tab and rating counts on every `/@username` page will keep showing empty for every visitor except the profile owner, regardless of the new privacy toggle.

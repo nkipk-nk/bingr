@@ -45,11 +45,19 @@ export function useFollows(session) {
   const unfollow = useCallback(async (userId) => {
     if (!session) return
     try {
-      const { error } = await supabase.from('bingr_follows')
+      // .select() lets a real delete be told apart from an RLS-filtered no-op
+      // (M21). A row simply not existing (never followed) is a benign no-op —
+      // assertAffected would flag it as a failure, so it's checked separately
+      // and treated as already-successful rather than surfaced as an error.
+      const { data, error } = await supabase.from('bingr_follows')
         .delete()
         .eq('follower_id', session.user.id)
         .eq('following_id', userId)
+        .select()
       if (error) throw error
+      if (!data?.length) {
+        logger.warn('unfollow affected no rows — row may not have existed', { userId })
+      }
       setFollowing(prev => prev.filter(id => id !== userId))
     } catch (err) {
       logger.error('unfollow failed', err, { userId })

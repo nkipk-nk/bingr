@@ -81,6 +81,10 @@ export async function withRetry(fn, { retries = 3, baseDelay = 500, label = 'ope
       lastError = err
       const isLast = attempt === retries
       if (!isLast) {
+        // `label` was previously accepted by every caller and silently
+        // discarded — a retried operation's failures had no context at all
+        // in dev console or Sentry until the final throw.
+        console.warn(`[bingr] ${label} failed (attempt ${attempt}/${retries}), retrying…`, err)
         const delay = baseDelay * Math.pow(2, attempt - 1) + Math.random() * 100
         await new Promise(r => setTimeout(r, delay))
       }

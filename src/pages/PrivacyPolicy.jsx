@@ -1,5 +1,6 @@
 export default function PrivacyPolicy({ onBack }) {
   const EFFECTIVE = 'June 2026'
+  const LAST_UPDATED = 'August 2026'
   const CONTACT = 'privacy@bingr.app'
 
   const s = (title) => (
@@ -17,7 +18,7 @@ export default function PrivacyPolicy({ onBack }) {
       <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, marginBottom: 24, fontFamily: 'inherit', padding: 0 }}>← Back</button>
 
       <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Privacy Policy</h1>
-      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32 }}>Effective date: {EFFECTIVE} · Last updated: {EFFECTIVE}</p>
+      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32 }}>Effective date: {EFFECTIVE} · Last updated: {LAST_UPDATED}</p>
 
       {p('bingr ("we", "us", "our") is operated from Kenya and is committed to protecting your personal data in accordance with the Kenya Data Protection Act 2019 and internationally recognised privacy best practices including GDPR principles. This policy explains what data we collect, why, how we store it, and your rights.')}
 
@@ -25,11 +26,15 @@ export default function PrivacyPolicy({ onBack }) {
       <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
         {li('Email address — used to create and identify your account.')}
         {li('Password — stored as a one-way hash by Supabase Auth. We never see your plain-text password.')}
-        {li('Watchlist, ratings, and episode progress — the content you choose to track in bingr.')}
+        {li('Username, display name, and bio — public identifiers you choose. Display name and bio are optional and may include personal information if you choose to share it.')}
+        {li('Country — selected at signup, used to determine which support/donation options to show you.')}
+        {li('Watchlist, ratings, diary entries, episode progress, and lists — the content you choose to track and curate in bingr. Diary entries and list descriptions may include free-text notes you write.')}
+        {li('Comments you post on titles, and any content you submit via the feedback form.')}
+        {li('Donation records — if you tell us about a support contribution, we record the amount and, if you choose, a name to show on the public supporter wall.')}
         {li('Session tokens — short-lived tokens used to keep you signed in, stored in your browser.')}
         {li('Basic usage logs — errors and anonymised technical events for debugging. No browsing history, no ad tracking.')}
       </ul>
-      {p('We do not collect your name, phone number, physical address, payment information, or any biometric data. We do not use third-party analytics or advertising trackers.')}
+      {p('We do not collect government ID numbers, phone numbers, physical addresses, payment card details, or biometric data. We do not use third-party analytics or advertising trackers.')}
 
       {s('2. How We Use Your Data')}
       <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
@@ -45,7 +50,7 @@ export default function PrivacyPolicy({ onBack }) {
       {p('Error logs may be processed by Sentry (sentry.io), a security-focused error tracking platform. Sentry processes anonymised technical data only — no watchlist contents or personal details are included in error reports.')}
 
       {s('4. Data Retention')}
-      {p('Your account data is retained for as long as your account exists. If you delete your account, all personal data — including your email, watchlist, ratings, and episode history — is permanently and irreversibly deleted within 30 days. Error logs are retained for 90 days.')}
+      {p('Your account data is retained for as long as your account exists. If you delete your account, your email, watchlist, ratings, diary, episode history, comments, and follows are permanently deleted immediately. Any feedback you submitted or donation record tied to your account is kept for our support and accounting history, but is anonymised at the same time — your username and email are stripped from it. Error logs are retained for 90 days.')}
 
       {s('5. Your Rights')}
       {p('Under the Kenya Data Protection Act 2019 and applicable international law, you have the right to:')}
@@ -60,7 +65,7 @@ export default function PrivacyPolicy({ onBack }) {
       {p(`To exercise any of these rights, contact us at ${CONTACT}. We will respond within 30 days.`)}
 
       {s('6. Security')}
-      {p('We implement industry-standard security measures including: encrypted data transmission (TLS), hashed password storage, Row Level Security (RLS) on all database tables ensuring users can only access their own data, PKCE authentication flow, and security response headers (HSTS, CSP, X-Frame-Options). No security measure is 100% foolproof — if you believe your account has been compromised, change your password immediately and contact us.')}
+      {p('We implement industry-standard security measures including: encrypted data transmission (TLS), hashed password storage, Row Level Security (RLS) on every database table restricting access to data you own or have explicitly made public (public profiles, public lists, comments), PKCE authentication flow, and security response headers (HSTS, CSP, X-Frame-Options). Data you have not made public — your diary and ratings when your profile is set to private, for example — is restricted to your account only. No security measure is 100% foolproof — if you believe your account has been compromised, change your password immediately and contact us.')}
 
       {s('7. Cookies and Local Storage')}
       {p('bingr uses browser localStorage to store your session token so you stay signed in. We do not use advertising cookies, tracking pixels, or third-party cookies of any kind.')}

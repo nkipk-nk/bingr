@@ -9,11 +9,27 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
+  const [privacySaving, setPrivacySaving] = useState(false)
+  const [privacyError, setPrivacyError] = useState('')
 
   useEffect(() => {
     setUsername(profile?.username || '')
     setDisplayName(profile?.display_name || '')
   }, [profile])
+
+  // Defaults to public — matches the profiles.profile_public column default,
+  // so a profile loaded before this field existed still reads correctly.
+  const isPublic = profile?.profile_public !== false
+
+  // Saved on toggle, independent of the username/display-name form below —
+  // a privacy change shouldn't wait on unrelated validation (e.g. a pending
+  // username availability check) before it takes effect.
+  const togglePrivacy = async () => {
+    setPrivacySaving(true); setPrivacyError('')
+    const { error } = await onUpdate({ profile_public: !isPublic })
+    setPrivacySaving(false)
+    if (error) setPrivacyError(error)
+  }
 
   const handleUsernameChange = (val) => {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, '')
@@ -93,6 +109,31 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
             <label style={L}>Display name <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
             <input value={displayName} onChange={e => setDisplayName(e.target.value)} style={I}
               maxLength={50} placeholder="How you want to appear on bingr" />
+          </div>
+
+          <div style={{ marginBottom: 20 }}>
+            <label style={L}>Profile visibility</label>
+            <div
+              onClick={togglePrivacy}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '12px',
+                background: 'var(--bg-input)', borderRadius: 10,
+                border: `1px solid ${isPublic ? 'var(--border)' : 'var(--accent)'}`,
+                cursor: privacySaving ? 'wait' : 'pointer', opacity: privacySaving ? 0.7 : 1,
+              }}>
+              <div style={{ width: 36, height: 20, borderRadius: 10, background: isPublic ? 'var(--accent)' : 'var(--border)', position: 'relative', flexShrink: 0, transition: 'background 0.2s' }}>
+                <div style={{ position: 'absolute', top: 2, left: isPublic ? 18 : 2, width: 16, height: 16, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{isPublic ? '🌐 Public profile' : '🔒 Private profile'}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  {isPublic
+                    ? 'Your profile page, ratings, and diary are visible to anyone with your link.'
+                    : 'Only you can see your ratings and diary. Your username stays findable in search.'}
+                </div>
+              </div>
+            </div>
+            {privacyError && <div style={{ fontSize: 12, color: '#e24b4a', marginTop: 6 }}>{privacyError}</div>}
           </div>
 
           {error && <div style={{ fontSize: 13, color: '#e24b4a', padding: '8px 12px', background: 'rgba(226,75,74,0.08)', borderRadius: 8, marginBottom: 14 }}>{error}</div>}

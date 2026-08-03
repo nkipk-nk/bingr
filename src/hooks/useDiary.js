@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { withRetry, DatabaseError } from '../lib/errors'
+import { withRetry, DatabaseError, assertAffected } from '../lib/errors'
 
 export function useDiary(session) {
   const [entries, setEntries] = useState([])
@@ -59,13 +59,19 @@ export function useDiary(session) {
   }, [session])
 
   const deleteEntry = useCallback(async (entryId) => {
-    if (!session) return
+    if (!session) return { error: 'You must be signed in.' }
     try {
-      const { error } = await supabase.from('bingr_diary').delete().eq('id', entryId).eq('user_id', session.user.id)
-      if (error) throw error
+      // .select() so a real delete can be told apart from an RLS-filtered
+      // no-op (M21) — without it, a blocked delete still reports success and
+      // the entry disappears from the UI while remaining in the database.
+      const res = await supabase.from('bingr_diary').delete()
+        .eq('id', entryId).eq('user_id', session.user.id).select()
+      assertAffected(res, 'deleteEntry', { entryId, userId: session.user.id })
       setEntries(prev => prev.filter(e => e.id !== entryId))
+      return { error: null }
     } catch (err) {
       logger.error('deleteEntry failed', err, { userId: session.user.id, entryId })
+      return { error: 'Could not delete that entry. Please refresh and try again.' }
     }
   }, [session])
 

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
-import { withRetry, DatabaseError } from '../lib/errors'
+import { withRetry, DatabaseError, assertAffected } from '../lib/errors'
 
 export function useLibrary(session) {
   const [library, setLibrary] = useState({})
@@ -71,12 +71,16 @@ export function useLibrary(session) {
     if (!session) return
     try {
       await withRetry(async () => {
-        const { error } = await supabase
+        // .select() lets an RLS-filtered no-op be told apart from a real
+        // delete (M21) — otherwise the item disappears from the UI while
+        // remaining in the database.
+        const res = await supabase
           .from('bingr_library')
           .delete()
           .eq('tmdb_id', tmdbId)
           .eq('user_id', session.user.id)
-        if (error) throw new DatabaseError('Delete failed', { supabaseError: error.message })
+          .select()
+        assertAffected(res, 'removeLibrary', { tmdbId, userId: session.user.id })
       }, { label: 'removeLibrary' })
       setLibrary(prev => { const n = { ...prev }; delete n[tmdbId]; return n })
     } catch (err) {
