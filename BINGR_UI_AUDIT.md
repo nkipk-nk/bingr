@@ -1,0 +1,95 @@
+# bingr — UI Audit: Redundancy, Contradiction & Gap Analysis
+
+**Date:** 3 August 2026
+**Companion to:** [`BINGR_AUDIT_REPORT.md`](BINGR_AUDIT_REPORT.md) (functional/security/backend audit — separate document, separate ID scheme, do not confuse `C1`–`C10` there with anything here)
+**Scope:** cross-screen design analysis — where the app repeats itself, contradicts itself, or leaves an obvious gap. Not a per-screen review (that's already covered in the earlier audit's §3); this looks *across* screens.
+**Status:** tracking document. Goal is 100% closure — every row gets fixed, none skipped. Update the **Status** column as work lands; do not delete rows once resolved, mark them `✅ fixed` so the record stays complete.
+
+**Decisions locked in before this list was written** (from the clarifying-questions round — informs the resolutions below, don't relitigate without reason):
+- **Audience:** growth product — designing for a stranger landing cold, not just friends.
+- **Visual direction:** bold & maximalist — full creative direction in [`BINGR_DESIGN_SYSTEM.md`](BINGR_DESIGN_SYSTEM.md).
+- **Theme priority:** dark-first, light mode a faithful full adaptation, not an afterthought.
+- **Scope authority:** resolutions below may include real feature consolidation/cuts, not just visual polish.
+
+---
+
+## How to use this document
+
+Three tables — **Redundancies**, **Contradictions**, **Gaps** — each row identified (`RD#`/`CX#`/`GP#`), severity-rated, with a concrete resolution and a status. When a fix ships, change Status to `✅ fixed` and add the commit/PR reference in a trailing note, matching the pattern in `BINGR_AUDIT_REPORT.md`.
+
+Severity here is **UX severity**, not the security severity scale from the other audit — 🔴 High / 🟠 Medium / 🟡 Low, meaning "how much this actively confuses or costs the user," not "how exploitable."
+
+---
+
+## Table 1 — Redundancies
+
+*Where bingr implements the same idea twice.*
+
+| ID | What | Where | Severity | Resolution | Status |
+|---|---|---|---|---|---|
+| RD1 | Rankings tab and public-profile "Top Rated" are two hand-built implementations of the same sorted-by-rating list, styled differently (rank number treatment, star display, presence/absence of a type filter). | [Rankings.jsx](src/pages/Rankings.jsx), [UserProfilePage.jsx](src/pages/UserProfilePage.jsx) rankings tab | 🔴 High | Merge into one `<RankedList items showFilter interactive>` component. Own-profile use gets the filter + tap-through; visiting a profile gets a read-only subset. One file, one visual language, two call sites. | open |
+| RD2 | Watchlist / Watching / Watched are three nav destinations for what is architecturally already one component (`LibraryTab` parameterized by `status`). The redundancy is in navigation, not code — three tab slots, three page loads, three empty states to maintain for one dataset. | [App.jsx](src/App.jsx) TABS array, [LibraryTab.jsx](src/pages/LibraryTab.jsx) | 🔴 High | Collapse to a single **Library** destination with a segmented status control (All / Watchlist / Watching / Watched) plus the existing Movie/TV filter. Frees two tab slots — directly helps GP-navigation below. | open |
+| RD3 | Rating has two homes with an undocumented sync rule: `bingr_library.rating` and `bingr_diary.rating` are separate columns. A diary log syncs to the library rating **only on first watch** — a rewatch's rating silently stays diary-only, with no UI explanation of this rule anywhere. | [App.jsx](src/App.jsx) diary-log handler, `useLibrary`/`useDiary` | 🔴 High | Make the library rating always reflect the *most recent* diary rating, rewatch included. When a rewatch rating differs from the current library rating, ask explicitly ("Update your overall rating to X?") rather than applying a silent, undocumented rule. | open |
+| RD4 | `ExportPanel` exports the whole library regardless of active tab, yet is re-mounted independently at the top of Watchlist, Watching, and Watched. | [App.jsx](src/App.jsx) fallback tab branch | 🟠 Medium | Resolves automatically once RD2 lands — one Library view, one ExportPanel. If RD2 is deferred, move export to a profile/settings-level action instead. | open |
+| RD5 | Diary rows and Feed items are two independently-coded card designs for the same underlying fact ("user watched/rated title on date") — different spacing, different rating treatment, different poster size (see CX1). | [DiaryPage.jsx](src/pages/DiaryPage.jsx), [ActivityFeed.jsx](src/pages/ActivityFeed.jsx) `FeedItem` | 🟠 Medium | One `<WatchLogCard variant="diary"|"feed">` component. `feed` variant adds the avatar + `"@user watched"` line; `diary` variant omits it (redundant when it's already "yours"). | open |
+| RD6 | Stats computed once (`computeStats()`) but rendered twice by hand: `StatsPage` and the profile's "stats" tab independently reimplement the tile grid, and the profile version drops the Wrapped hero, rating-distribution bars, and top-5 list entirely rather than reusing a reduced composition. | [StatsPage.jsx](src/pages/StatsPage.jsx), [UserProfilePage.jsx](src/pages/UserProfilePage.jsx) stats tab | 🟠 Medium | Extract the stat-tile grid, activity chart, and rating-distribution bars as shared components. `StatsPage` composes all of them plus the owner-only Wrapped hero; the public profile composes a deliberate subset — not a re-implementation. | open |
+| RD7 | Follow/unfollow button hand-implemented twice with separately-typed styling for the identical action. | [FindPeople.jsx](src/components/FindPeople.jsx) `UserRow`, [UserProfilePage.jsx](src/pages/UserProfilePage.jsx) | 🟡 Low | One `<FollowButton isFollowing onToggle loading>` component. | open |
+| RD8 | Two search boxes, two silently-different domains: header search (global) searches TMDB titles; FindPeople's search (buried inside the Feed tab) searches bingr usernames. Nothing signals the scope difference — typing a person's name into the header gives "no results" with no hint people-search lives elsewhere. | header search bar, [FindPeople.jsx](src/components/FindPeople.jsx) | 🟠 Medium | Don't unify the search *logic* (genuinely different data) — unify the *entry point*. Either make the header search a combined typeahead with Titles/People sections, or label it explicitly ("Search titles…") so scope is never ambiguous. See GP-nav below for how this interacts with removing FindPeople from Feed. | open |
+| RD9 | The rewatch badge (🔁) is independently re-implemented at four render sites with four separately-typed surrounding styles. | [DetailPanel.jsx](src/components/DetailPanel.jsx), [DiaryPage.jsx](src/pages/DiaryPage.jsx), [ActivityFeed.jsx](src/pages/ActivityFeed.jsx), [UserProfilePage.jsx](src/pages/UserProfilePage.jsx) | 🟡 Low | Folds into RD5 — becomes one prop-driven badge element inside `<WatchLogCard>` instead of four copies. | open |
+
+---
+
+## Table 2 — Contradictions
+
+*Where the same concept gets different treatment depending on which screen you're looking at.*
+
+| ID | What | Variants found | Severity | Resolution | Status |
+|---|---|---|---|---|---|
+| CX1 | Poster thumbnails — seven distinct size/radius treatments for three conceptual contexts. | Grid tile: `aspect-ratio 2/3` in a radius-12 card. List-row thumbnail: **four different pairs** — 36×54/r5, 38×56/r5, 42×62/r6, 30×44/r4. Detail hero: 110×165/r10. Provider logo: 18×18/r4. | 🔴 High | Exactly **three poster tokens** — `poster.sm` (list row), `poster.md` (grid tile), `poster.lg` (hero) — full spec in `BINGR_DESIGN_SYSTEM.md`. All seven current variants map onto these three; no new sizes get invented. | open |
+| CX2 | Rating display — five visual grammars, two colors, for the same number. | (1) single star + `/10`. (2) repeated-star string + `/10`. (3) single star, no `/10`. (4) plain text, no star. (5) interactive 10-star input. Color split evenly between `#ef9f27` and `#ba7517` with no rule for which gets which. | 🔴 High | One rating token (kill the second amber), one `<RatingBadge value size>` display component — always `★ N/10`, no repeated-star variant, no bare-star variant. Interactive input stays a separate component (genuinely different job: input vs. display). | open |
+| CX3 | Empty states — three different structures with no rule for which screen gets which. | Full (icon+title+subtitle+CTA): Library, Feed no-follows. Icon+title+subtitle, **no CTA**: Rankings, Stats, Diary — exactly where a nudge matters most. Single line, no icon: PublicListPage. Padding varies 2rem/3rem/4rem across otherwise-identical contexts. | 🔴 High | One `<EmptyState icon title subtitle action?>` component, structure always the same, action present everywhere there's an obvious next step (nearly everywhere — see GP6). | open |
+| CX4 | ~110 hand-styled `<button>` elements resolve to roughly seven visual species with zero shared implementation — every instance a separate inline `style={{}}` object. | Pill-filled, pill-outline, rect-filled, rect-ghost, circular icon-only, text-link, one-off FAB. A global change (focus ring, disabled state, hover timing) currently means editing dozens of files by hand. | 🔴 High | `<Button variant size icon?>` covering all seven species, defined once. **Highest-leverage single extraction in the system** — most-repeated, most-inconsistent, most load-bearing for "looks designed on purpose." Full spec in `BINGR_DESIGN_SYSTEM.md`. | open |
+| CX5 | 214 `borderRadius` declarations across 12 distinct values with no evident scale. | Values in use: 2, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20. 8 is most common (75×) but 10/12/20/6/16/14/4 are all heavily used too and aren't in any clean ratio to each other. Card padding equally ad hoc: 1/1.25/1.5/1.75/2/2.5rem. | 🔴 High | Collapse to 4 radii (sm/md/lg/pill) + an 8-step spacing scale — both defined in `BINGR_DESIGN_SYSTEM.md`. All 12 current values map onto the new scale; nothing new gets invented outside it. | open |
+| CX6 | ~14 call sites format dates independently, each writing its own `toLocaleDateString('en-KE', {...})` options object. | At least 5 distinct format combinations for what's conceptually 3 needs (full date / short day+month / bare month). No shared utility. | 🟠 Medium | One `formatDate(date, 'full'|'short'|'month')` utility in `lib/`. Three named formats, every call site picks one. | open |
+| CX7 | Avatar (initials circle) — five sizes with no scale logic. | 32 (comment author), 34 (header trigger), 36 (feed item), 38 (FindPeople row), 64 (profile hero). Reads as five people independently guessing a number, not a deliberate scale. | 🟠 Medium | Three avatar sizes (sm=32, md=40, lg=64) covering every current context; retire the other four values. | open |
+| CX8 | The same three status colors (watched/watching/watchlist) get three different visual grammars depending on screen. | Solid-filled badge (MovieCard corner), colored *text* on neutral bg (LibraryTab progress line), colored *border/pill* (DetailPanel status buttons). | 🟠 Medium | One status treatment — solid-filled pill — everywhere `watched/watching/watchlist` is shown. Reads identically as badge, button, or inline chip. | open |
+| CX9 | Two competing modal paradigms with no rule for which context gets which. | Bottom sheet (slide-up): `LogEntryModal`, `FeedbackModal`, `SupportButton` panel, `CreateListModal`. Centered dialog: `OnboardingModal`. Nothing about onboarding's content demands the different treatment. | 🟡 Low | Standardize on the bottom sheet (more mobile-native, matches the stated mobile-heavy context) with a `size` prop for rare cases needing more vertical room. | open |
+| CX10 | Destructive-action confirmation is inconsistent in *whether* it happens and jarring in *how* when it does. | `window.confirm()` (native, unstyled, breaks the visual language entirely) guards list/comment/diary-entry delete, library remove, admin promote/demote. Unfollow and "remove item from list" fire instantly with zero confirmation. | 🔴 High | One in-app `<ConfirmDialog>` (styled, on-brand) for anything destroying data that isn't trivially recreated (lists, diary notes, comments). Cheaply-reversible actions (unfollow, remove-from-list) stay instant but toast with a ~5s **Undo** — better UX than a prompt for low-stakes actions. | open |
+| CX11 | A global toast exists and is used for exactly two actions; everything else improvises its own feedback or gives none. | Toast covers: status change, rating change. Bespoke inline lookalikes: `ProfilePage`'s "✓ Profile saved," `SupportButton`'s "✓ Copied." Zero feedback: comment posted, list created, diary logged, follow toggled (see GP9), export downloaded. | 🟠 Medium | Route every success/error through the one toast system. Kill the bespoke inline confirmation boxes; a genuinely persistent (non-dismissing) state indicator is a different, deliberately-designed pattern, not an ad hoc toast lookalike. | open |
+
+---
+
+## Table 3 — Gaps
+
+*What's missing that the design implies should exist. Interaction/design gaps only — backend feature gaps are tracked in `BINGR_AUDIT_REPORT.md`.*
+
+| ID | What's missing | Severity | Resolution | Status |
+|---|---|---|---|---|
+| GP1 | No way to see who you follow or who follows you. Profile pages show *counts* but they aren't tappable — no list view exists anywhere. You can grow the number but never audit, browse, or unfollow from it. | 🔴 High | Make follower/following counts tap targets opening a `<FollowerListSheet>`, reusing `<FollowButton>` (RD7) per row. | open |
+| GP2 | Zero onboarding for a first-time user landing on an empty Discover. No welcome state, no explanation of what the tabs mean, no hint that a poster has quick actions — and on mobile those quick actions are hover-only and literally unreachable by touch, compounding the confusion. | 🔴 High | A lightweight, skippable first-session overlay (3–4 beats max) pointing at search, a poster's quick actions, and navigation. Given the growth-product ambition, this is the difference between a signup converting or bouncing after one confused scroll. | open |
+| GP3 | Landing page has zero visual product preview — every section is text and emoji icons, no screenshot, no poster collage, no mockup. The marketing page for a movie-tracking app currently shows zero movie posters. | 🔴 High | Priority item in `BINGR_DESIGN_SYSTEM.md`'s landing redesign — hero needs real visual weight from the catalogue itself. | open |
+| GP4 | No search or filter within your own library. The Movie/TV filter is the only narrowing tool. With any real collection size, no way to jump straight to a specific tracked title. | 🟠 Medium | Lightweight client-side filter input at the top of the (post-RD2) Library view — data's already loaded, this is a `.filter()` away. | open |
+| GP5 | No sort control where you'd actually use it. `ExportPanel` has a sort-by dropdown (rating/title/year/added) that only affects the *exported file* — the on-screen list has no sort control at all. | 🟠 Medium | Move sort into the on-screen Library view's header controls; export inherits the currently-applied sort instead of maintaining a separate selector. | open |
+| GP6 | About half the empty states describe a next action but don't let you take it — Rankings/Stats/Diary tell you what to do in text with no button to do it. (Duplicate of CX3's root cause, tracked separately because it's a distinct user-facing symptom.) | 🟠 Medium | Same fix as CX3 — every empty state gets a real CTA, no exceptions. | open |
+| GP7 | No edit path for an existing diary entry — `LogEntryModal` only creates; `DiaryPage` offers delete but not edit. A typo means delete-and-relog, losing the original entry's exact metadata. | 🟠 Medium | Make diary rows tappable into an edit variant of `LogEntryModal`, pre-filled. | open |
+| GP8 | The two most-shared, most-public-facing pages have no back affordance beyond a clickable logo — `UserProfilePage` and `PublicListPage`, exactly where a cold visitor lands via a shared link. The logo-click is also a full page reload, not an in-app navigate, discarding a logged-in visitor's app state. | 🟠 Medium | Explicit, labeled back affordance consistent with the rest of the app; make the logo-click an in-app navigate. | open |
+| GP9 | Two meaningful actions give literally zero feedback: follow/unfollow (only signal is the button's own state flip — no toast, unlike rating/status which do get one) and diary logging (modal just closes). | 🟠 Medium | Route both through the unified toast (CX11) — *"Following @user"* / *"Logged to your diary."* | open |
+| GP10 | No notification surface of any kind — follows, comment activity, nothing surfaces. For a product with a follow graph and comments, the total absence of "X followed you" is a real gap in what makes the social layer feel alive rather than static. | 🟡 Low (design-scope now; underlying data mostly doesn't exist yet either — see `BINGR_AUDIT_REPORT.md`) | Out of scope for a pure UI pass, but the header/nav redesign should reserve visual space for a future notification indicator — cheaper to design in now than retrofit. | open |
+| GP11 | Own-profile privacy state is invisible outside Settings — nothing in the main app persistently reminds you your profile is set to Private. | 🟡 Low | A small lock/globe glyph next to the header avatar, matching whichever icon is assigned to the visibility toggle. | open |
+| GP12 | Sign-in has no visual identity of its own — `AuthPage`/`LandingPage` are both plain centered cards on a flat background, in a domain (film/TV) where poster art could establish mood before the user's even inside. | 🟡 Low | Priority item in `BINGR_DESIGN_SYSTEM.md` — auth should carry the same visual signature as the rest of the app, not read as a generic form. | open |
+| GP-nav | *(Cross-cutting, not a single row — the navigation redesign itself.)* The nine-tab horizontal scroll strip has no clear hierarchy, hides tabs 5–9 off-screen on mobile with no scroll affordance, and the floating ☕ support button sits in the same bottom-right thumb zone a bottom nav would need. | 🔴 High | Full navigation redesign in `BINGR_DESIGN_SYSTEM.md` — this is the single most consequential screen-level decision in Part B, not a per-row tweak. | open |
+
+---
+
+## Root cause, stated once
+
+Nearly every Contradiction traces back to one fact: **there is no shared component library.** 929 inline `style={{}}` objects means every button, card, avatar, and empty state was typed fresh by whoever touched that screen that day. The component specs in `BINGR_DESIGN_SYSTEM.md` aren't just a style guide — they're the structural fix for most of this document at once. Redundancies RD1–RD3 are the two I'd prioritize above pure visual work: they're not just inconsistent, the *current behavior is confusing on its own terms*, independent of any redesign.
+
+## Tracker summary
+
+| Table | Total rows | Fixed | Open |
+|---|---|---|---|
+| Redundancies | 9 | 0 | 9 |
+| Contradictions | 11 | 0 | 11 |
+| Gaps | 12 + 1 cross-cutting | 0 | 13 |
+| **Total** | **33** | **0** | **33** |
