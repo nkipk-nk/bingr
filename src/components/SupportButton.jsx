@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 
 const AMOUNTS = [50, 150, 300]
-const getNumber = () => ['07', '00', '000', '000'].join('') // ← replace with your real number
+const getNumber = () => ['07', '00', '231', '485'].join('')
 
 export default function SupportButton({ session, profile, onShowSupporters }) {
   const [open, setOpen] = useState(false)
