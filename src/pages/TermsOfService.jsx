@@ -1,23 +1,23 @@
+import { ArrowLeft } from 'lucide-react'
+import Button from '../components/ui/Button'
+import styles from './LegalPage.module.css'
+
 export default function TermsOfService({ onBack }) {
   const EFFECTIVE = 'June 2026'
   const CONTACT = 'legal@bingr.app'
 
-  const s = (title) => (
-    <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: '2rem 0 0.75rem' }}>{title}</h2>
-  )
-  const p = (text) => (
-    <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 12 }}>{text}</p>
-  )
-  const li = (text) => (
-    <li style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 6 }}>{text}</li>
-  )
+  const s = (title) => <h2 className={styles.section}>{title}</h2>
+  const p = (text) => <p className={styles.paragraph}>{text}</p>
+  const li = (text) => <li className={styles.listItem}>{text}</li>
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '2rem 1.5rem' }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, marginBottom: 24, fontFamily: 'inherit', padding: 0 }}>← Back</button>
+    <div className={styles.wrap}>
+      <Button variant="ghost" size="sm" className={styles.backBtn} onClick={onBack}>
+        <ArrowLeft size={16} /> Back
+      </Button>
 
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Terms of Service</h1>
-      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32 }}>Effective date: {EFFECTIVE}</p>
+      <h1 className={styles.title}>Terms of Service</h1>
+      <p className={styles.meta}>Effective date: {EFFECTIVE}</p>
 
       {p('These Terms of Service ("Terms") govern your use of bingr ("the Service"), operated from Kenya. By creating an account or using bingr, you agree to these Terms. If you do not agree, do not use the Service.')}
 
@@ -29,7 +29,7 @@ export default function TermsOfService({ onBack }) {
 
       {s('3. Acceptable Use')}
       {p('You agree not to:')}
-      <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+      <ul className={styles.list}>
         {li('Use bingr for any unlawful purpose or in violation of any applicable laws.')}
         {li('Attempt to gain unauthorised access to other users\' accounts or data.')}
         {li('Reverse-engineer, decompile, or extract source code from the Service.')}

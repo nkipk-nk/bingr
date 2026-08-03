@@ -8,7 +8,10 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 // Flat config's `files` can't be an empty array, so this starts with a
 // placeholder glob that matches nothing; replace it with the first real
 // path (e.g. 'src/pages/PrivacyPolicy.jsx') as soon as one exists.
-const MIGRATED_FILES = ['src/__migrated_placeholder__.jsx']
+const MIGRATED_FILES = [
+  'src/pages/PrivacyPolicy.jsx',
+  'src/pages/TermsOfService.jsx',
+]
 
 export default defineConfig([
   globalIgnores(['dist']),

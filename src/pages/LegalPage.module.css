@@ -1,0 +1,58 @@
+/* Shared shell for the static legal pages (Privacy Policy, Terms of
+   Service) — same structure, same typographic rhythm, only the content
+   differs. First screens through the Phase 1 migration (low traffic,
+   low consequence — see the implementation plan). */
+
+.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+
+.backBtn { margin-bottom: var(--space-6); padding-left: 0; }
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg-size);
+  font-weight: var(--text-display-lg-weight);
+  line-height: var(--text-display-lg-leading);
+  letter-spacing: var(--text-display-lg-tracking);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.meta {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm-size);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-8);
+}
+
+.section {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg-size);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: var(--space-8) 0 var(--space-3);
+}
+
+.paragraph {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md-size);
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: var(--space-3);
+}
+
+.list {
+  padding-left: var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+.listItem {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md-size);
+  color: var(--text-secondary);
+  line-height: 1.8;
+  margin-bottom: var(--space-2);
+}

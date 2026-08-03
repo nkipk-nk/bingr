@@ -1,29 +1,29 @@
+import { ArrowLeft } from 'lucide-react'
+import Button from '../components/ui/Button'
+import styles from './LegalPage.module.css'
+
 export default function PrivacyPolicy({ onBack }) {
   const EFFECTIVE = 'June 2026'
   const LAST_UPDATED = 'August 2026'
   const CONTACT = 'privacy@bingr.app'
 
-  const s = (title) => (
-    <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)', margin: '2rem 0 0.75rem' }}>{title}</h2>
-  )
-  const p = (text) => (
-    <p style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 12 }}>{text}</p>
-  )
-  const li = (text) => (
-    <li style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 6 }}>{text}</li>
-  )
+  const s = (title) => <h2 className={styles.section}>{title}</h2>
+  const p = (text) => <p className={styles.paragraph}>{text}</p>
+  const li = (text) => <li className={styles.listItem}>{text}</li>
 
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto', padding: '2rem 1.5rem' }}>
-      <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: 14, marginBottom: 24, fontFamily: 'inherit', padding: 0 }}>← Back</button>
+    <div className={styles.wrap}>
+      <Button variant="ghost" size="sm" className={styles.backBtn} onClick={onBack}>
+        <ArrowLeft size={16} /> Back
+      </Button>
 
-      <h1 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>Privacy Policy</h1>
-      <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 32 }}>Effective date: {EFFECTIVE} · Last updated: {LAST_UPDATED}</p>
+      <h1 className={styles.title}>Privacy Policy</h1>
+      <p className={styles.meta}>Effective date: {EFFECTIVE} · Last updated: {LAST_UPDATED}</p>
 
       {p('bingr ("we", "us", "our") is operated from Kenya and is committed to protecting your personal data in accordance with the Kenya Data Protection Act 2019 and internationally recognised privacy best practices including GDPR principles. This policy explains what data we collect, why, how we store it, and your rights.')}
 
       {s('1. Data We Collect')}
-      <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+      <ul className={styles.list}>
         {li('Email address — used to create and identify your account.')}
         {li('Password — stored as a one-way hash by Supabase Auth. We never see your plain-text password.')}
         {li('Username, display name, and bio — public identifiers you choose. Display name and bio are optional and may include personal information if you choose to share it.')}
@@ -37,7 +37,7 @@ export default function PrivacyPolicy({ onBack }) {
       {p('We do not collect government ID numbers, phone numbers, physical addresses, payment card details, or biometric data. We do not use third-party analytics or advertising trackers.')}
 
       {s('2. How We Use Your Data')}
-      <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+      <ul className={styles.list}>
         {li('To provide the bingr service: saving your watchlist, ratings, and episode tracking.')}
         {li('To authenticate you securely and maintain your session.')}
         {li('To diagnose errors and improve the service (anonymised error logs).')}
@@ -54,7 +54,7 @@ export default function PrivacyPolicy({ onBack }) {
 
       {s('5. Your Rights')}
       {p('Under the Kenya Data Protection Act 2019 and applicable international law, you have the right to:')}
-      <ul style={{ paddingLeft: 20, marginBottom: 12 }}>
+      <ul className={styles.list}>
         {li('Access — request a copy of the personal data we hold about you.')}
         {li('Rectification — correct inaccurate data.')}
         {li('Erasure ("right to be forgotten") — permanently delete your account and all associated data. You can do this yourself at any time via Account Settings → Delete Account, or by contacting us.')}
