@@ -95,7 +95,7 @@ export default function App() {
   const diaryHook = useDiary(session)
   const followsHook = useFollows(session)
   const feedHook = useFeed(session, followsHook.following)
-  const { profile, updateProfile, checkUsername } = useProfile(session)
+  const { profile, updateProfile, checkUsername, exportAllData } = useProfile(session)
   const adminHook = useAdmin(profile)
 
   const [tab, setTab] = useState('discover')
@@ -320,7 +320,7 @@ export default function App() {
 
   // ── Logged in — protected pages ──
   if (page === 'delete-account') return <Suspense fallback={<PageFallback />}><DeleteAccount userEmail={session.user.email} onBack={() => navigate('app')} onDelete={deleteAccount} /></Suspense>
-  if (page === 'profile') return <Suspense fallback={<PageFallback />}><ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onBack={() => navigate('app')} /></Suspense>
+  if (page === 'profile') return <Suspense fallback={<PageFallback />}><ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onExportAllData={exportAllData} onBack={() => navigate('app')} /></Suspense>
   if (page === 'admin') return adminHook.isAdmin
     ? <Suspense fallback={<PageFallback />}><AdminPanel adminHook={adminHook} onBack={() => navigate('app')} /></Suspense>
     : <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Access denied.</div>

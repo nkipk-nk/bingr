@@ -1597,7 +1597,7 @@ not just reasoned about.
 | M13 | 🟠 Moderate | 1.08 MB single bundle | Claude | ✅ fixed — route-level `lazy()`/`Suspense` splitting + vendor chunk separation; app chunk 1,087 KB → 130 KB |
 | M14 | 🟠 Moderate | Queries rely solely on RLS | Claude | ✅ fixed — `useLibrary.load` and `useEpisodes.load` were the only two gaps |
 | M15 | 🟠 Moderate | Privacy Policy inaccurate | Claude | ✅ fixed — §1 data list corrected, §4 retention matches the M1/M2 fix, §6 RLS claim no longer overstated |
-| M16 | 🟠 Moderate | No full data export / privacy toggle | Claude | 🔶 **partial** — visibility toggle shipped and **verified live** (protects diary and, via C10, ratings/rankings); full-account JSON export still not built |
+| M16 | 🟠 Moderate | No full data export / privacy toggle | Claude | ✅ **fully fixed.** Visibility toggle shipped and verified live. Full-account export added: `useProfile.exportAllData()` queries `profiles`, `bingr_library`, `bingr_diary`, `bingr_episodes`, `bingr_lists`, `bingr_list_items`, `bingr_comments`, and `bingr_follows` (both directions) scoped to the signed-in user via `Promise.allSettled` — one section failing doesn't block the rest, and the user is told which sections (if any) came back incomplete. `downloadFullExport()` in `lib/export.js` bundles it into a single timestamped JSON file. Surfaced in `ProfilePage` as "📦 Download all my data". **[VERIFIED LIVE]** — all nine underlying queries return HTTP 200 for the test account. |
 | M17 | 🟠 Moderate | Comment reports do nothing | Claude | 🔶 client confirmation shipped; server auto-hide trigger written, awaiting `p1b` migration |
 | M18 | 🟠 Moderate | Edge Function CORS `*` | | open |
 | M19 | 🟠 Moderate | `useLibrary.upsert` dep churn | | open |

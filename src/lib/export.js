@@ -21,6 +21,26 @@ function download(filename, content, mime = 'text/plain;charset=utf-8') {
 }
 
 /**
+ * Download a full-account data export as a single JSON file.
+ * Fulfils the Privacy Policy's data-portability promise ("receive your data
+ * in a structured, machine-readable format") for real, rather than only via
+ * a manual request to support — previously the only self-service export was
+ * the library-only TXT/CSV above.
+ */
+export function downloadFullExport(bundle) {
+  const payload = {
+    exported_at: new Date().toISOString(),
+    format_version: 1,
+    ...bundle,
+  }
+  download(
+    `bingr-full-export-${new Date().toISOString().slice(0, 10)}.json`,
+    JSON.stringify(payload, null, 2),
+    'application/json;charset=utf-8',
+  )
+}
+
+/**
  * Filter and sort library items for export
  * @param {object} library
  * @param {object} opts

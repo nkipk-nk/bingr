@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
+import { downloadFullExport } from '../lib/export'
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
 
-export default function ProfilePage({ profile, session, onUpdate, checkUsername, onBack }) {
+export default function ProfilePage({ profile, session, onUpdate, checkUsername, onExportAllData, onBack }) {
   const [username, setUsername] = useState(profile?.username || '')
   const [displayName, setDisplayName] = useState(profile?.display_name || '')
   const [usernameState, setUsernameState] = useState('idle') // idle | checking | available | taken | invalid
@@ -11,6 +12,8 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
   const [error, setError] = useState('')
   const [privacySaving, setPrivacySaving] = useState(false)
   const [privacyError, setPrivacyError] = useState('')
+  const [exporting, setExporting] = useState(false)
+  const [exportNotice, setExportNotice] = useState(null) // { kind: 'ok'|'err', msg }
 
   useEffect(() => {
     setUsername(profile?.username || '')
@@ -29,6 +32,19 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
     const { error } = await onUpdate({ profile_public: !isPublic })
     setPrivacySaving(false)
     if (error) setPrivacyError(error)
+  }
+
+  const handleExport = async () => {
+    setExporting(true); setExportNotice(null)
+    const { error, bundle, incomplete } = await onExportAllData()
+    setExporting(false)
+    if (error) { setExportNotice({ kind: 'err', msg: error }); return }
+    downloadFullExport(bundle)
+    setExportNotice(
+      incomplete?.length
+        ? { kind: 'err', msg: `Downloaded, but couldn't include: ${incomplete.join(', ')}. Try again in a moment for the full export.` }
+        : { kind: 'ok', msg: '✓ Downloaded' }
+    )
   }
 
   const handleUsernameChange = (val) => {
@@ -150,6 +166,24 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>Email address</div>
           <div style={{ fontSize: 14, color: 'var(--text)' }}>{session?.user?.email}</div>
           <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>To change your email address, contact support@bingr.app</div>
+        </div>
+
+        {/* Data export */}
+        <div style={{ borderTop: '1px solid var(--border)', padding: '1rem 1.5rem' }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Your data</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 10, lineHeight: 1.6 }}>
+            Download everything bingr has stored for your account — profile, watchlist, ratings, diary,
+            episode progress, lists, comments, and follows — as a single JSON file.
+          </div>
+          <button onClick={handleExport} disabled={exporting}
+            style={{ padding: '8px 16px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', cursor: exporting ? 'wait' : 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 500 }}>
+            {exporting ? 'Preparing export…' : '📦 Download all my data'}
+          </button>
+          {exportNotice && (
+            <div style={{ fontSize: 12, marginTop: 8, color: exportNotice.kind === 'ok' ? '#1d9e75' : '#e24b4a' }}>
+              {exportNotice.msg}
+            </div>
+          )}
         </div>
       </div>
     </div>
