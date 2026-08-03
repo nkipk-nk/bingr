@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { friendlyAuthError } from '../lib/errors'
 import { supabase } from '../lib/supabase'
 import { COUNTRIES } from '../lib/countries'
@@ -30,6 +30,10 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
   const [resendLoading, setResendLoading] = useState(false)
   const [resendMsg, setResendMsg] = useState('')
+  // A local ref instead of the previous window._unTimer — that name was
+  // shared with OnboardingModal, so having both mounted (e.g. mid-onboarding
+  // in another tab) let one component's debounce clear the other's timer.
+  const usernameTimer = useRef(null)
 
   const handleUsernameChange = (val) => {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, '')
@@ -37,9 +41,11 @@ export default function AuthPage({ onAuth, onShowPrivacy, onShowTerms, onForgotP
     if (!clean) { setUsernameState('idle'); return }
     if (!USERNAME_RE.test(clean)) { setUsernameState('invalid'); return }
     setUsernameState('checking')
-    clearTimeout(window._unTimer)
-    window._unTimer = setTimeout(async () => {
-      const { data } = await supabase.from('profiles').select('id').eq('username', clean).single()
+    clearTimeout(usernameTimer.current)
+    usernameTimer.current = setTimeout(async () => {
+      // .maybeSingle() — .single() throws (and logs a 406) for the expected
+      // "no row" case, which is the common outcome of an availability check.
+      const { data } = await supabase.from('profiles').select('id').eq('username', clean).maybeSingle()
       setUsernameState(data ? 'taken' : 'available')
     }, 500)
   }

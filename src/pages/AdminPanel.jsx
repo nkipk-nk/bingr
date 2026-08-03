@@ -32,9 +32,14 @@ export default function AdminPanel({ adminHook, onBack }) {
     donorCount: donations.filter(d => d.confirmed).length,
   }
 
-  const filteredUsers = users.filter(u =>
-    !userSearch || u.username?.includes(userSearch.toLowerCase()) || u.display_name?.includes(userSearch.toLowerCase())
-  )
+  const filteredUsers = users.filter(u => {
+    if (!userSearch) return true
+    const needle = userSearch.toLowerCase()
+    // display_name is free text and can contain any casing — username is
+    // already lowercase-enforced at signup, but comparing it the same way
+    // costs nothing and stays correct if that ever changes.
+    return u.username?.toLowerCase().includes(needle) || u.display_name?.toLowerCase().includes(needle)
+  })
 
   const handleAddDonation = async () => {
     if (!donationForm.amount_kes) return

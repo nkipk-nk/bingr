@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { downloadFullExport } from '../lib/export'
 
 const USERNAME_RE = /^[a-z0-9_]{3,20}$/
@@ -14,6 +14,7 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
   const [privacyError, setPrivacyError] = useState('')
   const [exporting, setExporting] = useState(false)
   const [exportNotice, setExportNotice] = useState(null) // { kind: 'ok'|'err', msg }
+  const usernameTimer = useRef(null)
 
   useEffect(() => {
     setUsername(profile?.username || '')
@@ -55,8 +56,8 @@ export default function ProfilePage({ profile, session, onUpdate, checkUsername,
     if (clean.length < 3) { setUsernameState('invalid'); return }
     if (!USERNAME_RE.test(clean)) { setUsernameState('invalid'); return }
     setUsernameState('checking')
-    clearTimeout(window._unameTimer)
-    window._unameTimer = setTimeout(async () => {
+    clearTimeout(usernameTimer.current)
+    usernameTimer.current = setTimeout(async () => {
       const available = await checkUsername(clean)
       setUsernameState(available ? 'available' : 'taken')
     }, 500)

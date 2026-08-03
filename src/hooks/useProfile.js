@@ -77,12 +77,14 @@ export function useProfile(session) {
 
   const checkUsername = useCallback(async (username) => {
     if (!username || username.length < 3) return false
+    // .maybeSingle() — .single() throws (and logs a 406) for the expected
+    // "no row" case, which is the common outcome of an availability check.
     const { data } = await supabase
       .from('profiles')
       .select('id')
       .eq('username', username.toLowerCase())
       .neq('id', session?.user?.id || '')
-      .single()
+      .maybeSingle()
     return !data
   }, [session])
 

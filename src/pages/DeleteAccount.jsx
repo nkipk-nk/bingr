@@ -33,10 +33,21 @@ export default function DeleteAccount({ onBack, onDelete, userEmail }) {
               This will permanently delete your bingr account and <strong style={{ color: 'var(--text)' }}>all associated data</strong>, including:
             </p>
             <ul style={{ paddingLeft: 20, marginBottom: 20 }}>
-              {['Your watchlist, watched list, and watchlist', 'All episode tracking progress', 'All ratings and rankings', 'Your account login'].map(item => (
+              {[
+                'Your watchlist, watching, and watched lists',
+                'All episode tracking progress',
+                'All ratings, rankings, and diary entries',
+                'Your custom lists and comments',
+                'Your follows and followers',
+                'Your account login',
+              ].map(item => (
                 <li key={item} style={{ fontSize: 14, color: 'var(--text-muted)', lineHeight: 1.8, marginBottom: 4 }}>{item}</li>
               ))}
             </ul>
+            <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.7, marginBottom: 16 }}>
+              Feedback and donation records tied to your account are kept for our support and
+              accounting history, but are anonymised — your username and email are removed from them.
+            </p>
             <p style={{ fontSize: 14, color: '#e24b4a', fontWeight: 500, marginBottom: 20 }}>
               This action is permanent and cannot be undone.
             </p>

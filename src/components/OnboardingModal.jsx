@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { COUNTRIES } from '../lib/countries'
 
@@ -14,6 +14,10 @@ export default function OnboardingModal({ session, onComplete }) {
   const [usernameState, setUsernameState] = useState('idle') // idle|checking|available|taken|invalid
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  // A local ref instead of the previous window._unTimer — that name was
+  // shared with AuthPage, so having both able to mount could let one
+  // component's debounce clear the other's timer.
+  const usernameTimer = useRef(null)
 
   const handleUsernameChange = (val) => {
     const clean = val.toLowerCase().replace(/[^a-z0-9_]/g, '')
@@ -23,14 +27,16 @@ export default function OnboardingModal({ session, onComplete }) {
     if (clean.length < 3) { setUsernameState('invalid'); return }
     if (!USERNAME_RE.test(clean)) { setUsernameState('invalid'); return }
     setUsernameState('checking')
-    clearTimeout(window._unTimer)
-    window._unTimer = setTimeout(async () => {
+    clearTimeout(usernameTimer.current)
+    usernameTimer.current = setTimeout(async () => {
+      // .maybeSingle() — .single() throws (and logs a 406) for the expected
+      // "no row" case, which is the common outcome of an availability check.
       const { data } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', clean)
         .neq('id', session.user.id)
-        .single()
+        .maybeSingle()
       setUsernameState(data ? 'taken' : 'available')
     }, 500)
   }

@@ -3,6 +3,14 @@ import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { friendlyAuthError } from '../lib/errors'
 
+// NOTE (M20): this is a UX nicety, not a security control — it lives in
+// module state that resets on every page reload, so it stops nothing a
+// motivated attacker couldn't trivially bypass. Its only real job is to give
+// a user who's fat-fingered their password a few times an immediate,
+// friendly "slow down" message without waiting on a round trip. The actual
+// defence against credential-stuffing/brute-force is Supabase Auth's own
+// server-side rate limiting, which this cannot weaken or replace and which
+// applies regardless of what this function does.
 const authAttempts = { count: 0, resetAt: 0 }
 const MAX_ATTEMPTS = 8
 const WINDOW_MS = 10 * 60 * 1000
@@ -41,13 +49,15 @@ export function useAuth() {
   const signUp = async (email, password, username, country) => {
     try {
       checkRateLimit()
-      // Check username availability before creating account
+      // Check username availability before creating account.
+      // .maybeSingle() — .single() throws (and logs a 406) for the expected
+      // "no row" case, which is the common outcome here.
       if (username) {
         const { data: existing } = await supabase
           .from('profiles')
           .select('id')
           .eq('username', username.toLowerCase())
-          .single()
+          .maybeSingle()
         if (existing) return { data: null, error: { message: 'That username is already taken.' } }
       }
 

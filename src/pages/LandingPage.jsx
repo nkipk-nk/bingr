@@ -9,7 +9,7 @@ export default function LandingPage({ onSignUp, onSignIn, onShowPrivacy, onShowT
   ]
 
   const stats = [
-    { num: '500K+', label: 'Titles in database' },
+    { num: '500K+', label: 'Titles searchable' },
     { num: '10', label: 'Point rating scale' },
     { num: '100%', label: 'Free, no ads' },
   ]
@@ -61,6 +61,9 @@ export default function LandingPage({ onSignUp, onSignIn, onShowPrivacy, onShowT
               <div style={{ fontSize: 13, color: 'var(--text-muted)', marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
+        </div>
+        <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--text-muted)', marginTop: 12 }}>
+          Catalogue data provided by The Movie Database (TMDB)
         </div>
       </section>
 

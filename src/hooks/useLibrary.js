@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { withRetry, DatabaseError, assertAffected } from '../lib/errors'
@@ -7,6 +7,16 @@ export function useLibrary(session) {
   const [library, setLibrary] = useState({})
   const [syncing, setSyncing] = useState(false)
   const [error, setError] = useState(null)
+
+  // upsert/setStatus/setRating read the current library through this ref
+  // instead of closing over the `library` state value directly. Closing over
+  // it meant every mutation recreated upsert (new library reference in its
+  // deps), which recreated setStatus/setRating, which are passed to every
+  // MovieCard in the Discover grid — so rating one title re-rendered every
+  // card on screen. The ref keeps their identity stable across renders while
+  // still always reading the latest data.
+  const libraryRef = useRef(library)
+  useEffect(() => { libraryRef.current = library }, [library])
 
   const load = useCallback(async () => {
     if (!session) { setLibrary({}); return }
@@ -39,7 +49,7 @@ export function useLibrary(session) {
   const upsert = useCallback(async (tmdbId, item, patch) => {
     if (!session) return
     setSyncing(true)
-    const existing = library[tmdbId] || {}
+    const existing = libraryRef.current[tmdbId] || {}
     const payload = {
       user_id: session.user.id,
       tmdb_id: Number(tmdbId),
@@ -69,7 +79,7 @@ export function useLibrary(session) {
     } finally {
       setSyncing(false)
     }
-  }, [session, library])
+  }, [session])
 
   const remove = useCallback(async (tmdbId) => {
     if (!session) return
@@ -94,22 +104,22 @@ export function useLibrary(session) {
 
   const setStatus = useCallback(async (item, status) => {
     const id = item.id
-    const existing = library[id]
+    const existing = libraryRef.current[id]
     if (existing?.status === status) {
       if (existing.rating) await upsert(id, item, { status: null })
       else await remove(id)
     } else {
       await upsert(id, item, { status })
     }
-  }, [library, upsert, remove])
+  }, [upsert, remove])
 
   const setRating = useCallback(async (item, rating) => {
     const id = item.id
-    const existing = library[id]
+    const existing = libraryRef.current[id]
     const newRating = existing?.rating === rating ? 0 : rating
     if (!newRating && !existing?.status) await remove(id)
     else await upsert(id, item, { rating: newRating })
-  }, [library, upsert, remove])
+  }, [upsert, remove])
 
   const counts = {
     watchlist: Object.values(library).filter(x => x.status === 'watchlist').length,

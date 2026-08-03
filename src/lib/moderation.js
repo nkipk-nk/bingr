@@ -37,8 +37,12 @@ export function moderateComment(text) {
   return { ok: true, text: trimmed }
 }
 
-// Simple in-memory rate limiter — resets on page reload, paired with
-// server-side checks being added later via admin review
+// NOTE (M20): this is a UX nicety, not a security control — it's module
+// state that resets on every page reload. Its job is instant feedback
+// without a network round trip; the real backstop is the server-side
+// `bingr_comments_rate_limit` trigger (supabase/migrations/
+// 20260803_p0_security.sql), which enforces the same 5-per-minute window
+// from Postgres and cannot be bypassed by calling the API directly.
 const commentTimestamps = []
 const MAX_COMMENTS_PER_WINDOW = 5
 const WINDOW_MS = 60 * 1000 // 1 minute
