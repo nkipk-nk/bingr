@@ -58,6 +58,12 @@ export function useLibrary(session) {
       poster_path: item.poster_path || null,
       release_date: (item.release_date || item.first_air_date || '').slice(0, 20) || null,
       vote_average: item.vote_average || null,
+      // Real TMDB runtime when the caller has it loaded (DetailPanel, once
+      // details have fetched) — otherwise preserve whatever was already
+      // stored rather than wiping a known value on an unrelated update (e.g.
+      // re-rating from a context without full details). stats.js falls back
+      // to an average when this is null.
+      runtime_minutes: item.runtime_minutes ?? existing.runtime_minutes ?? null,
       status: existing.status || null,
       rating: existing.rating || 0,
       ...patch,

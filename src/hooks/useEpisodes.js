@@ -33,7 +33,7 @@ export function useEpisodes(session) {
     !!episodes[`${showId}-${season}-${episode}`],
   [episodes])
 
-  const toggleEpisode = useCallback(async (showId, season, episode) => {
+  const toggleEpisode = useCallback(async (showId, season, episode, runtimeMinutes = null) => {
     if (!session) return
     const key = `${showId}-${season}-${episode}`
     try {
@@ -54,6 +54,10 @@ export function useEpisodes(session) {
           season_number: Number(season),
           episode_number: Number(episode),
           watched_at: new Date().toISOString(),
+          // Real per-episode TMDB runtime when the caller has it (DetailPanel
+          // passes details.episode_run_time[0] once loaded) — stats.js falls
+          // back to an average when this is null.
+          runtime_minutes: runtimeMinutes,
         }
         const data = await withRetry(async () => {
           const { data, error } = await supabase.from('bingr_episodes')
@@ -68,7 +72,7 @@ export function useEpisodes(session) {
     }
   }, [session, episodes])
 
-  const markSeasonWatched = useCallback(async (showId, season, episodeList) => {
+  const markSeasonWatched = useCallback(async (showId, season, episodeList, runtimeMinutes = null) => {
     if (!session) return
     const unwatched = episodeList.filter(ep => !episodes[`${showId}-${season}-${ep.episode_number}`])
     try {
@@ -90,6 +94,7 @@ export function useEpisodes(session) {
           season_number: Number(season),
           episode_number: Number(ep.episode_number),
           watched_at: new Date().toISOString(),
+          runtime_minutes: runtimeMinutes,
         }))
         const data = await withRetry(async () => {
           const { data, error } = await supabase.from('bingr_episodes')

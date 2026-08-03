@@ -12,10 +12,14 @@ export function computeStats(diary = [], library = {}, episodes = {}) {
   const watchedShows = libValues.filter(x => x.media_type === 'tv')
   const rated = libValues.filter(x => x.rating > 0)
 
-  const totalEpisodesWatched = Object.keys(episodes).length
+  const episodeValues = Object.values(episodes)
+  const totalEpisodesWatched = episodeValues.length
 
-  const movieMinutes = watchedMovies.length * AVG_MOVIE_RUNTIME
-  const episodeMinutes = totalEpisodesWatched * AVG_EPISODE_RUNTIME
+  // Real TMDB runtime when we captured it at watch-time (see useLibrary.js /
+  // useEpisodes.js), falling back to the flat average for older entries or
+  // ones logged from a context without full TMDB details loaded.
+  const movieMinutes = watchedMovies.reduce((sum, x) => sum + (x.runtime_minutes || AVG_MOVIE_RUNTIME), 0)
+  const episodeMinutes = episodeValues.reduce((sum, e) => sum + (e.runtime_minutes || AVG_EPISODE_RUNTIME), 0)
   const totalHours = Math.round((movieMinutes + episodeMinutes) / 60)
 
   // Rating distribution

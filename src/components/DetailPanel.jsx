@@ -71,6 +71,13 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
   const extra = details?.runtime ? `${details.runtime} min`
     : details?.number_of_seasons ? `${details.number_of_seasons} season${details.number_of_seasons > 1 ? 's' : ''} · ${details.number_of_episodes} eps` : ''
 
+  // Movie runtime, once details have loaded — passed along to onSetStatus so
+  // the library row stores a real value instead of stats.js's flat average.
+  // bingr_library.runtime_minutes only applies to movies: TV watch-time
+  // comes entirely from summed bingr_episodes rows, not the library row.
+  const itemForStatus = !isTV && details?.runtime ? { ...item, runtime_minutes: details.runtime } : item
+  const episodeRuntime = isTV ? (details?.episode_run_time?.[0] || null) : null
+
   const regionData = providers.KE || providers.US || providers.GB || {}
   const flat = regionData.flatrate || []
   const rent = regionData.rent || []
@@ -131,7 +138,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
             {/* Status buttons */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               {['watched', 'watching', 'watchlist'].map(s => (
-                <button key={s} onClick={() => onSetStatus(item, s)} style={{
+                <button key={s} onClick={() => onSetStatus(itemForStatus, s)} style={{
                   padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
                   fontSize: 13, fontWeight: 500, fontFamily: 'inherit',
                   background: entry.status === s ? STATUS_COLORS[s] : 'var(--bg-input)',
@@ -204,8 +211,8 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
             <EpisodeTracker
               show={details}
               isWatched={(sid, s, e) => episodeProps?.isWatched(sid, s, e)}
-              toggleEpisode={(sid, s, e) => episodeProps?.toggleEpisode(sid, s, e)}
-              markSeasonWatched={(sid, s, eps) => episodeProps?.markSeasonWatched(sid, s, eps)}
+              toggleEpisode={(sid, s, e) => episodeProps?.toggleEpisode(sid, s, e, episodeRuntime)}
+              markSeasonWatched={(sid, s, eps) => episodeProps?.markSeasonWatched(sid, s, eps, episodeRuntime)}
               getSeasonProgress={(sid, s, count) => episodeProps?.getSeasonProgress(sid, s, count)}
             />
           </div>
