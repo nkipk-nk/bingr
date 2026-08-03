@@ -20,8 +20,8 @@ import MovieCard from './components/MovieCard'
 import DetailPanel from './components/DetailPanel'
 import LibraryTab from './pages/LibraryTab'
 import ExportPanel from './components/ExportPanel'
-import SupportButton from './components/SupportButton'
 import OnboardingModal from './components/OnboardingModal'
+import NavShell from './components/nav/NavShell'
 
 // Code-split everything that isn't on the landing → auth → discover path.
 // Before this the whole app — admin panel, both legal pages, public profile
@@ -41,7 +41,6 @@ const ListsPage = lazy(() => import('./pages/ListsPage'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./pages/TermsOfService'))
 const DeleteAccount = lazy(() => import('./pages/DeleteAccount'))
-const FeedbackModal = lazy(() => import('./components/FeedbackModal'))
 
 const PageFallback = () => (
   <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -59,18 +58,6 @@ const CardGrid = ({ items, library, onOpen, onSetStatus }) => (
     ))}
   </div>
 )
-
-const TABS = [
-  { id: 'discover', label: '🔍 Discover' },
-  { id: 'feed', label: '🌐 Feed' },
-  { id: 'stats', label: '📊 Stats' },
-  { id: 'rankings', label: '🏆 Rankings' },
-  { id: 'diary', label: '📔 Diary' },
-  { id: 'lists', label: '📋 Lists' },
-  { id: 'watchlist', label: '🔖 Watchlist' },
-  { id: 'watching', label: '▶ Watching' },
-  { id: 'watched', label: '✅ Watched' },
-]
 
 const seasonsCache = {}
 
@@ -326,21 +313,8 @@ export default function App() {
     : <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>Access denied.</div>
 
   // ── Main app ──
-  const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
-  const userInitials = userDisplay.slice(0, 2).toUpperCase()
-
-  const tabLabel = (t) => {
-    if (t.id === 'feed') return `🌐 Feed${feedHook.feed.length ? ` (${feedHook.feed.length})` : ''}`
-    if (t.id === 'watchlist') return `🔖 Watchlist${counts.watchlist ? ` (${counts.watchlist})` : ''}`
-    if (t.id === 'watching') return `▶ Watching${counts.watching ? ` (${counts.watching})` : ''}`
-    if (t.id === 'watched') return `✅ Watched${counts.watched ? ` (${counts.watched})` : ''}`
-    return t.label
-  }
-
-
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-page)', fontFamily: 'var(--font)' }}>
-
+    <>
       {/* Onboarding for Google OAuth users — shown until profile is complete */}
       {profile && !profile.username_set && (
         <OnboardingModal
@@ -349,80 +323,17 @@ export default function App() {
         />
       )}
 
-      {/* Header */}
-      <header style={{ background: 'var(--bg-card)', borderBottom: '1px solid var(--border)', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div onClick={goHome} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", flexShrink: 0 }}><img src="/logo.png" alt="bingr" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "contain" }} /><span style={{ fontSize: 20, fontWeight: 700, color: "var(--accent)", letterSpacing: -0.5 }}>bingr</span></div>
-
-          <div style={{ flex: 1, display: 'flex', gap: 6, minWidth: 200 }}>
-            <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSearch()}
-              placeholder="Search movies & TV shows…"
-              style={{ flex: 1, padding: '7px 12px', fontSize: 14, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', outline: 'none', fontFamily: 'inherit' }} />
-            <select value={searchType} onChange={e => setSearchType(e.target.value)}
-              style={{ padding: '7px 8px', fontSize: 13, border: '1px solid var(--border)', borderRadius: 8, background: 'var(--bg-input)', color: 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}>
-              <option value="multi">All</option>
-              <option value="movie">Movies</option>
-              <option value="tv">TV Shows</option>
-            </select>
-            <button onClick={handleSearch} style={{ padding: '7px 16px', background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 500, flexShrink: 0 }}>Search</button>
-          </div>
-
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              {syncing && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Syncing…</span>}
-              <div onClick={e => { e.stopPropagation(); setShowUserMenu(v => !v) }}
-                style={{ width: 34, height: 34, borderRadius: '50%', background: 'var(--accent)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, cursor: 'pointer', userSelect: 'none' }}
-                title={session.user.email}>{userInitials}</div>
-            </div>
-
-            {showUserMenu && (
-              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: '100%', right: 0, marginTop: 8, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 14, padding: '8px', minWidth: 220, boxShadow: '0 8px 32px rgba(0,0,0,0.18)', zIndex: 200 }}>
-                <div style={{ padding: '8px 12px 12px', borderBottom: '1px solid var(--border)', marginBottom: 6 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{userDisplay}</div>
-                  {profile?.username && <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>@{profile.username}</div>}
-                  <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>{session.user.email}</div>
-                </div>
-                {[
-                  { label: '👤 Edit profile', action: () => { navigate('profile'); setShowUserMenu(false) } },
-                  { label: '🪪 View public profile', action: () => { window.location.href = `/@${profile?.username}`; setShowUserMenu(false) } },
-                  ...(adminHook.isAdmin ? [{ label: '⚙️ Admin panel', action: () => { navigate('admin'); setShowUserMenu(false) } }] : []),
-                  ...(!adminHook.isAdmin ? [{ label: '💬 Send feedback', action: () => { setShowFeedback(true); setShowUserMenu(false) } }] : []),
-                  { label: '🌟 Supporters', action: () => { navigate('supporters'); setShowUserMenu(false) } },
-                  { label: '🔒 Privacy Policy', action: () => { navigate('privacy'); setShowUserMenu(false) } },
-                  { label: '📄 Terms of Service', action: () => { navigate('terms'); setShowUserMenu(false) } },
-                  { label: '🚪 Sign out', action: () => { signOut(); setShowUserMenu(false) } },
-                  { label: '⚠️ Delete account', action: () => { navigate('delete-account'); setShowUserMenu(false) }, danger: true },
-                ].map(item => (
-                  <button key={item.label} onClick={item.action}
-                    style={{ display: 'block', width: '100%', padding: '9px 12px', background: 'none', border: 'none', borderRadius: 8, textAlign: 'left', fontSize: 13, color: item.danger ? '#e24b4a' : 'var(--text)', cursor: 'pointer', fontFamily: 'inherit' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-input)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'none'}>
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div style={{ padding: '0 1.5rem', display: 'flex', overflowX: 'auto', borderTop: '1px solid var(--border)' }}>
-          {TABS.map(t => (
-            <button key={t.id} onClick={() => { setDetailItem(null); setSearchResults(null); setTab(t.id) }}
-              style={{ padding: '10px 16px', fontSize: 13, cursor: 'pointer', background: 'none', border: 'none', borderBottom: `2px solid ${tab === t.id ? 'var(--accent)' : 'transparent'}`, color: tab === t.id ? 'var(--accent)' : 'var(--text-muted)', fontFamily: 'inherit', whiteSpace: 'nowrap', transition: 'color 0.15s', flexShrink: 0, fontWeight: tab === t.id ? 600 : 400 }}>
-              {tabLabel(t)}
-            </button>
-          ))}
-        </div>
-      </header>
-
-      {libError && (
-        <div style={{ background: 'rgba(226,75,74,0.1)', borderBottom: '1px solid rgba(226,75,74,0.2)', padding: '10px 1.5rem', fontSize: 13, color: '#e24b4a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {libError}
-          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', color: '#e24b4a', cursor: 'pointer', fontSize: 13, fontFamily: 'inherit', textDecoration: 'underline' }}>Reload</button>
-        </div>
-      )}
-
-      <main style={{ padding: '1.5rem' }}>
+      <NavShell
+        session={session} profile={profile} isAdmin={adminHook.isAdmin} syncing={syncing}
+        query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={handleSearch}
+        showUserMenu={showUserMenu} setShowUserMenu={setShowUserMenu}
+        tab={tab} onSelectTab={(id) => { setDetailItem(null); setSearchResults(null); setTab(id) }}
+        counts={counts} feedCount={feedHook.feed.length}
+        onGoHome={goHome} onNavigate={navigate} onSignOut={signOut}
+        libError={libError}
+        showFeedback={showFeedback} setShowFeedback={setShowFeedback}
+        toast={toast}
+      >
         {detailItem ? (
           <DetailPanel
             item={detailItem}
@@ -493,33 +404,7 @@ export default function App() {
             <LibraryTab status={tab} library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
           </>
         )}
-      </main>
-
-      <footer style={{ borderTop: '1px solid var(--border)', padding: '1.5rem', display: 'flex', gap: 20, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
-        {[
-          { label: 'Privacy Policy', action: () => navigate('privacy') },
-          { label: 'Terms of Service', action: () => navigate('terms') },
-          { label: '🌟 Supporters', action: () => navigate('supporters') },
-          { label: 'Delete Account', action: () => navigate('delete-account') },
-        ].map(item => (
-          <span key={item.label} onClick={item.action} style={{ fontSize: 12, color: 'var(--text-muted)', cursor: 'pointer' }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>{item.label}</span>
-        ))}
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>© {new Date().getFullYear()} bingr · Made in Nairobi 🇰🇪</span>
-      </footer>
-
-      <SupportButton session={session} profile={profile} onShowSupporters={() => navigate('supporters')} />
-
-      {showFeedback && (
-        <Suspense fallback={null}>
-          <FeedbackModal session={session} profile={profile} onClose={() => setShowFeedback(false)} />
-        </Suspense>
-      )}
-
-      {toast && (
-        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a1a', color: '#fff', padding: '9px 20px', borderRadius: 10, fontSize: 13, fontWeight: 500, boxShadow: '0 4px 20px rgba(0,0,0,0.3)', zIndex: 9999, whiteSpace: 'nowrap' }}>{toast}</div>
-      )}
-    </div>
+      </NavShell>
+    </>
   )
 }
