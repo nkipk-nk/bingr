@@ -14,4 +14,12 @@
 
 .controlsRow { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-4); }
 .filterInput { flex: 1; min-width: 180px; }
-.selectSm { min-width: 130px; }
+/* Select's own wrap div defaults to width:100% (correct for a lone form
+   field), which — with no flex-basis of its own — falls back to that
+   width as its hypothetical flex-basis: effectively "100% of whatever
+   row I'm dropped into." Without a max-width to clamp that back down,
+   it forces itself onto its own full-width line instead of sitting
+   inline with its siblings. min-width alone (a floor, not a ceiling)
+   doesn't fix this — every Select placed in a horizontal row needs an
+   explicit max-width too. */
+.selectSm { min-width: 130px; max-width: 180px; flex-shrink: 0; }
