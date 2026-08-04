@@ -65,6 +65,7 @@ export function useLibrary(session) {
       // to an average when this is null.
       runtime_minutes: item.runtime_minutes ?? existing.runtime_minutes ?? null,
       status: existing.status || null,
+      watchlisted: existing.watchlisted || false,
       rating: existing.rating || 0,
       ...patch,
       updated_at: new Date().toISOString(),
@@ -108,30 +109,42 @@ export function useLibrary(session) {
     }
   }, [session])
 
+  // watched/watching stay mutually exclusive with each other, but no longer
+  // with Watchlist — real user testing found marking something Watching or
+  // Watched silently dropping it off the Watchlist confusing, since those
+  // are conceptually independent ("want to watch" vs. actual progress).
   const setStatus = useCallback(async (item, status) => {
     const id = item.id
     const existing = libraryRef.current[id]
     if (existing?.status === status) {
-      if (existing.rating) await upsert(id, item, { status: null })
+      if (existing.rating || existing.watchlisted) await upsert(id, item, { status: null })
       else await remove(id)
     } else {
       await upsert(id, item, { status })
     }
   }, [upsert, remove])
 
+  const toggleWatchlist = useCallback(async (item) => {
+    const id = item.id
+    const existing = libraryRef.current[id]
+    const watchlisted = !existing?.watchlisted
+    if (!watchlisted && !existing?.status && !existing?.rating) await remove(id)
+    else await upsert(id, item, { watchlisted })
+  }, [upsert, remove])
+
   const setRating = useCallback(async (item, rating) => {
     const id = item.id
     const existing = libraryRef.current[id]
     const newRating = existing?.rating === rating ? 0 : rating
-    if (!newRating && !existing?.status) await remove(id)
+    if (!newRating && !existing?.status && !existing?.watchlisted) await remove(id)
     else await upsert(id, item, { rating: newRating })
   }, [upsert, remove])
 
   const counts = {
-    watchlist: Object.values(library).filter(x => x.status === 'watchlist').length,
+    watchlist: Object.values(library).filter(x => x.watchlisted).length,
     watching: Object.values(library).filter(x => x.status === 'watching').length,
     watched: Object.values(library).filter(x => x.status === 'watched').length,
   }
 
-  return { library, syncing, error, setStatus, setRating, remove, counts, reload: load }
+  return { library, syncing, error, setStatus, toggleWatchlist, setRating, remove, counts, reload: load }
 }

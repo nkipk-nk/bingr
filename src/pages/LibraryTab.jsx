@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { IMG } from '../lib/tmdb'
-import { STATUS_LABELS } from '../lib/constants'
 import PosterTile from '../components/ui/PosterTile'
 import ProgressBar from '../components/ui/ProgressBar'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
@@ -41,7 +40,12 @@ export default function LibraryTab({ items, status, onOpen, onRemove, episodePro
                 {year} · {isTV ? 'TV' : 'Film'}{tmdbR ? ` · ★ ${tmdbR}` : ''}
                 {item.rating > 0 && <span className={styles.metaRating}> · ★ {item.rating}/10</span>}
               </div>
-              {status === 'all' && <div className={styles.statusRow}><StatusPill status={item.status} /></div>}
+              {status === 'all' && (item.status || item.watchlisted) && (
+                <div className={styles.statusRow}>
+                  {item.status && <StatusPill status={item.status} />}
+                  {item.watchlisted && <StatusPill status="watchlist" />}
+                </div>
+              )}
 
               {isTV && showProg && showProg.total > 0 && (
                 <div className={styles.progressWrap}>
@@ -68,7 +72,7 @@ export default function LibraryTab({ items, status, onOpen, onRemove, episodePro
         onClose={() => setConfirmTarget(null)}
         onConfirm={() => { onRemove(confirmTarget.tmdb_id); setConfirmTarget(null) }}
         title="Remove from library?"
-        message={confirmTarget ? `Remove "${confirmTarget.title || confirmTarget.name}" from ${STATUS_LABELS[confirmTarget.status].toLowerCase()}?` : ''}
+        message={confirmTarget ? `Remove "${confirmTarget.title || confirmTarget.name}" from your library?` : ''}
       />
     </div>
   )

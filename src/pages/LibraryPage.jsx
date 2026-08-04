@@ -22,8 +22,8 @@ export default function LibraryPage({ library, onOpen, onRemove, episodeProps, o
   const [sortBy, setSortBy] = useState('added')
   const [filterText, setFilterText] = useState('')
 
-  const all = Object.values(library).filter(x => STATUSES.includes(x.status))
-  const statusCount = (s) => all.filter(x => x.status === s).length
+  const all = Object.values(library).filter(x => x.status || x.watchlisted)
+  const statusCount = (s) => s === 'watchlist' ? all.filter(x => x.watchlisted).length : all.filter(x => x.status === s).length
 
   const filtered = filterLibrary(library, { status, mediaType, sortBy })
   const needle = filterText.trim().toLowerCase()

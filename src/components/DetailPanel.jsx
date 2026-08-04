@@ -20,7 +20,7 @@ import ProgressBar from './ui/ProgressBar'
 import { PageTabBar } from './ui/Tab'
 import styles from './DetailPanel.module.css'
 
-const STATUS_ICON = { watched: CheckCircle2, watching: Play, watchlist: Bookmark }
+const STATUS_ICON = { watched: CheckCircle2, watching: Play }
 const STATUS_ACTIVE_CLASS = {
   watched: styles.statusBtnActiveWatched,
   watching: styles.statusBtnActiveWatching,
@@ -41,7 +41,7 @@ const ProviderChips = ({ items, label }) => items.length ? (
   </div>
 ) : null
 
-export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [], session, profile, onShowAuth }) {
+export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onToggleWatchlist, onSetRating, episodeProps, lists = [], onAddToList, onLogDiary, diaryEntries = [], session, profile, onShowAuth }) {
   const { showToast } = useToast()
   const [details, setDetails] = useState(null)
   const [providers, setProviders] = useState({})
@@ -129,7 +129,7 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
           </div>
 
           <div className={styles.statusRow}>
-            {['watched', 'watching', 'watchlist'].map(s => {
+            {['watched', 'watching'].map(s => {
               const Icon = STATUS_ICON[s]
               const active = entry.status === s
               return (
@@ -139,6 +139,11 @@ export default function DetailPanel({ item, entry = {}, onBack, onSetStatus, onS
                 </button>
               )
             })}
+            {/* Independent of watched/watching — see useLibrary.js's setStatus comment. */}
+            <button onClick={() => onToggleWatchlist(itemForStatus)}
+              className={[styles.statusBtn, entry.watchlisted ? STATUS_ACTIVE_CLASS.watchlist : ''].filter(Boolean).join(' ')}>
+              <Bookmark size={14} /> {STATUS_LABELS.watchlist}
+            </button>
           </div>
         </div>
       </div>

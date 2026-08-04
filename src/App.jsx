@@ -64,7 +64,7 @@ function getPageFromURL() {
 
 export default function App() {
   const { session, loading: authLoading, signUp, signIn, signOut, deleteAccount } = useAuth()
-  const { library, syncing, error: libError, setStatus, setRating, remove } = useLibrary(session)
+  const { library, syncing, error: libError, setStatus, toggleWatchlist, setRating, remove } = useLibrary(session)
   const episodeHook = useEpisodes(session)
   const listsHook = useLists(session)
   const diaryHook = useDiary(session)
@@ -229,7 +229,14 @@ export default function App() {
     const cur = library[item.id]
     await setStatus(item, status)
     if (cur?.status === status) showToast('Status removed')
-    else showToast(status === 'watched' ? 'Marked as watched ✓' : status === 'watching' ? 'Added to watching' : 'Added to watchlist', { tone: 'success' })
+    else showToast(status === 'watched' ? 'Marked as watched ✓' : 'Added to watching', { tone: 'success' })
+  }
+
+  // Independent of watched/watching — see useLibrary.js's setStatus comment.
+  const handleToggleWatchlist = async (item) => {
+    const wasWatchlisted = !!library[item.id]?.watchlisted
+    await toggleWatchlist(item)
+    showToast(wasWatchlisted ? 'Removed from watchlist' : 'Added to watchlist', { tone: 'success' })
   }
 
   const handleSetRating = async (item, rating) => {
@@ -395,6 +402,7 @@ export default function App() {
             entry={library[detailItem.id] || {}}
             onBack={(recItem) => recItem?.id ? openDetail(recItem) : setDetailItem(null)}
             onSetStatus={handleSetStatus}
+            onToggleWatchlist={handleToggleWatchlist}
             onSetRating={handleSetRating}
             episodeProps={episodeProps}
             lists={listsHook.lists}
@@ -410,7 +418,7 @@ export default function App() {
             library={library} trending={trending} trendingError={trendingError}
             searchResults={searchResults} searchLoading={searchLoading} query={query}
             onClearSearch={() => setSearchResults(null)}
-            onOpen={openDetail} onSetStatus={handleSetStatus}
+            onOpen={openDetail} onSetStatus={handleSetStatus} onToggleWatchlist={handleToggleWatchlist}
             onFindPeople={() => { setSearchResults(null); setTab('feed'); setTimeout(() => document.getElementById('find-people')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50) }}
           />
         ) : tab === 'feed' ? (

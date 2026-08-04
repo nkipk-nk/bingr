@@ -5,7 +5,7 @@
 .title { font-family: var(--font-body); font-size: var(--text-body-md-size); font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .meta { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-tertiary); margin-top: 2px; }
 .metaRating { color: var(--gold); }
-.statusRow { margin-top: var(--space-2); }
+.statusRow { margin-top: var(--space-2); display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
 .progressWrap { margin-top: var(--space-2); max-width: 160px; }
 .progressLine { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); margin-bottom: var(--space-1); }

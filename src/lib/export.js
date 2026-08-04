@@ -52,7 +52,10 @@ export function downloadFullExport(bundle) {
  */
 export function filterLibrary(library, { status = 'all', mediaType = 'all', sortBy = 'added', limit = null } = {}) {
   let items = Object.values(library)
-  if (status !== 'all') items = items.filter(x => x.status === status)
+  // watchlisted is an independent flag, not a status value — see
+  // useLibrary.js's setStatus comment.
+  if (status === 'watchlist') items = items.filter(x => x.watchlisted)
+  else if (status !== 'all') items = items.filter(x => x.status === status)
   if (mediaType !== 'all') items = items.filter(x => x.media_type === mediaType)
 
   items.sort((a, b) => {
@@ -100,6 +103,7 @@ export function exportTXT(items, opts = {}) {
       txt += `${i + 1}. ${title}${year ? ` (${year})` : ''}\n`
       txt += `   Type: ${type}\n`
       if (status) txt += `   Status: ${status}\n`
+      if (item.watchlisted) txt += `   On Watchlist: Yes\n`
       if (rating) txt += `   My Rating: ${rating}\n`
       if (tmdbR) txt += `   ${tmdbR}\n`
       txt += '\n'
@@ -126,12 +130,13 @@ export function exportCSV(items, opts = {}) {
     return str
   }
 
-  const headers = ['Title', 'Year', 'Type', 'Status', 'My Rating', 'Rating Label', 'TMDB Score', 'Added Date']
+  const headers = ['Title', 'Year', 'Type', 'Status', 'On Watchlist', 'My Rating', 'Rating Label', 'TMDB Score', 'Added Date']
   const rows = items.map(item => [
     item.title || item.name || '',
     (item.release_date || item.first_air_date || '').slice(0, 4),
     item.media_type === 'tv' ? 'TV Series' : 'Movie',
     STATUS_LABELS[item.status] || '',
+    item.watchlisted ? 'Yes' : '',
     item.rating || '',
     item.rating ? RATING_LABELS[item.rating] : '',
     item.vote_average ? Number(item.vote_average).toFixed(1) : '',
