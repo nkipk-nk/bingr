@@ -24,13 +24,21 @@ const SORT_OPTIONS = [
 // endpoint the way it does for genres, and a raw company/network search
 // would need its own autocomplete UI for a long tail nobody would pick
 // anyway. IDs confirmed directly against TMDB's API, not from memory.
+//
+// A streaming brand's TV network ID and movie production-company ID are
+// different TMDB entities (with_networks vs with_companies), and not every
+// brand has a clean one-to-one company match — Disney+ and Hulu's movie
+// catalogs are scattered across dozens of regional/shell companies with no
+// single ID that reliably represents them, so those two stay TV-only
+// (movieId omitted) rather than filtering on a company that would silently
+// return the wrong or empty results.
 const NETWORKS = [
-  { id: 213, name: 'Netflix' },
-  { id: 49, name: 'HBO' },
-  { id: 2739, name: 'Disney+' },
-  { id: 2552, name: 'Apple TV+' },
-  { id: 1024, name: 'Prime Video' },
-  { id: 453, name: 'Hulu' },
+  { key: 'netflix', name: 'Netflix', tvId: 213, movieId: 178464 },
+  { key: 'hbo', name: 'HBO', tvId: 49, movieId: 3268 },
+  { key: 'disneyplus', name: 'Disney+', tvId: 2739, movieId: null },
+  { key: 'appletv', name: 'Apple TV+', tvId: 2552, movieId: 194232 },
+  { key: 'primevideo', name: 'Prime Video', tvId: 1024, movieId: 210099 },
+  { key: 'hulu', name: 'Hulu', tvId: 453, movieId: null },
 ]
 const STUDIOS = [
   { id: 420, name: 'Marvel Studios' },
@@ -68,7 +76,7 @@ export default function DiscoverPage({
   const [type, setType] = useState('movie')
   const [genres, setGenres] = useState([])
   const [genreId, setGenreId] = useState('')
-  const [company, setCompany] = useState('') // "network:<id>" or "company:<id>" — tagged so the right TMDB param applies regardless of Type
+  const [company, setCompany] = useState('') // "network:<key>" (looked up in NETWORKS for the right per-Type id) or "company:<id>" (same id works for both Types)
   const [languages, setLanguages] = useState([])
   const [lang, setLang] = useState('')
   const [sort, setSort] = useState('popularity')
@@ -82,15 +90,19 @@ export default function DiscoverPage({
   // TV's combined "Sci-Fi & Fantasy" vs movies' split categories) — refetch
   // the list, and reset the selection, whenever Type changes.
   //
-  // The network/studio picker only half-resets: a network (e.g. HBO) is a
-  // TV-only concept, so switching to Movies clears it — but a studio (e.g.
-  // Marvel Studios) makes both movies and TV, so that selection survives a
-  // Type switch instead of being thrown away for no reason.
+  // The network/studio picker only half-resets: most networks have a movie
+  // company ID too (see NETWORKS above) and survive a Type switch just like
+  // studios do — only the two without one (Disney+, Hulu) get cleared when
+  // switching to Movies, since there's no correct way to filter them there.
   useEffect(() => {
     if (!browseOpen) return
     let cancelled = false
     setGenreId('')
-    setCompany(prev => (type === 'movie' && prev.startsWith('network:')) ? '' : prev)
+    setCompany(prev => {
+      if (type !== 'movie' || !prev.startsWith('network:')) return prev
+      const net = NETWORKS.find(n => n.key === prev.split(':')[1])
+      return net?.movieId ? prev : ''
+    })
     const fetchGenres = type === 'tv' ? tmdb.genresTV() : tmdb.genresMovie()
     fetchGenres
       .then(data => { if (!cancelled) setGenres(data.genres || []) })
@@ -117,12 +129,18 @@ export default function DiscoverPage({
       // votes and a fluke 10/10 — a minimum vote count keeps results real.
       'vote_count.gte': sort === 'rating' ? 100 : undefined,
     }
-    // Param depends on which list the selection came from, not on Type —
-    // a studio applies via with_companies whether browsing Movies or TV.
+    // A studio's id works via with_companies for either Type. A network's
+    // id is Type-specific — with_networks on TV, its mapped movie company
+    // (when it has one) via with_companies on Movies.
     if (company) {
-      const [kind, id] = company.split(':')
-      if (kind === 'network') params.with_networks = id
-      else params.with_companies = id
+      const [kind, val] = company.split(':')
+      if (kind === 'network') {
+        const net = NETWORKS.find(n => n.key === val)
+        if (type === 'tv') params.with_networks = net.tvId
+        else if (net?.movieId) params.with_companies = net.movieId
+      } else {
+        params.with_companies = val
+      }
     }
     return type === 'tv' ? tmdb.discoverTV(params) : tmdb.discoverMovies(params)
   }, [type, genreId, company, lang, sort])
@@ -206,19 +224,15 @@ export default function DiscoverPage({
               {genres.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </Select>
             <Select className={styles.filterSelect} value={company} onChange={e => setCompany(e.target.value)}>
-              <option value="">{type === 'tv' ? 'All networks & studios' : 'All studios'}</option>
-              {type === 'tv' ? (
-                <>
-                  <optgroup label="Streaming & Networks">
-                    {NETWORKS.map(c => <option key={`network:${c.id}`} value={`network:${c.id}`}>{c.name}</option>)}
-                  </optgroup>
-                  <optgroup label="Studios">
-                    {STUDIOS.map(c => <option key={`company:${c.id}`} value={`company:${c.id}`}>{c.name}</option>)}
-                  </optgroup>
-                </>
-              ) : (
-                STUDIOS.map(c => <option key={`company:${c.id}`} value={`company:${c.id}`}>{c.name}</option>)
-              )}
+              <option value="">All networks & studios</option>
+              <optgroup label="Streaming & Networks">
+                {(type === 'tv' ? NETWORKS : NETWORKS.filter(c => c.movieId)).map(c => (
+                  <option key={`network:${c.key}`} value={`network:${c.key}`}>{c.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Studios">
+                {STUDIOS.map(c => <option key={`company:${c.id}`} value={`company:${c.id}`}>{c.name}</option>)}
+              </optgroup>
             </Select>
             <Select className={styles.filterSelect} value={lang} onChange={e => setLang(e.target.value)}>
               <option value="">All languages</option>

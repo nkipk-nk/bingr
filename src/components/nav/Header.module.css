@@ -21,7 +21,11 @@
 .searchInputWrap { flex: 1; }
 .typeSelect { max-width: 130px; }
 
-.rightGroup { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; }
+/* .searchGroup's max-width means it stops growing before it reaches the
+   end of the row on wide screens — without this, the leftover space has
+   nowhere to go and the avatar ends up stranded next to the search bar
+   instead of anchored to the corner. */
+.rightGroup { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; margin-left: auto; }
 .syncing { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); }
 
 /* GP10 (BINGR_UI_AUDIT.md) — space reserved here for a future
