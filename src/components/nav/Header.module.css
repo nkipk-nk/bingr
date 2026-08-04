@@ -21,6 +21,15 @@
 .searchInputWrap { flex: 1; }
 .typeSelect { max-width: 130px; }
 
+/* SideRail (nav/SideRail.module.css) is a fixed 220px column starting
+   below the header — reserving that same width here lines the search bar
+   up with the page content's left edge instead of it starting right after
+   the logo. Row's own left padding + gap already eat into that 220px, so
+   subtract both to land the search bar exactly at the SideRail's edge. */
+@media (min-width: 1024px) {
+  .brand { min-width: calc(220px - var(--space-6) - var(--space-3)); }
+}
+
 /* .searchGroup's max-width means it stops growing before it reaches the
    end of the row on wide screens — without this, the leftover space has
    nowhere to go and the avatar ends up stranded next to the search bar
