@@ -1,4 +1,4 @@
-import { X, Repeat2 } from 'lucide-react'
+import { X, Pencil, Repeat2 } from 'lucide-react'
 import { IMG } from '../lib/tmdb'
 import Card from './ui/Card'
 import Avatar from './ui/Avatar'
@@ -17,7 +17,7 @@ export default function WatchLogCard({
   // feed variant
   username, displayName, action, timestamp, onOpenProfile,
   // diary variant
-  day, onDelete,
+  day, onDelete, onEdit,
 }) {
   return (
     <Card className={styles.card}>
@@ -53,10 +53,19 @@ export default function WatchLogCard({
         {notes && <div className={styles.notes}>"{notes}"</div>}
       </div>
 
-      {variant === 'diary' && onDelete && (
-        <button className={styles.deleteBtn} title="Remove entry" onClick={e => { e.stopPropagation(); onDelete() }}>
-          <X size={14} />
-        </button>
+      {variant === 'diary' && (onEdit || onDelete) && (
+        <div className={styles.diaryActions}>
+          {onEdit && (
+            <button className={styles.editBtn} title="Edit entry" onClick={e => { e.stopPropagation(); onEdit() }}>
+              <Pencil size={13} />
+            </button>
+          )}
+          {onDelete && (
+            <button className={styles.deleteBtn} title="Remove entry" onClick={e => { e.stopPropagation(); onDelete() }}>
+              <X size={14} />
+            </button>
+          )}
+        </div>
       )}
     </Card>
   )

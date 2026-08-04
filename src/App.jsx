@@ -341,7 +341,7 @@ export default function App() {
             onOpenProfile={(username) => { window.location.href = `/@${username}` }}
           />
         ) : tab === 'diary' ? (
-          <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} /></Suspense>
+          <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} onGoDiscover={goHome} /></Suspense>
         ) : tab === 'library' ? (
           <LibraryPage library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
         ) : tab === 'you' ? (
@@ -350,7 +350,7 @@ export default function App() {
               session={session} profile={profile} library={library}
               diaryHook={diaryHook} episodeHook={episodeHook} listsHook={listsHook}
               onOpenItem={openDetail} onShowSupporters={() => navigate('supporters')}
-              tab={youTab} onTabChange={setYouTab}
+              tab={youTab} onTabChange={setYouTab} onGoDiscover={goHome}
               onNavigate={navigate} onSignOut={signOut} onShowFeedback={() => setShowFeedback(true)}
               isAdmin={adminHook.isAdmin}
             />

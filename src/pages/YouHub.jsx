@@ -40,7 +40,7 @@ function AccountRow({ icon: Icon, label, onClick, danger }) {
 export default function YouHub({
   session, profile, library, diaryHook, episodeHook, listsHook,
   onOpenItem, onShowSupporters, onNavigate, onSignOut, onShowFeedback, isAdmin,
-  tab, onTabChange,
+  tab, onTabChange, onGoDiscover,
 }) {
   const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
 
@@ -56,8 +56,8 @@ export default function YouHub({
 
       <PageTabBar className={styles.tabs} value={tab} onChange={onTabChange} items={TABS.map(t => ({ id: t.id, label: t.label }))} />
 
-      {tab === 'stats' && <StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} />}
-      {tab === 'rankings' && <Rankings library={library} onOpen={onOpenItem} />}
+      {tab === 'stats' && <StatsPage library={library} diary={diaryHook.entries} episodes={episodeHook.episodes} onGoDiscover={onGoDiscover} />}
+      {tab === 'rankings' && <Rankings library={library} onOpen={onOpenItem} onGoDiscover={onGoDiscover} />}
       {tab === 'lists' && <ListsPage listsHook={listsHook} onOpenItem={onOpenItem} />}
       {tab === 'support' && <SupportSection session={session} profile={profile} onShowSupporters={onShowSupporters} />}
       {tab === 'account' && (

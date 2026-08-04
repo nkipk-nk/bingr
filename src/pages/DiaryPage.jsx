@@ -1,19 +1,27 @@
 import { useState } from 'react'
 import { BookOpen } from 'lucide-react'
 import WatchLogCard from '../components/WatchLogCard'
+import LogEntryModal from '../components/LogEntryModal'
 import EmptyState from '../components/ui/EmptyState'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import { useToast } from '../contexts/useToast'
 import { formatDate } from '../lib/dates'
+import { sanitise } from '../lib/errors'
 import styles from './DiaryPage.module.css'
 
-export default function DiaryPage({ diaryHook, onOpen }) {
-  const { entries, loading, deleteEntry } = diaryHook
+export default function DiaryPage({ diaryHook, onOpen, onGoDiscover }) {
+  const { entries, loading, deleteEntry, updateEntry } = diaryHook
+  const { showToast } = useToast()
   const [confirmTarget, setConfirmTarget] = useState(null)
+  const [editTarget, setEditTarget] = useState(null)
 
   if (loading) return <div className={styles.centeredMsg}>Loading…</div>
 
   if (!entries.length) return (
-    <EmptyState icon={BookOpen} title="Your diary is empty" description="Log when you watch something from the title's detail page" />
+    <EmptyState
+      icon={BookOpen} title="Your diary is empty" description="Log when you watch something from the title's detail page"
+      actionLabel={onGoDiscover ? 'Browse Discover' : undefined} onAction={onGoDiscover}
+    />
   )
 
   // Group entries by month
@@ -49,6 +57,7 @@ export default function DiaryPage({ diaryHook, onOpen }) {
                 rewatch={e.rewatch}
                 onOpenTitle={() => openEntry(e)}
                 onDelete={() => setConfirmTarget(e)}
+                onEdit={() => setEditTarget(e)}
               />
             ))}
           </div>
@@ -62,6 +71,19 @@ export default function DiaryPage({ diaryHook, onOpen }) {
         title="Remove diary entry?"
         message={confirmTarget ? `Remove this diary entry for "${confirmTarget.title}"?` : ''}
       />
+
+      {editTarget && (
+        <LogEntryModal
+          item={{ id: editTarget.tmdb_id, media_type: editTarget.media_type, title: editTarget.title, poster_path: editTarget.poster_path, release_date: editTarget.release_date }}
+          editEntry={editTarget}
+          isRewatch={editTarget.rewatch}
+          onSave={async ({ watchedDate, rating, notes }) => {
+            await updateEntry(editTarget.id, { watched_date: watchedDate, rating, notes: sanitise(notes, 1000) || null })
+            showToast('Diary entry updated', { tone: 'success' })
+          }}
+          onClose={() => setEditTarget(null)}
+        />
+      )}
     </div>
   )
 }

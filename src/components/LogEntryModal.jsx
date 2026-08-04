@@ -6,11 +6,12 @@ import Button from './ui/Button'
 import starStyles from './StarRating.module.css'
 import styles from './LogEntryModal.module.css'
 
-export default function LogEntryModal({ item, currentRating, onSave, onClose, isRewatch }) {
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
-  const [rating, setRating] = useState(currentRating || 0)
+export default function LogEntryModal({ item, currentRating, onSave, onClose, isRewatch, editEntry }) {
+  const isEdit = !!editEntry
+  const [date, setDate] = useState(editEntry?.watched_date || new Date().toISOString().slice(0, 10))
+  const [rating, setRating] = useState(isEdit ? (editEntry.rating || 0) : (currentRating || 0))
   const [hoverRating, setHoverRating] = useState(0)
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes] = useState(editEntry?.notes || '')
   const [saving, setSaving] = useState(false)
 
   const title = item.title || item.name || ''
@@ -26,7 +27,7 @@ export default function LogEntryModal({ item, currentRating, onSave, onClose, is
   return (
     <Modal
       open onClose={onClose} size="compact"
-      title={<>{isRewatch ? <Repeat2 size={18} className={styles.titleIcon} /> : <BookOpen size={18} className={styles.titleIcon} />}{isRewatch ? 'Log a rewatch' : 'Log to diary'}</>}
+      title={<>{isRewatch ? <Repeat2 size={18} className={styles.titleIcon} /> : <BookOpen size={18} className={styles.titleIcon} />}{isEdit ? 'Edit diary entry' : isRewatch ? 'Log a rewatch' : 'Log to diary'}</>}
     >
       <div className={styles.subtitle}>{title}</div>
 
@@ -59,7 +60,7 @@ export default function LogEntryModal({ item, currentRating, onSave, onClose, is
 
       <div className={styles.actions}>
         <Button variant="secondary" className={styles.cancelBtn} onClick={onClose}>Cancel</Button>
-        <Button variant="primary" className={styles.saveBtn} onClick={save} loading={saving}>Save to diary</Button>
+        <Button variant="primary" className={styles.saveBtn} onClick={save} loading={saving}>{isEdit ? 'Save changes' : 'Save to diary'}</Button>
       </div>
     </Modal>
   )

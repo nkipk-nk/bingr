@@ -10,12 +10,15 @@ import PosterTile from '../components/ui/PosterTile'
 import EmptyState from '../components/ui/EmptyState'
 import styles from './StatsPage.module.css'
 
-export default function StatsPage({ library, diary, episodes }) {
+export default function StatsPage({ library, diary, episodes, onGoDiscover }) {
   const stats = useMemo(() => computeStats(diary, library, episodes), [diary, library, episodes])
   const hasAnyData = stats.totalMovies > 0 || stats.totalShows > 0 || stats.diaryTotal > 0
 
   if (!hasAnyData) return (
-    <EmptyState icon={BarChart3} title="No stats yet" description="Start tracking movies and TV shows to see your stats here" />
+    <EmptyState
+      icon={BarChart3} title="No stats yet" description="Start tracking movies and TV shows to see your stats here"
+      actionLabel={onGoDiscover ? 'Browse Discover' : undefined} onAction={onGoDiscover}
+    />
   )
 
   const tiles = [

@@ -14,7 +14,7 @@ import styles from './RankedList.module.css'
 // list. This is the single shared component both now render through.
 // `showFilter` covers Rankings' own-library movie/TV toggle; a visited
 // profile's Top Rated tab renders the same list read-only, no filter.
-export default function RankedList({ items, onOpen, showFilter = false }) {
+export default function RankedList({ items, onOpen, showFilter = false, onGoDiscover }) {
   const [filter, setFilter] = useState('all')
 
   const rated = items.filter(x => x.rating > 0)
@@ -22,7 +22,10 @@ export default function RankedList({ items, onOpen, showFilter = false }) {
   const sorted = [...filtered].sort((a, b) => b.rating - a.rating)
 
   if (!rated.length) return (
-    <EmptyState icon={Trophy} title="No ratings yet" description="Open any title, rate it with stars, and it'll appear here." />
+    <EmptyState
+      icon={Trophy} title="No ratings yet" description="Open any title, rate it with stars, and it'll appear here."
+      actionLabel={onGoDiscover ? 'Browse Discover' : undefined} onAction={onGoDiscover}
+    />
   )
 
   return (
