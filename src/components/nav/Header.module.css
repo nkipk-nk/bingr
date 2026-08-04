@@ -32,3 +32,14 @@
   color: var(--text-secondary);
   display: flex; align-items: center; justify-content: center;
 }
+
+/* Below this, brand + search's combined min-width no longer fits one row,
+   wrapping the avatar down to its own line at the left edge — which also
+   broke AccountMenu's right:0 anchor (it measures from wherever the
+   avatar actually ends up, so it rendered mostly off-screen). Trimming
+   here keeps everything on one row instead of chasing the anchor math. */
+@media (max-width: 480px) {
+  .row { padding: var(--space-3) var(--space-4); }
+  .brandName { display: none; }
+  .searchGroup { min-width: 160px; }
+}

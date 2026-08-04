@@ -29,7 +29,7 @@ export default function NavShell({
 }) {
   return (
     <div className={styles.shell}>
-      <SideRail tab={tab} onSelectTab={onSelectTab} onGoHome={onGoHome} />
+      <SideRail tab={tab} onSelectTab={onSelectTab} />
 
       <Header
         session={session} profile={profile} syncing={syncing} isAdmin={isAdmin}

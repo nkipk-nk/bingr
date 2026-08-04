@@ -62,9 +62,8 @@ export default function LibraryPage({ library, onOpen, onRemove, episodeProps, o
           <option value="title">Title A–Z</option>
           <option value="year">Year</option>
         </Select>
+        <ExportPanel items={items} status={status} mediaType={mediaType} />
       </div>
-
-      <ExportPanel items={items} status={status} mediaType={mediaType} />
 
       <LibraryTab items={items} status={status} onOpen={onOpen} onRemove={onRemove} episodeProps={episodeProps} />
     </div>

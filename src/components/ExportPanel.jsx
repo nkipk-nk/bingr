@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { Download, ChevronDown } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Download } from 'lucide-react'
 import { exportTXT, exportCSV } from '../lib/export'
 import { useToast } from '../contexts/useToast'
-import Card from './ui/Card'
 import Select from './ui/Select'
 import Button from './ui/Button'
 import styles from './ExportPanel.module.css'
@@ -12,10 +11,28 @@ import styles from './ExportPanel.module.css'
 // panel just exports whatever LibraryPage.jsx currently has on screen
 // (`items`, already filtered/sorted there), and only owns the one control
 // genuinely specific to exporting: how many rows to include.
+//
+// Was a full-width card that took up a whole row whether collapsed or
+// open — now a small button with an anchored dropdown, matching the same
+// pattern as AccountMenu.jsx, so it sits inline with the other library
+// toolbar controls instead of pushing everything below it down a row.
 export default function ExportPanel({ items, status, mediaType }) {
   const { showToast } = useToast()
   const [limit, setLimit] = useState('all')
   const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onClickOutside = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    const onKeyDown = (e) => { if (e.key === 'Escape') setOpen(false) }
+    document.addEventListener('mousedown', onClickOutside)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onClickOutside)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
 
   const preview = limit === 'all' ? items : items.slice(0, parseInt(limit))
 
@@ -24,17 +41,17 @@ export default function ExportPanel({ items, status, mediaType }) {
     if (format === 'txt') exportTXT(preview, opts)
     if (format === 'csv') exportCSV(preview, opts)
     showToast(`Library exported as ${format.toUpperCase()}`, { tone: 'success' })
+    setOpen(false)
   }
 
   return (
-    <Card className={styles.panel}>
-      <div className={styles.header} onClick={() => setOpen(v => !v)}>
-        <div className={styles.headerLeft}><Download size={16} /> Export my library</div>
-        <ChevronDown size={16} className={[styles.chevron, open ? styles.chevronOpen : ''].filter(Boolean).join(' ')} />
-      </div>
+    <div className={styles.wrap} ref={ref}>
+      <Button variant="secondary" size="sm" onClick={() => setOpen(v => !v)}>
+        <Download size={14} /> Export
+      </Button>
 
       {open && (
-        <div className={styles.content}>
+        <div className={styles.panel}>
           <div className={styles.limitRow}>
             <div className={styles.limitLabel}>Limit</div>
             <Select value={limit} onChange={e => setLimit(e.target.value)}>
@@ -53,6 +70,6 @@ export default function ExportPanel({ items, status, mediaType }) {
           </div>
         </div>
       )}
-    </Card>
+    </div>
   )
 }

@@ -1,6 +1,9 @@
 .menu {
   position: absolute; top: calc(100% + var(--space-2)); right: 0;
-  width: 260px;
+  /* Caps at 260px normally; on narrow viewports shrinks to fit with a 16px
+     margin instead of overflowing past the screen edge — right:0 alone
+     only guarantees the RIGHT edge stays on-screen, not the left. */
+  width: min(260px, calc(100vw - 32px));
   background: var(--bg-surface); border: var(--border-width-hairline) solid var(--border-subtle);
   border-radius: var(--radius-md); box-shadow: var(--elevation-2-shadow);
   padding: var(--space-2);

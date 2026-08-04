@@ -50,8 +50,8 @@ export default function MovieCard({ item, entry = {}, onOpen, onSetStatus, onTog
 
       {(entry.status || entry.watchlisted) && (
         <div className={styles.badgeStack}>
-          {entry.status && <StatusPill status={entry.status} />}
-          {entry.watchlisted && <StatusPill status="watchlist" />}
+          {entry.status && <StatusPill status={entry.status} iconOnly />}
+          {entry.watchlisted && <StatusPill status="watchlist" iconOnly />}
         </div>
       )}
       {entry.rating > 0 && <div className={styles.ratingBadge}><RatingBadge rating={entry.rating} /></div>}
