@@ -1,4 +1,4 @@
-import { UserRound, SlidersHorizontal, Settings, MessageCircle, Sparkles, LogOut, AlertTriangle } from 'lucide-react'
+import { SlidersHorizontal, Settings, MessageCircle, Sparkles, LogOut, AlertTriangle } from 'lucide-react'
 
 // Single source of truth for what the account/profile menu contains,
 // consumed by AccountMenu.jsx (the header dropdown — its only remaining
@@ -10,16 +10,15 @@ import { UserRound, SlidersHorizontal, Settings, MessageCircle, Sparkles, LogOut
 // footer-only now (BINGR_UI_AUDIT.md RD10), not repeated in every menu that
 // happens to also expose account actions.
 //
-// 'my-profile' goes straight to the real profile page (/@username) — not a
-// separate settings form. 'account-settings' is a distinct destination for
-// account-level controls (email, privacy, data export, delete account) that
-// aren't part of your public identity. These used to be conflated under one
-// "Edit profile" item that was actually a settings form, with the real
-// profile page reachable only as a separate, redundant "View public
-// profile" item (RD11).
+// No "My Profile" item either (RD14, BINGR_UI_AUDIT.md) — the primary nav's
+// "You" item already navigates to /@username, and Header (with this dropdown)
+// and the nav both render together at every viewport, so a second button to
+// the identical destination was always on screen at the same time as the
+// first, not a legitimate alternate-context entry point. 'account-settings'
+// is a distinct destination for account-level controls (email, privacy,
+// data export, delete account) that aren't part of your public identity.
 export function accountMenuItems({ isAdmin }) {
   return [
-    { id: 'my-profile', icon: UserRound, label: 'My Profile' },
     { id: 'account-settings', icon: SlidersHorizontal, label: 'Account Settings' },
     isAdmin
       ? { id: 'admin', icon: Settings, label: 'Admin panel' }

@@ -17,8 +17,10 @@ function MenuRow({ icon: Icon, label, onClick, danger }) {
 // "exactly one place profile/settings lives") reads as a mobile pattern
 // that doesn't fit desktop, where a proper anchored dropdown is the
 // expected affordance. See accountMenuItems.js for the shared item list —
-// the only remaining copy of this menu (RD13, BINGR_UI_AUDIT.md: the
-// You-hub's own copy of it was removed, not just this one added).
+// deliberately doesn't include a profile link (RD14, BINGR_UI_AUDIT.md):
+// the primary nav's "You" item already goes to /@username and renders
+// alongside this dropdown at every viewport, so a second link to the same
+// place here would just be a second button for one destination.
 export default function AccountMenu({ profile, session, isAdmin, onClose, onNavigate, onShowFeedback, onSignOut }) {
   const ref = useRef(null)
 
@@ -35,7 +37,6 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
 
   const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
   const go = (fn) => () => { fn(); onClose() }
-  const goToPublicProfile = () => { window.location.href = `/@${profile?.username}`; onClose() }
 
   const handlers = {
     'account-settings': () => onNavigate('account-settings'),
@@ -61,10 +62,7 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
 
       <div className={styles.divider} />
       {primaryItems.map(item => (
-        <MenuRow
-          key={item.id} icon={item.icon} label={item.label}
-          onClick={item.id === 'my-profile' ? goToPublicProfile : go(handlers[item.id])}
-        />
+        <MenuRow key={item.id} icon={item.icon} label={item.label} onClick={go(handlers[item.id])} />
       ))}
 
       <div className={styles.divider} />

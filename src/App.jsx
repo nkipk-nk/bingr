@@ -137,7 +137,9 @@ export default function App() {
         'privacy': '/privacy', 'terms': '/terms',
         'supporters': '/supporters',
       }
-      const url = urlMap[newPage] || '/'
+      // 'user-profile' isn't a static entry — its URL carries the username
+      // (matches getPageFromURL()'s /^\/@([a-z0-9_]+)$/ parse on reload).
+      const url = newPage === 'user-profile' && param ? `/@${param}` : (urlMap[newPage] || '/')
       window.history.pushState({ page: newPage, param }, '', url)
     }
   }, [])
