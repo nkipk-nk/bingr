@@ -13,8 +13,9 @@ import styles from './NavShell.module.css'
 //
 // The floating support button used to live here too — retired per
 // BINGR_DESIGN_SYSTEM.md's nav section (it sat in the same bottom-right
-// thumb zone the bottom nav needs) and folded into the You hub's Support
-// tab (see SupportSection.jsx / YouHub.jsx) instead of being repositioned.
+// thumb zone the bottom nav needs) and folded into a Support tab on your
+// own profile page instead of being repositioned (see SupportSection.jsx,
+// UserProfilePage.jsx).
 const FeedbackModal = lazy(() => import('../FeedbackModal'))
 
 export default function NavShell({

@@ -8,6 +8,10 @@ import RankedList from '../components/RankedList'
 import WatchLogCard from '../components/WatchLogCard'
 import FollowerListSheet from '../components/FollowerListSheet'
 import EditProfileModal from '../components/EditProfileModal'
+import Rankings from './Rankings'
+import StatsPage from './StatsPage'
+import ListsPage from './ListsPage'
+import SupportSection from '../components/SupportSection'
 import Avatar from '../components/ui/Avatar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -18,9 +22,20 @@ import { StatTileGrid } from '../components/stats/StatTile'
 import ActivityChart from '../components/stats/ActivityChart'
 import styles from './UserProfilePage.module.css'
 
+// RD13 (BINGR_UI_AUDIT.md) — this page (your own profile, isOwnProfile
+// below) used to have a near-duplicate sibling in YouHub.jsx: Stats,
+// Rankings, and Lists both lived here (as reduced/read-only tabs) *and*
+// there (as full-featured ones), because YouHub was the only place the full
+// versions existed. Now this page IS the full version when you're looking
+// at your own profile — Rankings/Stats/Lists render the exact same
+// full-featured components YouHub used to (Rankings.jsx, StatsPage.jsx,
+// ListsPage.jsx), plus a Support tab (SupportSection.jsx) that otherwise
+// had nowhere left to live. Visiting someone else's profile still gets the
+// original reduced/read-only versions — that split was always correct,
+// the duplication was having two separate *pages* for the owner's version.
 export default function UserProfilePage({
   username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook, embedded = false,
-  onUpdateProfile,
+  onUpdateProfile, episodes, listsHook, onShowSupporters, onGoDiscover, session,
 }) {
   const { showToast, clearToast } = useToast()
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
@@ -39,7 +54,7 @@ export default function UserProfilePage({
   // Must stay below the useState declarations above — referencing `diary` in the
   // dependency array before its `const` binding is initialised throws a
   // ReferenceError (temporal dead zone) and crashes every /@username page.
-  const stats = useMemo(() => computeStats(diary, libraryMap, {}), [diary, libraryMap])
+  const stats = useMemo(() => computeStats(diary, libraryMap, episodes || {}), [diary, libraryMap, episodes])
 
   useEffect(() => {
     if (!username) { setNotFound(true); setLoading(false); return }
@@ -168,11 +183,14 @@ export default function UserProfilePage({
     showToast('Profile saved', { tone: 'success' })
   }
 
+  const listsCount = isOwnProfile && listsHook ? listsHook.lists.length : lists.length
+
   const TABS = [
     { id: 'rankings', label: `Top Rated (${library.length})` },
     { id: 'stats', label: 'Stats' },
     { id: 'diary', label: `Recent Activity (${diary.length})` },
-    { id: 'lists', label: `Lists (${lists.length})` },
+    { id: 'lists', label: `Lists (${listsCount})` },
+    ...(isOwnProfile ? [{ id: 'support', label: 'Support' }] : []),
   ]
 
   const statTiles = [
@@ -230,15 +248,23 @@ export default function UserProfilePage({
 
         <PageTabBar className={styles.tabs} value={tab} onChange={setTab} items={TABS} />
 
-        {tab === 'rankings' && <RankedList items={library} onOpen={onOpenItem} />}
+        {tab === 'rankings' && (
+          isOwnProfile
+            ? <Rankings library={libraryMap} onOpen={onOpenItem} onGoDiscover={onGoDiscover} />
+            : <RankedList items={library} onOpen={onOpenItem} />
+        )}
 
         {tab === 'stats' && (
-          <div>
-            <div className={styles.statsTiles}><StatTileGrid tiles={statTiles} /></div>
-            {stats.monthlyActivity.some(m => m.count > 0) && (
-              <Card><ActivityChart months={stats.monthlyActivity} height={70} barHeight={50} /></Card>
-            )}
-          </div>
+          isOwnProfile ? (
+            <StatsPage library={libraryMap} diary={diary} episodes={episodes || {}} onGoDiscover={onGoDiscover} />
+          ) : (
+            <div>
+              <div className={styles.statsTiles}><StatTileGrid tiles={statTiles} /></div>
+              {stats.monthlyActivity.some(m => m.count > 0) && (
+                <Card><ActivityChart months={stats.monthlyActivity} height={70} barHeight={50} /></Card>
+              )}
+            </div>
+          )
         )}
 
         {tab === 'diary' && (
@@ -263,17 +289,25 @@ export default function UserProfilePage({
         )}
 
         {tab === 'lists' && (
-          lists.length === 0 ? <EmptyState icon={Layers} title="No public lists yet" /> : (
-            <div className={styles.listsGrid}>
-              {lists.map(list => (
-                <Card key={list.id} className={styles.listCard} onClick={() => { window.location.href = `/list/${list.id}` }}>
-                  <div className={styles.listTitle}>{list.name}</div>
-                  {list.description && <div className={styles.listDesc}>{list.description}</div>}
-                  <div className={styles.listCount}>{list.bingr_list_items?.[0]?.count ?? 0} titles</div>
-                </Card>
-              ))}
-            </div>
+          isOwnProfile && listsHook ? (
+            <ListsPage listsHook={listsHook} onOpenItem={onOpenItem} />
+          ) : (
+            lists.length === 0 ? <EmptyState icon={Layers} title="No public lists yet" /> : (
+              <div className={styles.listsGrid}>
+                {lists.map(list => (
+                  <Card key={list.id} className={styles.listCard} onClick={() => { window.location.href = `/list/${list.id}` }}>
+                    <div className={styles.listTitle}>{list.name}</div>
+                    {list.description && <div className={styles.listDesc}>{list.description}</div>}
+                    <div className={styles.listCount}>{list.bingr_list_items?.[0]?.count ?? 0} titles</div>
+                  </Card>
+                ))}
+              </div>
+            )
           )
+        )}
+
+        {tab === 'support' && isOwnProfile && (
+          <SupportSection session={session} profile={profile} onShowSupporters={onShowSupporters} />
         )}
 
         {!currentUserId && (

@@ -32,7 +32,6 @@ const MIGRATED_FILES = [
   'src/pages/StatsPage.jsx',
   'src/components/RankedList.jsx',
   'src/pages/ListsPage.jsx',
-  'src/pages/YouHub.jsx',
   'src/components/SupportSection.jsx',
   'src/pages/UserProfilePage.jsx',
   'src/pages/PublicListPage.jsx',

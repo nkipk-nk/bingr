@@ -1,10 +1,10 @@
 import { UserRound, SlidersHorizontal, Settings, MessageCircle, Sparkles, LogOut, AlertTriangle } from 'lucide-react'
 
-// Single source of truth for what the account/profile menu contains —
-// consumed by both AccountMenu.jsx (header dropdown) and YouHub.jsx's
-// Account tab, the same actions reachable two ways per
-// BINGR_DESIGN_SYSTEM.md's nav section. Previously each hand-typed its own
-// copy of this list and could drift.
+// Single source of truth for what the account/profile menu contains,
+// consumed by AccountMenu.jsx (the header dropdown — its only remaining
+// consumer; the You-hub used to render an identical copy of this same list
+// as its own "Account" tab, removed per RD13, BINGR_UI_AUDIT.md, rather
+// than kept in sync).
 //
 // Privacy Policy / Terms of Service are deliberately not items here — they're
 // footer-only now (BINGR_UI_AUDIT.md RD10), not repeated in every menu that

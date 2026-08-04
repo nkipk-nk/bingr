@@ -36,7 +36,6 @@ const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const SupportersPage = lazy(() => import('./pages/SupportersPage'))
 const AdminPanel = lazy(() => import('./pages/AdminPanel'))
 const DiaryPage = lazy(() => import('./pages/DiaryPage'))
-const YouHub = lazy(() => import('./pages/YouHub'))
 const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'))
 const TermsOfService = lazy(() => import('./pages/TermsOfService'))
 const DeleteAccount = lazy(() => import('./pages/DeleteAccount'))
@@ -87,7 +86,6 @@ export default function App() {
   const [detailItem, setDetailItem] = useState(null)
   const { toast, showToast, clearToast } = useToast()
   const [showFeedback, setShowFeedback] = useState(false)
-  const [youTab, setYouTab] = useState('stats')
   const [showTour, setShowTour] = useState(false)
 
   // URL routing on mount
@@ -265,13 +263,19 @@ export default function App() {
   // main tabbed app — the main NavShell instance's own handlers don't do
   // this because they're already on 'app'. Kept as separate handlers so
   // that already-working instance isn't touched.
-  const goToTabFromHere = (id) => { navigate('app'); setDetailItem(null); setSearchResults(null); setTab(id) }
+  // "You" no longer opens a separate hub — it navigates straight to your own
+  // profile page (RD13, BINGR_UI_AUDIT.md), same destination as the account
+  // dropdown's "My Profile".
+  const goToTabFromHere = (id) => {
+    if (id === 'you') { navigate('user-profile', profile?.username); return }
+    navigate('app'); setDetailItem(null); setSearchResults(null); setTab(id)
+  }
   const searchFromHere = async () => { navigate('app'); setTab('discover'); await handleSearch() }
-  const wrapInShell = (children) => (
+  const wrapInShell = (children, activeTab = 'you') => (
     <NavShell
       session={session} profile={profile} syncing={syncing} isAdmin={adminHook.isAdmin}
       query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={searchFromHere}
-      tab="you" onSelectTab={goToTabFromHere}
+      tab={activeTab} onSelectTab={goToTabFromHere}
       onGoHome={goHome} onNavigate={navigate} onSignOut={signOut}
       libError={libError}
       showFeedback={showFeedback} setShowFeedback={setShowFeedback}
@@ -329,10 +333,15 @@ export default function App() {
           onGoHome={() => navigate('app')}
           embedded={!!session}
           onUpdateProfile={updateProfile}
+          session={session}
+          episodes={episodeHook.episodes}
+          listsHook={listsHook}
+          onShowSupporters={() => navigate('supporters')}
+          onGoDiscover={goHome}
         />
       </Suspense>
     )
-    return session ? wrapInShell(userProfileContent) : userProfileContent
+    return session ? wrapInShell(userProfileContent, pageParam === profile?.username ? 'you' : null) : userProfileContent
   }
   if (page === 'supporters') {
     const supportersContent = <Suspense fallback={<PageFallback />}><SupportersPage onBack={() => navigate('app')} /></Suspense>
@@ -397,7 +406,10 @@ export default function App() {
       <NavShell
         session={session} profile={profile} syncing={syncing} isAdmin={adminHook.isAdmin}
         query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={handleSearch}
-        tab={tab} onSelectTab={(id) => { setDetailItem(null); setSearchResults(null); setTab(id) }}
+        tab={tab} onSelectTab={(id) => {
+          if (id === 'you') { navigate('user-profile', profile?.username); return }
+          setDetailItem(null); setSearchResults(null); setTab(id)
+        }}
         onGoHome={goHome} onNavigate={navigate} onSignOut={signOut}
         libError={libError}
         showFeedback={showFeedback} setShowFeedback={setShowFeedback}
@@ -439,15 +451,6 @@ export default function App() {
           <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} onGoDiscover={goHome} /></Suspense>
         ) : tab === 'library' ? (
           <LibraryPage library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} onGoDiscover={goHome} />
-        ) : tab === 'you' ? (
-          <Suspense fallback={<PageFallback />}>
-            <YouHub
-              session={session} profile={profile} library={library}
-              diaryHook={diaryHook} episodeHook={episodeHook} listsHook={listsHook}
-              onOpenItem={openDetail} onShowSupporters={() => navigate('supporters')}
-              tab={youTab} onTabChange={setYouTab} onGoDiscover={goHome}
-            />
-          </Suspense>
         ) : null}
       </NavShell>
     </>

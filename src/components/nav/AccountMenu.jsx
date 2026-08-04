@@ -12,12 +12,13 @@ function MenuRow({ icon: Icon, label, onClick, danger }) {
   )
 }
 
-// Real user testing on the deployed app found the avatar-navigates-to-the-
-// You-hub pattern (a deliberate Phase 2b call, trading a second menu for
+// Real user testing on the deployed app found the avatar-navigates-directly-
+// to-a-hub pattern (a deliberate Phase 2b call, trading a second menu for
 // "exactly one place profile/settings lives") reads as a mobile pattern
 // that doesn't fit desktop, where a proper anchored dropdown is the
-// expected affordance. Same actions YouHub's Account tab already has —
-// that tab isn't removed, this is just also reachable from the header.
+// expected affordance. See accountMenuItems.js for the shared item list —
+// the only remaining copy of this menu (RD13, BINGR_UI_AUDIT.md: the
+// You-hub's own copy of it was removed, not just this one added).
 export default function AccountMenu({ profile, session, isAdmin, onClose, onNavigate, onShowFeedback, onSignOut }) {
   const ref = useRef(null)
 
