@@ -79,6 +79,7 @@ export const tmdb = {
   recommendations: (type, id) => get(`/${type}/${id}/recommendations`),
   genresMovie: () => get('/genre/movie/list'),
   genresTV: () => get('/genre/tv/list'),
+  languages: () => get('/configuration/languages'),
   discoverMovies: (params) => get(`/discover/movie?${buildQuery(params)}`),
   discoverTV: (params) => get(`/discover/tv?${buildQuery(params)}`),
 }
