@@ -20,7 +20,7 @@ import styles from './UserProfilePage.module.css'
 
 export default function UserProfilePage({
   username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook, embedded = false,
-  checkUsername, onUpdateProfile,
+  onUpdateProfile,
 }) {
   const { showToast, clearToast } = useToast()
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
@@ -158,13 +158,12 @@ export default function UserProfilePage({
 
   const openProfile = (u) => { window.location.href = `/@${u}` }
 
-  // A username change makes this page's own URL (/@oldUsername) stale — send
-  // the user to the new one instead of quietly leaving a dead link active.
-  // A display-name-only change just merges into local state; this page
-  // fetches its own `profile` independently of useProfile's copy (it also
-  // serves anonymous/other-user views), so there's no shared cache to sync.
+  // Merges into local state — this page fetches its own `profile`
+  // independently of useProfile's copy (it also serves anonymous/other-user
+  // views), so there's no shared cache to sync. Username isn't editable here
+  // (see EditProfileModal.jsx / AccountSettings.jsx), so there's no
+  // possibility of this page's own /@username URL going stale.
   const handleProfileSaved = (patch) => {
-    if (patch.username && patch.username !== profile.username) { openProfile(patch.username); return }
     setProfile(prev => ({ ...prev, ...patch }))
     showToast('Profile saved', { tone: 'success' })
   }
@@ -302,7 +301,6 @@ export default function UserProfilePage({
           open={editOpen}
           onClose={() => setEditOpen(false)}
           profile={profile}
-          checkUsername={checkUsername}
           onUpdate={onUpdateProfile}
           onSaved={handleProfileSaved}
         />

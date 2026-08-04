@@ -1,14 +1,13 @@
 .field { margin-bottom: var(--space-4); }
 .label { display: block; font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-secondary); margin-bottom: var(--space-1); font-weight: 500; }
 .labelOptional { color: var(--text-tertiary); font-weight: 400; }
-.hint { font-family: var(--font-body); font-size: var(--text-body-xs-size); margin-top: var(--space-1); }
-.hintOk { color: var(--success); }
-.hintBad { color: var(--danger); }
-.helperText { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); margin-top: var(--space-1); }
 
-.usernameWrap { position: relative; }
-.usernameAt { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); font-family: var(--font-body); font-size: var(--text-body-md-size); color: var(--text-tertiary); }
-.usernameInput { padding-left: 28px; }
+.textarea {
+  width: 100%; padding: var(--space-3); font-size: var(--text-body-md-size); font-family: var(--font-body);
+  border: var(--border-width-hairline) solid var(--border-subtle); border-radius: var(--radius-sm);
+  background: var(--bg-input); color: var(--text-primary); outline: none; resize: vertical; box-sizing: border-box;
+}
+.charCount { font-family: var(--font-body); font-size: var(--text-body-xs-size); color: var(--text-tertiary); text-align: right; margin-top: 3px; }
 
 .errorBox {
   font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--danger);

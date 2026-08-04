@@ -3,14 +3,3 @@
 .handle { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); }
 
 .tabs { margin-bottom: var(--space-5); overflow-x: auto; overflow-y: hidden; }
-
-.accountList { max-width: 420px; display: flex; flex-direction: column; gap: var(--space-2); }
-.accountRow {
-  display: flex; align-items: center; gap: var(--space-3);
-  width: 100%; text-align: left; padding: var(--space-3) var(--space-4);
-  background: var(--bg-surface); border: var(--border-width-hairline) solid var(--border-subtle); border-radius: var(--radius-sm);
-  color: var(--text-primary); font-family: var(--font-body); font-size: var(--text-body-md-size); cursor: pointer;
-  transition: background-color var(--duration-instant) var(--ease-standard);
-}
-.accountRow:hover { background: var(--bg-input); }
-.accountRowDanger { color: var(--danger); }

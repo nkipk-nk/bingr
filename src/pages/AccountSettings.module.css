@@ -15,7 +15,15 @@
 .bannerHandle { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: color-mix(in srgb, var(--text-primary) 75%, transparent); margin-top: 2px; }
 
 .hint { font-family: var(--font-body); font-size: var(--text-body-xs-size); margin-top: var(--space-1); }
+.hintOk { color: var(--success); }
 .hintBad { color: var(--danger); }
+
+.usernameWrap { position: relative; }
+.usernameAt { position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); font-family: var(--font-body); font-size: var(--text-body-md-size); color: var(--text-tertiary); }
+.usernameInput { padding-left: 28px; }
+
+.passwordFields { display: flex; flex-direction: column; gap: var(--space-2); margin-bottom: var(--space-1); }
+.sectionBtn { margin-top: var(--space-3); }
 
 .visToggle {
   display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3);

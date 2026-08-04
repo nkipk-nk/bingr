@@ -135,6 +135,18 @@ export function useAuth() {
     catch (err) { logger.error('Sign out threw', err) }
   }
 
+  const updatePassword = async (password) => {
+    try {
+      const { error } = await supabase.auth.updateUser({ password })
+      if (error) return { error: friendlyAuthError(error.message) }
+      logger.info('Password updated')
+      return { error: null }
+    } catch (err) {
+      logger.error('updatePassword threw', err)
+      return { error: 'Unexpected error. Please try again.' }
+    }
+  }
+
   const deleteAccount = async () => {
     try {
       const { error } = await supabase.functions.invoke('delete-account')
@@ -147,5 +159,5 @@ export function useAuth() {
     }
   }
 
-  return { session, loading, signUp, signIn, signOut, deleteAccount }
+  return { session, loading, signUp, signIn, signOut, updatePassword, deleteAccount }
 }

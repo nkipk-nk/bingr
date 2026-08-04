@@ -63,7 +63,7 @@ function getPageFromURL() {
 }
 
 export default function App() {
-  const { session, loading: authLoading, signUp, signIn, signOut, deleteAccount } = useAuth()
+  const { session, loading: authLoading, signUp, signIn, signOut, updatePassword, deleteAccount } = useAuth()
   const { library, syncing, error: libError, setStatus, toggleWatchlist, setRating, remove } = useLibrary(session)
   const episodeHook = useEpisodes(session)
   const listsHook = useLists(session)
@@ -328,7 +328,6 @@ export default function App() {
           onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
           onGoHome={() => navigate('app')}
           embedded={!!session}
-          checkUsername={checkUsername}
           onUpdateProfile={updateProfile}
         />
       </Suspense>
@@ -370,7 +369,13 @@ export default function App() {
   // ── Logged in — protected pages ──
   if (page === 'delete-account') return <Suspense fallback={<PageFallback />}><DeleteAccount userEmail={session.user.email} onBack={() => navigate('app')} onDelete={deleteAccount} /></Suspense>
   if (page === 'account-settings') return wrapInShell(
-    <Suspense fallback={<PageFallback />}><AccountSettings profile={profile} session={session} onUpdate={updateProfile} onExportAllData={exportAllData} onBack={() => navigate('app')} onDeleteAccount={() => navigate('delete-account')} /></Suspense>
+    <Suspense fallback={<PageFallback />}>
+      <AccountSettings
+        profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername}
+        onUpdatePassword={updatePassword} onExportAllData={exportAllData}
+        onBack={() => navigate('app')} onDeleteAccount={() => navigate('delete-account')}
+      />
+    </Suspense>
   )
   if (page === 'admin') return adminHook.isAdmin
     ? wrapInShell(<Suspense fallback={<PageFallback />}><AdminPanel adminHook={adminHook} onBack={() => navigate('app')} /></Suspense>)
@@ -441,8 +446,6 @@ export default function App() {
               diaryHook={diaryHook} episodeHook={episodeHook} listsHook={listsHook}
               onOpenItem={openDetail} onShowSupporters={() => navigate('supporters')}
               tab={youTab} onTabChange={setYouTab} onGoDiscover={goHome}
-              onNavigate={navigate} onSignOut={signOut} onShowFeedback={() => setShowFeedback(true)}
-              isAdmin={adminHook.isAdmin}
             />
           </Suspense>
         ) : null}
