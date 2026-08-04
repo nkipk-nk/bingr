@@ -13,6 +13,9 @@ dist/
 .DS_Store
 .vscode/
 
+# Playwright MCP session artifacts (screenshots, snapshots, console logs)
+.playwright-mcp/
+
 # Supabase
 # NOTE: schema/migrations MUST be tracked — they are the source of truth for
 # RLS policies and are reviewable alongside the code that depends on them.

@@ -37,17 +37,20 @@ export default function FindPeople({ session, followsHook, onOpenProfile }) {
   // GP9 (BINGR_UI_AUDIT.md) — follow toggled used to give zero feedback
   // beyond the button's own state flip. CX10 — unfollow is cheaply
   // reversible, so it gets an Undo instead of a confirm-before-acting
-  // prompt. Awaited (unlike a plain fire-and-forget toggle) so `following`
-  // state has actually flipped before Undo can run — otherwise a fast
-  // Undo click could race the original delete and read stale state,
-  // calling unfollow() again instead of follow() and silently no-opping.
+  // prompt. Undo calls follow() directly, not toggleFollow() — caught via
+  // real browser testing: this onClick closure freezes `followsHook` (and
+  // everything toggleFollow's useCallback chain closes over, including
+  // `following`) as of this render, which still shows "following" from
+  // before the unfollow it's meant to undo. toggleFollow() branches on
+  // that stale snapshot and silently fires a second unfollow (0 rows
+  // affected) instead of re-following. follow() doesn't branch on it.
   const handleToggleFollow = async (u) => {
     const wasFollowing = followsHook.isFollowing(u.id)
     await followsHook.toggleFollow(u.id)
     if (wasFollowing) {
       showToast(`Unfollowed @${u.username}`, {
         tone: 'success',
-        action: { label: 'Undo', onClick: () => { clearToast(); followsHook.toggleFollow(u.id) } },
+        action: { label: 'Undo', onClick: () => { clearToast(); followsHook.follow(u.id) } },
       })
     } else {
       showToast(`Following @${u.username}`, { tone: 'success' })

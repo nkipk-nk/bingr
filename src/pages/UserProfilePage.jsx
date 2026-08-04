@@ -125,8 +125,15 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
     // GP9 (BINGR_UI_AUDIT.md) — follow toggled used to give zero feedback
     // beyond the button's own state flip. CX10 — unfollow is cheaply
     // reversible, so it gets an Undo instead of a confirm-before-acting
-    // prompt. toggleFollow reads current state, so calling it again from
-    // Undo correctly re-follows.
+    // prompt. Undo calls follow() directly, not toggleFollow() — this
+    // onClick closure is created inside handleFollow's execution and
+    // captures `followsHook` (and everything it closes over, including
+    // `following` at toggleFollow's useCallback layer) as it was at THAT
+    // render. toggleFollow() decides follow-vs-unfollow from that frozen
+    // `following` snapshot, which still shows "following" from before this
+    // very unfollow — caught via real browser testing: Undo silently fired
+    // a second unfollow (0 rows affected) instead of re-following.
+    // follow() doesn't branch on that stale state, so it isn't affected.
     if (wasFollowing) {
       showToast(`Unfollowed @${profile.username}`, {
         tone: 'success',
@@ -134,7 +141,7 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
           label: 'Undo',
           onClick: async () => {
             clearToast()
-            await followsHook.toggleFollow(profile.id)
+            await followsHook.follow(profile.id)
             setFollowCounts(prev => ({ ...prev, followers: prev.followers + 1 }))
           },
         },

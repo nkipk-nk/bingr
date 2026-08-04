@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useLibrary } from './hooks/useLibrary'
 import { useEpisodes } from './hooks/useEpisodes'
@@ -70,8 +70,9 @@ export default function App() {
   const diaryHook = useDiary(session)
   const followsHook = useFollows(session)
   const feedHook = useFeed(session, followsHook.following)
-  const { profile, updateProfile, checkUsername, exportAllData } = useProfile(session)
+  const { profile, updateProfile, checkUsername, exportAllData, reload: reloadProfile } = useProfile(session)
   const adminHook = useAdmin(profile)
+  const justSignedUpRef = useRef(false)
 
   const [tab, setTab] = useState('discover')
   const [page, setPage] = useState('loading')
@@ -185,8 +186,32 @@ export default function App() {
     )
   }, [library])
 
-  const handleAuth = async (mode, email, password, username, country) =>
-    mode === 'signup' ? signUp(email, password, username, country) : signIn(email, password)
+  // Real bug found via browser testing, not one of the tracked audit
+  // findings: handle_new_user() always inserts a placeholder row
+  // (username_set: false) — signUp() then fixes it up with an awaited
+  // retry-write, but useProfile's own session-triggered SELECT fires at the
+  // same time and has no delay, so it almost always wins the race and
+  // caches the pre-fixup row. The DB ends up correct; React's `profile`
+  // doesn't, so a freshly-onboarded user sees the onboarding modal again.
+  // Setting the ref before signUp() runs (not after) matters — session
+  // changes well before signUp()'s retry loop finishes, so the effect
+  // below needs the flag already true when that happens.
+  const handleAuth = async (mode, email, password, username, country) => {
+    if (mode === 'signup') {
+      if (username) justSignedUpRef.current = true
+      const result = await signUp(email, password, username, country)
+      if (result.error) justSignedUpRef.current = false
+      return result
+    }
+    return signIn(email, password)
+  }
+
+  useEffect(() => {
+    if (session && justSignedUpRef.current) {
+      justSignedUpRef.current = false
+      reloadProfile()
+    }
+  }, [session, reloadProfile])
 
   const handleSearch = async () => {
     if (!query.trim()) return

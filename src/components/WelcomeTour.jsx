@@ -18,7 +18,7 @@ const STEPS = [
   {
     icon: Compass,
     title: 'Five places to go',
-    body: 'Discover new titles, catch up on Feed, manage your Library, log your Diary, and see your Stats — all from the bar below.',
+    body: 'Discover new titles, catch up on Feed, manage your Library, log your Diary, and check Stats, Rankings & more under You — all from the bar below.',
     nav: true,
   },
 ]
