@@ -51,3 +51,8 @@
 .centeredMsg { text-align: center; padding: var(--space-12) var(--space-4); color: var(--text-secondary); font-family: var(--font-body); font-size: var(--text-body-md-size); }
 .errorIcon { color: var(--text-tertiary); margin-bottom: var(--space-3); }
 .errorTitle { font-family: var(--font-body); font-size: var(--text-body-lg-size); font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-4); }
+
+.browseBar { display: flex; justify-content: flex-end; margin-bottom: var(--space-4); }
+.filterRow { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-bottom: var(--space-5); }
+.filterSelect { min-width: 140px; max-width: 200px; flex: 1; }
+.loadMoreRow { display: flex; justify-content: center; margin-top: var(--space-6); }

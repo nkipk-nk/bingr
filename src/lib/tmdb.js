@@ -60,6 +60,14 @@ export async function mapWithConcurrency(items, limit, fn) {
   return results
 }
 
+// Browse feature (genre/sort catalog discovery) — movie and TV genre IDs
+// differ in TMDB's own model (e.g. TV's combined "Sci-Fi & Fantasy" vs
+// movies' split categories), so genre lists and discover calls are always
+// per-type, never merged.
+function buildQuery(params) {
+  return Object.entries(params).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&')
+}
+
 export const tmdb = {
   trendingMovies: () => get('/trending/movie/week'),
   trendingTV: () => get('/trending/tv/week'),
@@ -69,4 +77,8 @@ export const tmdb = {
   seasonDetails: (showId, season) => get(`/tv/${showId}/season/${season}`),
   providers: (type, id) => get(`/${type}/${id}/watch/providers`),
   recommendations: (type, id) => get(`/${type}/${id}/recommendations`),
+  genresMovie: () => get('/genre/movie/list'),
+  genresTV: () => get('/genre/tv/list'),
+  discoverMovies: (params) => get(`/discover/movie?${buildQuery(params)}`),
+  discoverTV: (params) => get(`/discover/tv?${buildQuery(params)}`),
 }
