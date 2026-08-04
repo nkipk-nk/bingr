@@ -20,6 +20,7 @@ import DiscoverPage from './pages/DiscoverPage'
 import FeedPage from './pages/FeedPage'
 import LibraryPage from './pages/LibraryPage'
 import OnboardingModal from './components/OnboardingModal'
+import WelcomeTour from './components/WelcomeTour'
 import NavShell from './components/nav/NavShell'
 import styles from './App.module.css'
 
@@ -86,6 +87,7 @@ export default function App() {
   const { toast, showToast, clearToast } = useToast()
   const [showFeedback, setShowFeedback] = useState(false)
   const [youTab, setYouTab] = useState('stats')
+  const [showTour, setShowTour] = useState(false)
 
   // URL routing on mount
   useEffect(() => {
@@ -103,6 +105,20 @@ export default function App() {
       if (page === 'loading' || page === 'app') setPage('landing')
     }
   }, [session, authLoading])
+
+  // GP2 (BINGR_UI_AUDIT.md) — orient first-time users once onboarding
+  // (username/country) is done. localStorage, not account data — this is
+  // presentational, not worth a DB column or a cross-device sync guarantee.
+  useEffect(() => {
+    if (!profile?.username_set) return
+    if (localStorage.getItem('bingr_tour_seen')) return
+    setShowTour(true)
+  }, [profile?.username_set])
+
+  const dismissTour = () => {
+    localStorage.setItem('bingr_tour_seen', '1')
+    setShowTour(false)
+  }
 
   // Handle PASSWORD_RECOVERY event from Supabase
   useEffect(() => {
@@ -298,6 +314,8 @@ export default function App() {
           onComplete={() => { window.location.reload() }}
         />
       )}
+
+      {showTour && <WelcomeTour onDone={dismissTour} />}
 
       <NavShell
         session={session} profile={profile} syncing={syncing}
