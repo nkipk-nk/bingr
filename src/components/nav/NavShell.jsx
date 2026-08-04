@@ -48,12 +48,14 @@ export default function NavShell({
         {children}
       </main>
 
+      {/* Legal/copyright only, per BINGR_UI_AUDIT.md RD10 — Supporters and
+          Delete Account both already live in the account menu (reachable
+          from the header avatar and the You hub's Account tab); repeating
+          them here too made the same link appear in three places. */}
       <footer className={styles.footer}>
         {[
           { label: 'Privacy Policy', action: () => onNavigate('privacy') },
           { label: 'Terms of Service', action: () => onNavigate('terms') },
-          { label: 'Supporters', action: () => onNavigate('supporters') },
-          { label: 'Delete Account', action: () => onNavigate('delete-account') },
         ].map(item => (
           <button key={item.label} onClick={item.action} className={styles.footerLink}>{item.label}</button>
         ))}

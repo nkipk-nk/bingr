@@ -1,13 +1,11 @@
-import {
-  BarChart3, Trophy, Layers, Coffee, Settings,
-  UserRound, IdCard, MessageCircle, Sparkles, Lock, FileText, LogOut, AlertTriangle,
-} from 'lucide-react'
+import { BarChart3, Trophy, Layers, Coffee, Settings } from 'lucide-react'
 import StatsPage from './StatsPage'
 import Rankings from './Rankings'
 import ListsPage from './ListsPage'
 import SupportSection from '../components/SupportSection'
 import Avatar from '../components/ui/Avatar'
 import { PageTabBar } from '../components/ui/Tab'
+import { accountMenuItems } from '../components/nav/accountMenuItems'
 import styles from './YouHub.module.css'
 
 const TABS = [
@@ -44,6 +42,16 @@ export default function YouHub({
 }) {
   const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
 
+  const accountHandlers = {
+    'edit-profile': () => onNavigate('profile'),
+    'view-public-profile': () => { window.location.href = `/@${profile?.username}` },
+    admin: () => onNavigate('admin'),
+    feedback: onShowFeedback,
+    supporters: onShowSupporters,
+    'sign-out': onSignOut,
+    'delete-account': () => onNavigate('delete-account'),
+  }
+
   return (
     <div>
       <div className={styles.header}>
@@ -62,15 +70,9 @@ export default function YouHub({
       {tab === 'support' && <SupportSection session={session} profile={profile} onShowSupporters={onShowSupporters} />}
       {tab === 'account' && (
         <div className={styles.accountList}>
-          <AccountRow icon={UserRound} label="Edit profile" onClick={() => onNavigate('profile')} />
-          <AccountRow icon={IdCard} label="View public profile" onClick={() => { window.location.href = `/@${profile?.username}` }} />
-          {isAdmin && <AccountRow icon={Settings} label="Admin panel" onClick={() => onNavigate('admin')} />}
-          {!isAdmin && <AccountRow icon={MessageCircle} label="Send feedback" onClick={onShowFeedback} />}
-          <AccountRow icon={Sparkles} label="Supporters" onClick={onShowSupporters} />
-          <AccountRow icon={Lock} label="Privacy Policy" onClick={() => onNavigate('privacy')} />
-          <AccountRow icon={FileText} label="Terms of Service" onClick={() => onNavigate('terms')} />
-          <AccountRow icon={LogOut} label="Sign out" onClick={onSignOut} />
-          <AccountRow icon={AlertTriangle} label="Delete account" onClick={() => onNavigate('delete-account')} danger />
+          {accountMenuItems({ isAdmin }).map(item => (
+            <AccountRow key={item.id} icon={item.icon} label={item.label} danger={item.danger} onClick={accountHandlers[item.id]} />
+          ))}
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { UserRound, IdCard, Settings, MessageCircle, Sparkles, Lock, FileText, LogOut, AlertTriangle } from 'lucide-react'
 import Avatar from '../ui/Avatar'
+import { accountMenuItems } from './accountMenuItems'
 import styles from './AccountMenu.module.css'
 
 function MenuRow({ icon: Icon, label, onClick, danger }) {
@@ -36,6 +36,18 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
   const go = (fn) => () => { fn(); onClose() }
   const goToPublicProfile = () => { window.location.href = `/@${profile?.username}`; onClose() }
 
+  const handlers = {
+    'edit-profile': () => onNavigate('profile'),
+    admin: () => onNavigate('admin'),
+    feedback: onShowFeedback,
+    supporters: () => onNavigate('supporters'),
+    'sign-out': onSignOut,
+    'delete-account': () => onNavigate('delete-account'),
+  }
+  const items = accountMenuItems({ isAdmin })
+  const primaryItems = items.filter(i => i.id !== 'sign-out' && i.id !== 'delete-account')
+  const dangerItems = items.filter(i => i.id === 'sign-out' || i.id === 'delete-account')
+
   return (
     <div ref={ref} className={styles.menu} role="menu">
       <div className={styles.header}>
@@ -47,19 +59,17 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
       </div>
 
       <div className={styles.divider} />
-      <MenuRow icon={UserRound} label="Edit profile" onClick={go(() => onNavigate('profile'))} />
-      <MenuRow icon={IdCard} label="View public profile" onClick={goToPublicProfile} />
-      {isAdmin && <MenuRow icon={Settings} label="Admin panel" onClick={go(() => onNavigate('admin'))} />}
-      {!isAdmin && <MenuRow icon={MessageCircle} label="Send feedback" onClick={go(onShowFeedback)} />}
-      <MenuRow icon={Sparkles} label="Supporters" onClick={go(() => onNavigate('supporters'))} />
+      {primaryItems.map(item => (
+        <MenuRow
+          key={item.id} icon={item.icon} label={item.label}
+          onClick={item.id === 'view-public-profile' ? goToPublicProfile : go(handlers[item.id])}
+        />
+      ))}
 
       <div className={styles.divider} />
-      <MenuRow icon={Lock} label="Privacy Policy" onClick={go(() => onNavigate('privacy'))} />
-      <MenuRow icon={FileText} label="Terms of Service" onClick={go(() => onNavigate('terms'))} />
-
-      <div className={styles.divider} />
-      <MenuRow icon={LogOut} label="Sign out" onClick={go(onSignOut)} />
-      <MenuRow icon={AlertTriangle} label="Delete account" onClick={go(() => onNavigate('delete-account'))} danger />
+      {dangerItems.map(item => (
+        <MenuRow key={item.id} icon={item.icon} label={item.label} onClick={go(handlers[item.id])} danger={item.danger} />
+      ))}
     </div>
   )
 }
