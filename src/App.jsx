@@ -335,10 +335,8 @@ export default function App() {
           onGoHome={() => navigate('app')}
           embedded={!!session}
           onUpdateProfile={updateProfile}
-          session={session}
           episodes={episodeHook.episodes}
           listsHook={listsHook}
-          onShowSupporters={() => navigate('supporters')}
           onGoDiscover={goHome}
         />
       </Suspense>

@@ -1,4 +1,4 @@
-import { SlidersHorizontal, Settings, MessageCircle, Sparkles, LogOut, AlertTriangle } from 'lucide-react'
+import { SlidersHorizontal, Settings, MessageCircle, Sparkles, LogOut } from 'lucide-react'
 
 // Single source of truth for what the account/profile menu contains,
 // consumed by AccountMenu.jsx (the header dropdown — its only remaining
@@ -14,9 +14,12 @@ import { SlidersHorizontal, Settings, MessageCircle, Sparkles, LogOut, AlertTria
 // "You" item already navigates to /@username, and Header (with this dropdown)
 // and the nav both render together at every viewport, so a second button to
 // the identical destination was always on screen at the same time as the
-// first, not a legitimate alternate-context entry point. 'account-settings'
-// is a distinct destination for account-level controls (email, privacy,
-// data export, delete account) that aren't part of your public identity.
+// first, not a legitimate alternate-context entry point.
+//
+// No "Delete account" here either — it's account-settings' Danger Zone
+// only. A quick dropdown one click from the avatar isn't where a
+// permanently-destructive action should be that reachable; a deliberate
+// trip to Account Settings first is the point, not friction to remove.
 export function accountMenuItems({ isAdmin }) {
   return [
     { id: 'account-settings', icon: SlidersHorizontal, label: 'Account Settings' },
@@ -25,6 +28,5 @@ export function accountMenuItems({ isAdmin }) {
       : { id: 'feedback', icon: MessageCircle, label: 'Send feedback' },
     { id: 'supporters', icon: Sparkles, label: 'Supporters' },
     { id: 'sign-out', icon: LogOut, label: 'Sign out' },
-    { id: 'delete-account', icon: AlertTriangle, label: 'Delete account', danger: true },
   ]
 }

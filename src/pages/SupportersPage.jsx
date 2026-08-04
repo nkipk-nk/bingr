@@ -96,11 +96,6 @@ export default function SupportersPage({ onBack }) {
           ))}
         </div>
       )}
-
-      <Card roomy className={styles.cta}>
-        <p>Want to support bingr? Click the coffee icon anywhere in the app.</p>
-        <Button variant="primary" onClick={onBack}>Back to bingr</Button>
-      </Card>
     </div>
   )
 }

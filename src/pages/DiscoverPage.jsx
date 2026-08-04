@@ -68,7 +68,7 @@ export default function DiscoverPage({
   const [type, setType] = useState('movie')
   const [genres, setGenres] = useState([])
   const [genreId, setGenreId] = useState('')
-  const [company, setCompany] = useState('') // network id (tv) or studio id (movie)
+  const [company, setCompany] = useState('') // "network:<id>" or "company:<id>" — tagged so the right TMDB param applies regardless of Type
   const [languages, setLanguages] = useState([])
   const [lang, setLang] = useState('')
   const [sort, setSort] = useState('popularity')
@@ -80,14 +80,17 @@ export default function DiscoverPage({
 
   // Genre IDs aren't shared between movies and TV in TMDB's own model (e.g.
   // TV's combined "Sci-Fi & Fantasy" vs movies' split categories) — refetch
-  // the list, and reset the selection, whenever Type changes. The
-  // network/studio picker is likewise type-specific (a TV network id means
-  // nothing as a movie company id) — reset alongside it, no fetch needed
-  // since NETWORKS/STUDIOS are static.
+  // the list, and reset the selection, whenever Type changes.
+  //
+  // The network/studio picker only half-resets: a network (e.g. HBO) is a
+  // TV-only concept, so switching to Movies clears it — but a studio (e.g.
+  // Marvel Studios) makes both movies and TV, so that selection survives a
+  // Type switch instead of being thrown away for no reason.
   useEffect(() => {
     if (!browseOpen) return
     let cancelled = false
-    setGenreId(''); setCompany('')
+    setGenreId('')
+    setCompany(prev => (type === 'movie' && prev.startsWith('network:')) ? '' : prev)
     const fetchGenres = type === 'tv' ? tmdb.genresTV() : tmdb.genresMovie()
     fetchGenres
       .then(data => { if (!cancelled) setGenres(data.genres || []) })
@@ -114,12 +117,14 @@ export default function DiscoverPage({
       // votes and a fluke 10/10 — a minimum vote count keeps results real.
       'vote_count.gte': sort === 'rating' ? 100 : undefined,
     }
-    if (type === 'tv') {
-      params.with_networks = company || undefined
-      return tmdb.discoverTV(params)
+    // Param depends on which list the selection came from, not on Type —
+    // a studio applies via with_companies whether browsing Movies or TV.
+    if (company) {
+      const [kind, id] = company.split(':')
+      if (kind === 'network') params.with_networks = id
+      else params.with_companies = id
     }
-    params.with_companies = company || undefined
-    return tmdb.discoverMovies(params)
+    return type === 'tv' ? tmdb.discoverTV(params) : tmdb.discoverMovies(params)
   }, [type, genreId, company, lang, sort])
 
   // Filters changed (or Browse just opened) — replace results from page 1.
@@ -201,8 +206,19 @@ export default function DiscoverPage({
               {genres.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
             </Select>
             <Select className={styles.filterSelect} value={company} onChange={e => setCompany(e.target.value)}>
-              <option value="">{type === 'tv' ? 'All networks' : 'All studios'}</option>
-              {(type === 'tv' ? NETWORKS : STUDIOS).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="">{type === 'tv' ? 'All networks & studios' : 'All studios'}</option>
+              {type === 'tv' ? (
+                <>
+                  <optgroup label="Streaming & Networks">
+                    {NETWORKS.map(c => <option key={`network:${c.id}`} value={`network:${c.id}`}>{c.name}</option>)}
+                  </optgroup>
+                  <optgroup label="Studios">
+                    {STUDIOS.map(c => <option key={`company:${c.id}`} value={`company:${c.id}`}>{c.name}</option>)}
+                  </optgroup>
+                </>
+              ) : (
+                STUDIOS.map(c => <option key={`company:${c.id}`} value={`company:${c.id}`}>{c.name}</option>)
+              )}
             </Select>
             <Select className={styles.filterSelect} value={lang} onChange={e => setLang(e.target.value)}>
               <option value="">All languages</option>

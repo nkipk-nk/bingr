@@ -3,19 +3,14 @@ import Header from './Header'
 import BottomNav from './BottomNav'
 import SideRail from './SideRail'
 import Toast from '../ui/Toast'
+import SupportFab from '../SupportFab'
 import styles from './NavShell.module.css'
 
 // Extracted from App.jsx (behavior-preserving — no visual change origin;
 // Phase 2b added the BottomNav/SideRail visual layer on top). Wraps the
 // logged-in main-app view: header, primary nav, error banner, page
-// content, footer, feedback modal, and the toast — everything that
-// surrounds whatever tab/detail content App.jsx passes in as children.
-//
-// The floating support button used to live here too — retired per
-// BINGR_DESIGN_SYSTEM.md's nav section (it sat in the same bottom-right
-// thumb zone the bottom nav needs) and folded into a Support tab on your
-// own profile page instead of being repositioned (see SupportSection.jsx,
-// UserProfilePage.jsx).
+// content, footer, feedback modal, support FAB, and the toast — everything
+// that surrounds whatever tab/detail content App.jsx passes in as children.
 const FeedbackModal = lazy(() => import('../FeedbackModal'))
 
 export default function NavShell({
@@ -65,9 +60,11 @@ export default function NavShell({
 
       {showFeedback && (
         <Suspense fallback={null}>
-          <FeedbackModal session={session} profile={profile} onClose={() => setShowFeedback(false)} />
+          <FeedbackModal session={session} profile={profile} page={tab} onClose={() => setShowFeedback(false)} />
         </Suspense>
       )}
+
+      <SupportFab session={session} profile={profile} />
 
       {toast && (
         <Toast

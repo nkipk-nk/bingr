@@ -44,11 +44,10 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
     feedback: onShowFeedback,
     supporters: () => onNavigate('supporters'),
     'sign-out': onSignOut,
-    'delete-account': () => onNavigate('delete-account'),
   }
   const items = accountMenuItems({ isAdmin })
-  const primaryItems = items.filter(i => i.id !== 'sign-out' && i.id !== 'delete-account')
-  const dangerItems = items.filter(i => i.id === 'sign-out' || i.id === 'delete-account')
+  const primaryItems = items.filter(i => i.id !== 'sign-out')
+  const exitItems = items.filter(i => i.id === 'sign-out')
 
   return (
     <div ref={ref} className={styles.menu} role="menu">
@@ -66,8 +65,8 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
       ))}
 
       <div className={styles.divider} />
-      {dangerItems.map(item => (
-        <MenuRow key={item.id} icon={item.icon} label={item.label} onClick={go(handlers[item.id])} danger={item.danger} />
+      {exitItems.map(item => (
+        <MenuRow key={item.id} icon={item.icon} label={item.label} onClick={go(handlers[item.id])} />
       ))}
     </div>
   )

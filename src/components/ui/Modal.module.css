@@ -32,7 +32,11 @@
 }
 
 .compact { max-height: 60vh; }
-.full { height: 90vh; }
+/* Previously only changed height — every modal, compact or full, was capped
+   at the same 560px width as a result. Full-size content (multi-field forms,
+   longer copy) benefits from more than that; compact stays narrow since it's
+   only ever 1-2 fields. */
+.full { height: 90vh; max-width: 720px; }
 
 .handle {
   width: 40px;

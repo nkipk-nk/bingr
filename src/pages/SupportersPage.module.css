@@ -1,4 +1,4 @@
-.wrap { max-width: 600px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
+.wrap { max-width: 720px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
 .backBtn { padding-left: 0; margin-bottom: var(--space-6); }
 
 .hero { text-align: center; margin-bottom: var(--space-8); }
@@ -64,6 +64,3 @@
 .rowNote { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); margin-top: 2px; font-style: italic; }
 .rowDate { font-family: var(--font-mono); font-size: var(--text-mono-sm-size); letter-spacing: var(--text-mono-sm-tracking); color: var(--text-tertiary); margin-top: 2px; }
 .rowAmount { font-family: var(--font-mono); font-size: var(--text-mono-md-size); font-weight: var(--text-mono-md-weight); color: var(--magenta-bright); flex-shrink: 0; }
-
-.cta { text-align: center; margin-top: var(--space-8); }
-.cta p { font-family: var(--font-body); font-size: var(--text-body-md-size); color: var(--text-secondary); margin-bottom: var(--space-3); }

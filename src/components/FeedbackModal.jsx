@@ -14,7 +14,7 @@ const CATEGORIES = [
   { value: 'general', label: 'General feedback', icon: MessageCircle, desc: 'Anything else on your mind' },
 ]
 
-export default function FeedbackModal({ session, profile, onClose }) {
+export default function FeedbackModal({ session, profile, page, onClose }) {
   const [category, setCategory] = useState('general')
   const [message, setMessage] = useState('')
   const [email, setEmail] = useState(session?.user?.email || '')
@@ -33,6 +33,11 @@ export default function FeedbackModal({ session, profile, onClose }) {
         email: email.trim() || null,
         category,
         message: sanitise(message, 2000),
+        // Captured automatically, not asked of the user — extra debugging
+        // context (what screen they were on, what browser/device) without
+        // adding fields to an already-short form.
+        page_context: page || null,
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 300) : null,
       })
       if (error) throw error
       logger.info('Feedback submitted', { category })
@@ -51,7 +56,10 @@ export default function FeedbackModal({ session, profile, onClose }) {
       <div className={styles.successWrap}>
         <HeartHandshake size={40} className={styles.successIcon} />
         <div className={styles.successTitle}>Thanks for the feedback!</div>
-        <p className={styles.successDesc}>Every message helps make bingr better. I read every single one.</p>
+        <p className={styles.successDesc}>
+          I read every message personally, usually within a few days.
+          {email.trim() ? " I'll reply if it needs one." : ' Most feedback doesn\'t need a reply, but leave an email next time if you want one.'}
+        </p>
         <Button variant="primary" onClick={onClose}>Close</Button>
       </div>
     </Modal>

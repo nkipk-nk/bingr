@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Coffee, Smartphone, Globe, Sparkles } from 'lucide-react'
-import { supabase } from '../lib/supabase'
+import { useState } from 'react'
+import { Coffee, Smartphone, Globe } from 'lucide-react'
 import { logger } from '../lib/logger'
 import Button from './ui/Button'
 import styles from './SupportSection.module.css'
@@ -8,33 +7,16 @@ import styles from './SupportSection.module.css'
 const AMOUNTS = [50, 150, 300]
 const getNumber = () => ['07', '00', '231', '485'].join('')
 
-// The floating ☕ button's content, extracted so it can render as a plain
-// in-page section instead of a modal — the button itself is retired
-// (BINGR_UI_AUDIT.md GP-nav / BINGR_DESIGN_SYSTEM.md's nav section: it
-// occupied the same bottom-right thumb zone the bottom nav needs, and
-// "support" isn't a primary-enough task to earn a persistent floating
-// trigger). Same donation flow, now living in the You hub.
-export default function SupportSection({ session, profile, onShowSupporters }) {
+// The donate flow only — no "recent supporters" preview here. That data
+// already has its own full destination (SupportersPage.jsx, reachable from
+// the account dropdown), so showing a teaser of it inside this modal too
+// was the same link/content in two places at once.
+export default function SupportSection({ session, profile }) {
   const [revealed, setRevealed] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [supporters, setSupporters] = useState([])
 
   const countryCode = profile?.country_code || null
   const kenyan = countryCode === 'KE'
-
-  useEffect(() => {
-    supabase
-      .from('bingr_donations')
-      .select('username, amount_kes, donated_at')
-      .eq('confirmed', true)
-      .eq('show_on_wall', true)
-      .order('donated_at', { ascending: false })
-      .limit(3)
-      .then(({ data, error }) => {
-        if (error) { logger.warn('Failed to load recent supporters', { message: error.message }); return }
-        setSupporters(data || [])
-      })
-  }, [])
 
   const handleCopy = async () => {
     const num = getNumber()
@@ -55,7 +37,6 @@ export default function SupportSection({ session, profile, onShowSupporters }) {
     <div className={styles.wrap}>
       <div className={styles.hero}>
         <Coffee size={36} className={styles.heroIcon} />
-        <div className={styles.heroTitle}>Support bingr</div>
         <p className={styles.heroDesc}>
           bingr is free, ad-free, and built by one developer in Nairobi.
           If it saves you time or brings you joy, a small support means a lot 🙏
@@ -92,23 +73,6 @@ export default function SupportSection({ session, profile, onShowSupporters }) {
       )}
 
       <p className={styles.disclaimer}>No pressure — bingr is free forever 💚</p>
-
-      {supporters.length > 0 && (
-        <div className={styles.recentSupporters}>
-          <div className={styles.recentHeader}>
-            <div className={styles.recentTitle}><Sparkles size={14} /> Recent supporters</div>
-            <button onClick={onShowSupporters} className={styles.recentViewAll}>View all →</button>
-          </div>
-          <div className={styles.recentList}>
-            {supporters.map((s, i) => (
-              <div key={i} className={styles.recentRow}>
-                <div className={styles.recentName}>{s.username}</div>
-                <div className={styles.recentAmount}>KES {s.amount_kes}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   )
 }

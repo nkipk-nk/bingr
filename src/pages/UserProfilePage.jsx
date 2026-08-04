@@ -11,7 +11,6 @@ import EditProfileModal from '../components/EditProfileModal'
 import Rankings from './Rankings'
 import StatsPage from './StatsPage'
 import ListsPage from './ListsPage'
-import SupportSection from '../components/SupportSection'
 import Avatar from '../components/ui/Avatar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -29,13 +28,16 @@ import styles from './UserProfilePage.module.css'
 // versions existed. Now this page IS the full version when you're looking
 // at your own profile — Rankings/Stats/Lists render the exact same
 // full-featured components YouHub used to (Rankings.jsx, StatsPage.jsx,
-// ListsPage.jsx), plus a Support tab (SupportSection.jsx) that otherwise
-// had nowhere left to live. Visiting someone else's profile still gets the
+// ListsPage.jsx). Support briefly lived here too as a tab (RD13) but moved
+// to a floating button (SupportFab.jsx, rendered from NavShell.jsx) — a
+// donate action isn't "your data" the way Stats/Rankings/Lists are, and
+// tucking it behind a tab made it less discoverable than the floating
+// button it replaced. Visiting someone else's profile still gets the
 // original reduced/read-only versions — that split was always correct,
 // the duplication was having two separate *pages* for the owner's version.
 export default function UserProfilePage({
   username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook, embedded = false,
-  onUpdateProfile, episodes, listsHook, onShowSupporters, onGoDiscover, session,
+  onUpdateProfile, episodes, listsHook, onGoDiscover,
 }) {
   const { showToast, clearToast } = useToast()
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
@@ -190,7 +192,6 @@ export default function UserProfilePage({
     { id: 'stats', label: 'Stats' },
     { id: 'diary', label: `Recent Activity (${diary.length})` },
     { id: 'lists', label: `Lists (${listsCount})` },
-    ...(isOwnProfile ? [{ id: 'support', label: 'Support' }] : []),
   ]
 
   const statTiles = [
@@ -304,10 +305,6 @@ export default function UserProfilePage({
               </div>
             )
           )
-        )}
-
-        {tab === 'support' && isOwnProfile && (
-          <SupportSection session={session} profile={profile} onShowSupporters={onShowSupporters} />
         )}
 
         {!currentUserId && (

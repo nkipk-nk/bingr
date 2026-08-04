@@ -10,7 +10,7 @@
 .brandLogo { width: 28px; height: 28px; border-radius: var(--radius-sm); object-fit: contain; }
 .brandName { font-family: var(--font-display); font-size: var(--text-display-md-size); font-weight: 700; color: var(--magenta-bright); }
 
-.body { max-width: 900px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
+.body { max-width: 1100px; margin: 0 auto; padding: var(--space-8) var(--space-6); }
 
 .profileCard { display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
 .profileInfo { flex: 1; min-width: 0; }

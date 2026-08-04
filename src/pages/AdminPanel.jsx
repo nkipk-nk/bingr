@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import {
   ArrowLeft, Settings, Users, Mail, Coffee, HeartHandshake,
   Bug, Lightbulb, Clapperboard, MessageCircle, Wrench,
-  CheckCircle2, AlertTriangle, Plus, Flag,
+  CheckCircle2, AlertTriangle, Plus, Flag, Compass, Monitor,
 } from 'lucide-react'
 import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
@@ -181,6 +181,8 @@ export default function AdminPanel({ adminHook, onBack }) {
                       </div>
                       <p className={styles.itemBody}>{f.message}</p>
                       {f.email && <div className={styles.itemFootnote}><Mail size={12} /> {f.email}</div>}
+                      {f.page_context && <div className={styles.itemFootnote}><Compass size={12} /> {f.page_context}</div>}
+                      {f.user_agent && <div className={styles.itemFootnote}><Monitor size={12} /> {f.user_agent}</div>}
                     </Card>
                   )
                 })}

@@ -1,0 +1,24 @@
+.fab {
+  position: fixed;
+  right: var(--space-6);
+  bottom: 88px; /* clears BottomNav (mobile) — see NavShell.module.css's .toastOffset for the same split */
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--magenta-deep);
+  color: var(--text-primary);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--elevation-2-shadow);
+  z-index: 200;
+  transition: background-color var(--duration-instant) var(--ease-standard), transform var(--duration-instant) var(--ease-standard);
+}
+.fab:hover { background: color-mix(in srgb, var(--magenta-deep) 92%, white); }
+.fab:active { transform: scale(0.94); }
+
+@media (min-width: 1024px) {
+  .fab { bottom: var(--space-6); } /* no BottomNav on desktop — SideRail is left-side, doesn't conflict */
+}
