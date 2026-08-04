@@ -5,6 +5,7 @@
   min-height: 100vh;
   background: var(--bg-canvas);
   font-family: var(--font-body);
+  padding-top: var(--header-height); /* clears the now-fixed Header */
   padding-bottom: 64px; /* clears BottomNav's height */
 }
 

@@ -2,7 +2,7 @@
 .name { font-family: var(--font-body); font-size: var(--text-body-lg-size); font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .handle { font-family: var(--font-body); font-size: var(--text-body-sm-size); color: var(--text-secondary); }
 
-.tabs { margin-bottom: var(--space-5); overflow-x: auto; }
+.tabs { margin-bottom: var(--space-5); overflow-x: auto; overflow-y: hidden; }
 
 .accountList { max-width: 420px; display: flex; flex-direction: column; gap: var(--space-2); }
 .accountRow {
