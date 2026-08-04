@@ -30,7 +30,7 @@ import styles from './App.module.css'
 // anonymous ones who will never see most of it.
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword = lazy(() => import('./pages/ResetPassword'))
-const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const AccountSettings = lazy(() => import('./pages/AccountSettings'))
 const PublicListPage = lazy(() => import('./pages/PublicListPage'))
 const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
 const SupportersPage = lazy(() => import('./pages/SupportersPage'))
@@ -328,6 +328,8 @@ export default function App() {
           onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
           onGoHome={() => navigate('app')}
           embedded={!!session}
+          checkUsername={checkUsername}
+          onUpdateProfile={updateProfile}
         />
       </Suspense>
     )
@@ -367,8 +369,8 @@ export default function App() {
 
   // ── Logged in — protected pages ──
   if (page === 'delete-account') return <Suspense fallback={<PageFallback />}><DeleteAccount userEmail={session.user.email} onBack={() => navigate('app')} onDelete={deleteAccount} /></Suspense>
-  if (page === 'profile') return wrapInShell(
-    <Suspense fallback={<PageFallback />}><ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onExportAllData={exportAllData} onBack={() => navigate('app')} /></Suspense>
+  if (page === 'account-settings') return wrapInShell(
+    <Suspense fallback={<PageFallback />}><AccountSettings profile={profile} session={session} onUpdate={updateProfile} onExportAllData={exportAllData} onBack={() => navigate('app')} onDeleteAccount={() => navigate('delete-account')} /></Suspense>
   )
   if (page === 'admin') return adminHook.isAdmin
     ? wrapInShell(<Suspense fallback={<PageFallback />}><AdminPanel adminHook={adminHook} onBack={() => navigate('app')} /></Suspense>)

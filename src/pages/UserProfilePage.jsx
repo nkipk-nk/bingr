@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Search, Clapperboard, Tv, Play, Clock, Star, BookOpen, Layers, ArrowLeft } from 'lucide-react'
+import { Search, Clapperboard, Tv, Play, Clock, Star, BookOpen, Layers, ArrowLeft, Pencil } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../lib/logger'
 import { computeStats, formatHours } from '../lib/stats'
@@ -7,6 +7,7 @@ import { useToast } from '../contexts/useToast'
 import RankedList from '../components/RankedList'
 import WatchLogCard from '../components/WatchLogCard'
 import FollowerListSheet from '../components/FollowerListSheet'
+import EditProfileModal from '../components/EditProfileModal'
 import Avatar from '../components/ui/Avatar'
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
@@ -17,7 +18,10 @@ import { StatTileGrid } from '../components/stats/StatTile'
 import ActivityChart from '../components/stats/ActivityChart'
 import styles from './UserProfilePage.module.css'
 
-export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook, embedded = false }) {
+export default function UserProfilePage({
+  username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook, embedded = false,
+  checkUsername, onUpdateProfile,
+}) {
   const { showToast, clearToast } = useToast()
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
   const [followLoading, setFollowLoading] = useState(false)
@@ -30,6 +34,7 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
   const [notFound, setNotFound] = useState(false)
   const [tab, setTab] = useState('rankings')
   const [followSheet, setFollowSheet] = useState(null) // 'followers' | 'following' | null
+  const [editOpen, setEditOpen] = useState(false)
 
   // Must stay below the useState declarations above — referencing `diary` in the
   // dependency array before its `const` binding is initialised throws a
@@ -153,6 +158,17 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
 
   const openProfile = (u) => { window.location.href = `/@${u}` }
 
+  // A username change makes this page's own URL (/@oldUsername) stale — send
+  // the user to the new one instead of quietly leaving a dead link active.
+  // A display-name-only change just merges into local state; this page
+  // fetches its own `profile` independently of useProfile's copy (it also
+  // serves anonymous/other-user views), so there's no shared cache to sync.
+  const handleProfileSaved = (patch) => {
+    if (patch.username && patch.username !== profile.username) { openProfile(patch.username); return }
+    setProfile(prev => ({ ...prev, ...patch }))
+    showToast('Profile saved', { tone: 'success' })
+  }
+
   const TABS = [
     { id: 'rankings', label: `Top Rated (${library.length})` },
     { id: 'stats', label: 'Stats' },
@@ -201,6 +217,9 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
             {profile.bio && <p className={styles.bio}>{profile.bio}</p>}
             {!isOwnProfile && currentUserId && followsHook && (
               <FollowButton following={amFollowing} onToggle={handleFollow} disabled={followLoading} />
+            )}
+            {isOwnProfile && (
+              <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}><Pencil size={14} /> Edit profile</Button>
             )}
           </div>
           <div className={styles.statsRow}>
@@ -275,6 +294,17 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
           type={followSheet}
           getUsers={followsHook.getUsers}
           onOpenProfile={openProfile}
+        />
+      )}
+
+      {isOwnProfile && (
+        <EditProfileModal
+          open={editOpen}
+          onClose={() => setEditOpen(false)}
+          profile={profile}
+          checkUsername={checkUsername}
+          onUpdate={onUpdateProfile}
+          onSaved={handleProfileSaved}
         />
       )}
     </div>

@@ -37,7 +37,7 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
   const goToPublicProfile = () => { window.location.href = `/@${profile?.username}`; onClose() }
 
   const handlers = {
-    'edit-profile': () => onNavigate('profile'),
+    'account-settings': () => onNavigate('account-settings'),
     admin: () => onNavigate('admin'),
     feedback: onShowFeedback,
     supporters: () => onNavigate('supporters'),
@@ -62,7 +62,7 @@ export default function AccountMenu({ profile, session, isAdmin, onClose, onNavi
       {primaryItems.map(item => (
         <MenuRow
           key={item.id} icon={item.icon} label={item.label}
-          onClick={item.id === 'view-public-profile' ? goToPublicProfile : go(handlers[item.id])}
+          onClick={item.id === 'my-profile' ? goToPublicProfile : go(handlers[item.id])}
         />
       ))}
 

@@ -43,8 +43,8 @@ export default function YouHub({
   const userDisplay = profile?.display_name || profile?.username || session.user.email.split('@')[0]
 
   const accountHandlers = {
-    'edit-profile': () => onNavigate('profile'),
-    'view-public-profile': () => { window.location.href = `/@${profile?.username}` },
+    'my-profile': () => { window.location.href = `/@${profile?.username}` },
+    'account-settings': () => onNavigate('account-settings'),
     admin: () => onNavigate('admin'),
     feedback: onShowFeedback,
     supporters: onShowSupporters,
