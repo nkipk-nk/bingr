@@ -249,6 +249,32 @@ export default function App() {
     navigate('app')
   }
 
+  // Standalone pages (profile/admin/supporters/user-profile) were found to
+  // render outside NavShell entirely — no persistent nav, and critically no
+  // <Toast>, so showToast() calls there (profile save, follow/unfollow)
+  // silently updated context state with nothing mounted to display it. Now
+  // wrapped in NavShell (see the routes below), which means their nav/search
+  // controls need to actually leave the standalone page and land on the
+  // main tabbed app — the main NavShell instance's own handlers don't do
+  // this because they're already on 'app'. Kept as separate handlers so
+  // that already-working instance isn't touched.
+  const goToTabFromHere = (id) => { navigate('app'); setDetailItem(null); setSearchResults(null); setTab(id) }
+  const goToAccountFromHere = () => { navigate('app'); setDetailItem(null); setSearchResults(null); setTab('you'); setYouTab('account') }
+  const searchFromHere = async () => { navigate('app'); setTab('discover'); await handleSearch() }
+  const wrapInShell = (children) => (
+    <NavShell
+      session={session} profile={profile} syncing={syncing}
+      query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={searchFromHere}
+      tab="you" onSelectTab={goToTabFromHere} onOpenAccount={goToAccountFromHere}
+      onGoHome={goHome} onNavigate={navigate}
+      libError={libError}
+      showFeedback={showFeedback} setShowFeedback={setShowFeedback}
+      toast={toast} onClearToast={clearToast}
+    >
+      {children}
+    </NavShell>
+  )
+
 
   const episodeProps = {
     episodes: episodeHook.episodes,
@@ -281,19 +307,30 @@ export default function App() {
       <PublicListPage listId={pageParam} onSignUp={() => { setAuthMode('signup'); navigate('auth') }} onGoHome={() => navigate('app')} />
     </Suspense>
   )
-  if (page === 'user-profile') return (
-    <Suspense fallback={<PageFallback />}>
-      <UserProfilePage
-        username={pageParam}
-        currentUserId={session?.user?.id || null}
-        followsHook={session ? followsHook : null}
-        onOpenItem={(item) => { navigate('app'); setTab('discover'); openDetail(item) }}
-        onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
-        onGoHome={() => navigate('app')}
-      />
-    </Suspense>
-  )
-  if (page === 'supporters') return <Suspense fallback={<PageFallback />}><SupportersPage onBack={() => navigate('app')} /></Suspense>
+  if (page === 'user-profile') {
+    // Reached anonymously (a shared link) as often as from inside the app —
+    // NavShell only wraps it when a session exists, so an anonymous visitor
+    // keeps today's focused, chrome-free page (their session-less state
+    // never triggers a toast anyway — no follow button without a session).
+    const userProfileContent = (
+      <Suspense fallback={<PageFallback />}>
+        <UserProfilePage
+          username={pageParam}
+          currentUserId={session?.user?.id || null}
+          followsHook={session ? followsHook : null}
+          onOpenItem={(item) => { navigate('app'); setTab('discover'); openDetail(item) }}
+          onSignUp={() => { setAuthMode('signup'); navigate('auth') }}
+          onGoHome={() => navigate('app')}
+          embedded={!!session}
+        />
+      </Suspense>
+    )
+    return session ? wrapInShell(userProfileContent) : userProfileContent
+  }
+  if (page === 'supporters') {
+    const supportersContent = <Suspense fallback={<PageFallback />}><SupportersPage onBack={() => navigate('app')} /></Suspense>
+    return session ? wrapInShell(supportersContent) : supportersContent
+  }
   if (page === 'privacy') return <Suspense fallback={<PageFallback />}><PrivacyPolicy onBack={() => navigate(session ? 'app' : 'landing')} /></Suspense>
   if (page === 'terms') return <Suspense fallback={<PageFallback />}><TermsOfService onBack={() => navigate(session ? 'app' : 'landing')} /></Suspense>
   if (page === 'reset') return <Suspense fallback={<PageFallback />}><ResetPassword onDone={() => { navigate('auth'); setAuthMode('login') }} /></Suspense>
@@ -324,9 +361,11 @@ export default function App() {
 
   // ── Logged in — protected pages ──
   if (page === 'delete-account') return <Suspense fallback={<PageFallback />}><DeleteAccount userEmail={session.user.email} onBack={() => navigate('app')} onDelete={deleteAccount} /></Suspense>
-  if (page === 'profile') return <Suspense fallback={<PageFallback />}><ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onExportAllData={exportAllData} onBack={() => navigate('app')} /></Suspense>
+  if (page === 'profile') return wrapInShell(
+    <Suspense fallback={<PageFallback />}><ProfilePage profile={profile} session={session} onUpdate={updateProfile} checkUsername={checkUsername} onExportAllData={exportAllData} onBack={() => navigate('app')} /></Suspense>
+  )
   if (page === 'admin') return adminHook.isAdmin
-    ? <Suspense fallback={<PageFallback />}><AdminPanel adminHook={adminHook} onBack={() => navigate('app')} /></Suspense>
+    ? wrapInShell(<Suspense fallback={<PageFallback />}><AdminPanel adminHook={adminHook} onBack={() => navigate('app')} /></Suspense>)
     : <div className={styles.denied}>Access denied.</div>
 
   // ── Main app ──
@@ -386,7 +425,7 @@ export default function App() {
         ) : tab === 'diary' ? (
           <Suspense fallback={<PageFallback />}><DiaryPage diaryHook={diaryHook} onOpen={openDetail} onGoDiscover={goHome} /></Suspense>
         ) : tab === 'library' ? (
-          <LibraryPage library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} />
+          <LibraryPage library={library} onOpen={openDetail} onRemove={remove} episodeProps={episodeProps} onGoDiscover={goHome} />
         ) : tab === 'you' ? (
           <Suspense fallback={<PageFallback />}>
             <YouHub

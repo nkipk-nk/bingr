@@ -16,7 +16,7 @@ const STATUSES = ['watchlist', 'watching', 'watched']
 // inside ExportPanel, affecting the exported file but not what you saw on
 // screen). Owns the status/type/sort/filter state that ExportPanel and
 // LibraryTab both used to duplicate independently.
-export default function LibraryPage({ library, onOpen, onRemove, episodeProps }) {
+export default function LibraryPage({ library, onOpen, onRemove, episodeProps, onGoDiscover }) {
   const [status, setStatus] = useState('all')
   const [mediaType, setMediaType] = useState('all')
   const [sortBy, setSortBy] = useState('added')
@@ -30,7 +30,10 @@ export default function LibraryPage({ library, onOpen, onRemove, episodeProps })
   const items = needle ? filtered.filter(x => (x.title || x.name || '').toLowerCase().includes(needle)) : filtered
 
   if (!all.length) return (
-    <EmptyState icon={Bookmark} title="Your library is empty" description="Browse Discover to add titles" />
+    <EmptyState
+      icon={Bookmark} title="Your library is empty" description="Browse Discover to add titles"
+      actionLabel={onGoDiscover ? 'Browse Discover' : undefined} onAction={onGoDiscover}
+    />
   )
 
   return (

@@ -17,7 +17,7 @@ import { StatTileGrid } from '../components/stats/StatTile'
 import ActivityChart from '../components/stats/ActivityChart'
 import styles from './UserProfilePage.module.css'
 
-export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook }) {
+export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook, embedded = false }) {
   const { showToast, clearToast } = useToast()
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
   const [followLoading, setFollowLoading] = useState(false)
@@ -171,16 +171,18 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
 
   return (
     <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerLeft}>
-          <Button variant="ghost" size="sm" className={styles.backBtn} onClick={onGoHome}><ArrowLeft size={16} /> Back</Button>
-          <button className={styles.brand} onClick={onGoHome}>
-            <img src="/logo.png" alt="bingr" className={styles.brandLogo} />
-            <span className={styles.brandName}>bingr</span>
-          </button>
-        </div>
-        {!currentUserId && <Button variant="primary" size="sm" onClick={onSignUp}>Sign up free</Button>}
-      </header>
+      {!embedded && (
+        <header className={styles.header}>
+          <div className={styles.headerLeft}>
+            <Button variant="ghost" size="sm" className={styles.backBtn} onClick={onGoHome}><ArrowLeft size={16} /> Back</Button>
+            <button className={styles.brand} onClick={onGoHome}>
+              <img src="/logo.png" alt="bingr" className={styles.brandLogo} />
+              <span className={styles.brandName}>bingr</span>
+            </button>
+          </div>
+          {!currentUserId && <Button variant="primary" size="sm" onClick={onSignUp}>Sign up free</Button>}
+        </header>
+      )}
 
       <div className={styles.body}>
         <Card className={styles.profileCard}>
