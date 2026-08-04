@@ -18,10 +18,10 @@ import styles from './NavShell.module.css'
 const FeedbackModal = lazy(() => import('../FeedbackModal'))
 
 export default function NavShell({
-  session, profile, syncing,
+  session, profile, syncing, isAdmin,
   query, setQuery, searchType, setSearchType, onSearch,
-  tab, onSelectTab, onOpenAccount,
-  onGoHome, onNavigate,
+  tab, onSelectTab,
+  onGoHome, onNavigate, onSignOut,
   libError,
   showFeedback, setShowFeedback,
   toast, onClearToast,
@@ -32,9 +32,9 @@ export default function NavShell({
       <SideRail tab={tab} onSelectTab={onSelectTab} onGoHome={onGoHome} />
 
       <Header
-        session={session} profile={profile} syncing={syncing}
+        session={session} profile={profile} syncing={syncing} isAdmin={isAdmin}
         query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={onSearch}
-        onGoHome={onGoHome} onOpenAccount={onOpenAccount}
+        onGoHome={onGoHome} onNavigate={onNavigate} onShowFeedback={() => setShowFeedback(true)} onSignOut={onSignOut}
       />
 
       {libError && (

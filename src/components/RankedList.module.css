@@ -1,6 +1,6 @@
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4); }
 .title { font-family: var(--font-body); font-size: var(--text-body-lg-size); font-weight: 600; color: var(--text-primary); }
-.filterSelect { width: 150px; }
+.filterSelect { max-width: 150px; }
 
 .row { display: flex; align-items: center; gap: var(--space-3); cursor: pointer; margin-bottom: var(--space-2); }
 .rank { font-family: var(--font-mono); font-size: var(--text-mono-md-size); font-weight: 700; min-width: 28px; text-align: center; flex-shrink: 0; color: var(--text-tertiary); }

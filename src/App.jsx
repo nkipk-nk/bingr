@@ -259,14 +259,13 @@ export default function App() {
   // this because they're already on 'app'. Kept as separate handlers so
   // that already-working instance isn't touched.
   const goToTabFromHere = (id) => { navigate('app'); setDetailItem(null); setSearchResults(null); setTab(id) }
-  const goToAccountFromHere = () => { navigate('app'); setDetailItem(null); setSearchResults(null); setTab('you'); setYouTab('account') }
   const searchFromHere = async () => { navigate('app'); setTab('discover'); await handleSearch() }
   const wrapInShell = (children) => (
     <NavShell
-      session={session} profile={profile} syncing={syncing}
+      session={session} profile={profile} syncing={syncing} isAdmin={adminHook.isAdmin}
       query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={searchFromHere}
-      tab="you" onSelectTab={goToTabFromHere} onOpenAccount={goToAccountFromHere}
-      onGoHome={goHome} onNavigate={navigate}
+      tab="you" onSelectTab={goToTabFromHere}
+      onGoHome={goHome} onNavigate={navigate} onSignOut={signOut}
       libError={libError}
       showFeedback={showFeedback} setShowFeedback={setShowFeedback}
       toast={toast} onClearToast={clearToast}
@@ -382,11 +381,10 @@ export default function App() {
       {showTour && <WelcomeTour onDone={dismissTour} />}
 
       <NavShell
-        session={session} profile={profile} syncing={syncing}
+        session={session} profile={profile} syncing={syncing} isAdmin={adminHook.isAdmin}
         query={query} setQuery={setQuery} searchType={searchType} setSearchType={setSearchType} onSearch={handleSearch}
         tab={tab} onSelectTab={(id) => { setDetailItem(null); setSearchResults(null); setTab(id) }}
-        onOpenAccount={() => { setDetailItem(null); setSearchResults(null); setTab('you'); setYouTab('account') }}
-        onGoHome={goHome} onNavigate={navigate}
+        onGoHome={goHome} onNavigate={navigate} onSignOut={signOut}
         libError={libError}
         showFeedback={showFeedback} setShowFeedback={setShowFeedback}
         toast={toast} onClearToast={clearToast}

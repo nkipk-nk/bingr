@@ -48,6 +48,7 @@ const MIGRATED_FILES = [
   'src/App.jsx',
   'src/components/ErrorBoundary.jsx',
   'src/components/nav/NavShell.jsx',
+  'src/components/nav/AccountMenu.jsx',
 ]
 
 export default defineConfig([
