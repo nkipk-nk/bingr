@@ -27,7 +27,7 @@ const UserRow = ({ user, isFollowing, onToggleFollow, onOpenProfile }) => (
 )
 
 export default function FindPeople({ session, followsHook, onOpenProfile }) {
-  const { showToast } = useToast()
+  const { showToast, clearToast } = useToast()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [suggested, setSuggested] = useState([])
@@ -35,11 +35,23 @@ export default function FindPeople({ session, followsHook, onOpenProfile }) {
   const searchTimer = useRef(null)
 
   // GP9 (BINGR_UI_AUDIT.md) — follow toggled used to give zero feedback
-  // beyond the button's own state flip.
-  const handleToggleFollow = (u) => {
+  // beyond the button's own state flip. CX10 — unfollow is cheaply
+  // reversible, so it gets an Undo instead of a confirm-before-acting
+  // prompt. Awaited (unlike a plain fire-and-forget toggle) so `following`
+  // state has actually flipped before Undo can run — otherwise a fast
+  // Undo click could race the original delete and read stale state,
+  // calling unfollow() again instead of follow() and silently no-opping.
+  const handleToggleFollow = async (u) => {
     const wasFollowing = followsHook.isFollowing(u.id)
-    followsHook.toggleFollow(u.id)
-    showToast(wasFollowing ? `Unfollowed @${u.username}` : `Following @${u.username}`, { tone: 'success' })
+    await followsHook.toggleFollow(u.id)
+    if (wasFollowing) {
+      showToast(`Unfollowed @${u.username}`, {
+        tone: 'success',
+        action: { label: 'Undo', onClick: () => { clearToast(); followsHook.toggleFollow(u.id) } },
+      })
+    } else {
+      showToast(`Following @${u.username}`, { tone: 'success' })
+    }
   }
 
   // Load a handful of suggested users (most recently active) on mount

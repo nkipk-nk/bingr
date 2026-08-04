@@ -55,8 +55,8 @@ function CreateListModal({ onClose, onCreate }) {
   )
 }
 
-function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, removeFromList, onOpenItem }) {
-  const { showToast } = useToast()
+function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, removeFromList, addToList, onOpenItem }) {
+  const { showToast, clearToast } = useToast()
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -78,9 +78,27 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleRemove = async (tmdbId) => {
-    await removeFromList(list.id, tmdbId)
-    setItems(prev => prev.filter(x => x.tmdb_id !== tmdbId))
+  // CX10 (BINGR_UI_AUDIT.md) — remove-from-list is cheaply reversible, so
+  // it's instant with an Undo toast rather than a confirm-before-acting
+  // prompt. Undo re-fetches from the server (getListItems) instead of
+  // splicing the removed item back into local state, so it can't drift
+  // from what addToList actually persisted.
+  const handleRemove = async (item) => {
+    await removeFromList(list.id, item.tmdb_id)
+    setItems(prev => prev.filter(x => x.tmdb_id !== item.tmdb_id))
+    showToast(`Removed "${item.title || item.name}" from list`, {
+      action: {
+        label: 'Undo',
+        onClick: async () => {
+          clearToast()
+          const ok = await addToList(list.id, {
+            id: item.tmdb_id, media_type: item.media_type, title: item.title,
+            poster_path: item.poster_path, release_date: item.release_date, vote_average: item.vote_average,
+          })
+          if (ok) setItems(await getListItems(list.id))
+        },
+      },
+    })
   }
 
   const saveEdit = async () => {
@@ -157,7 +175,7 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
                 <div className={styles.itemTitle}>{item.title || item.name}</div>
                 <div className={styles.itemMeta}>{(item.release_date || '').slice(0, 4)} · {item.media_type === 'tv' ? 'TV' : 'Film'}</div>
               </div>
-              <button className={styles.itemRemove} title="Remove from list" onClick={() => handleRemove(item.tmdb_id)}><X size={11} /></button>
+              <button className={styles.itemRemove} title="Remove from list" onClick={() => handleRemove(item)}><X size={11} /></button>
             </div>
           ))}
         </div>
@@ -175,7 +193,7 @@ function ListDetailView({ list, onBack, onDelete, onUpdate, getListItems, remove
 }
 
 export default function ListsPage({ listsHook, onOpenItem }) {
-  const { lists, createList, updateList, deleteList, removeFromList, getListItems } = listsHook
+  const { lists, createList, updateList, deleteList, addToList, removeFromList, getListItems } = listsHook
   const [showCreate, setShowCreate] = useState(false)
   const [activeList, setActiveList] = useState(null)
 
@@ -194,6 +212,7 @@ export default function ListsPage({ listsHook, onOpenItem }) {
         onUpdate={updateList}
         getListItems={getListItems}
         removeFromList={removeFromList}
+        addToList={addToList}
         onOpenItem={onOpenItem}
       />
     )

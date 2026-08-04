@@ -18,7 +18,7 @@ import ActivityChart from '../components/stats/ActivityChart'
 import styles from './UserProfilePage.module.css'
 
 export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHome, currentUserId, followsHook }) {
-  const { showToast } = useToast()
+  const { showToast, clearToast } = useToast()
   const [followCounts, setFollowCounts] = useState({ following: 0, followers: 0 })
   const [followLoading, setFollowLoading] = useState(false)
   const [profile, setProfile] = useState(null)
@@ -114,16 +114,34 @@ export default function UserProfilePage({ username, onOpenItem, onSignUp, onGoHo
 
   const handleFollow = async () => {
     if (!followsHook || followLoading) return
+    const wasFollowing = amFollowing
     setFollowLoading(true)
     await followsHook.toggleFollow(profile.id)
     setFollowCounts(prev => ({
       ...prev,
-      followers: amFollowing ? prev.followers - 1 : prev.followers + 1
+      followers: wasFollowing ? prev.followers - 1 : prev.followers + 1
     }))
     setFollowLoading(false)
     // GP9 (BINGR_UI_AUDIT.md) — follow toggled used to give zero feedback
-    // beyond the button's own state flip.
-    showToast(amFollowing ? `Unfollowed @${profile.username}` : `Following @${profile.username}`, { tone: 'success' })
+    // beyond the button's own state flip. CX10 — unfollow is cheaply
+    // reversible, so it gets an Undo instead of a confirm-before-acting
+    // prompt. toggleFollow reads current state, so calling it again from
+    // Undo correctly re-follows.
+    if (wasFollowing) {
+      showToast(`Unfollowed @${profile.username}`, {
+        tone: 'success',
+        action: {
+          label: 'Undo',
+          onClick: async () => {
+            clearToast()
+            await followsHook.toggleFollow(profile.id)
+            setFollowCounts(prev => ({ ...prev, followers: prev.followers + 1 }))
+          },
+        },
+      })
+    } else {
+      showToast(`Following @${profile.username}`, { tone: 'success' })
+    }
   }
 
   const openProfile = (u) => { window.location.href = `/@${u}` }
